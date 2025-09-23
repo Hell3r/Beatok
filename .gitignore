@@ -1,0 +1,147 @@
+# ==================== Python ====================
+# Виртуальное окружение
+venv/
+env/
+.venv/
+ENV/
+
+# Питон кэш
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Распределение / упаковка
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Environments
+.env
+.venv
+env/
+venv/
+
+# ==================== Node.js/React ====================
+# Логи
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Зависимости
+node_modules/
+jspm_packages/
+
+# Кэш пакетов
+.npm
+.eslintcache
+
+# Сборка
+/dist
+/build
+/.next
+/out
+
+# Production
+/.env.production.local
+
+# Деплой
+/.vercel
+/.netlify
+
+# ==================== IDE ====================
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# PyCharm
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ==================== Database ====================
+# SQLite
+*.sqlite
+*.db
+
+/alembic/versions/*
+!alembic/versions/.gitkeep
+
+# ==================== FastAPI ====================
+# Файлы журналов
+*.log
+logs/
+
+# Временные файлы
+*.tmp
+*.temp
+
+# ==================== Docker ====================
+# Игнорируй все Docker файлы кроме Dockerfile
+docker-compose.override.yml
+
+# ==================== Project Specific ====================
+# Файлы окружения (ОЧЕНЬ ВАЖНО!)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Резервные копии
+*.bak
+*.backup
+
+# Документация
+/site
