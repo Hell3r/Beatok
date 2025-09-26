@@ -1,6 +1,8 @@
 import React from 'react';
 import Header from './components/Header';
 import './index.css';
+import BeatsPage from './pages/BeatsPage';
+
 
 const App: React.FC = () => {
   const isUserAuthenticated = false;
@@ -12,6 +14,9 @@ const App: React.FC = () => {
       <main className="container mx-auto px-4 py-8">
         <h1 className="text-4xl font-bold mb-4">Добро пожаловать в BEATOK</h1>
         <p className="text-gray-400">Здесь начинается ваша музыка.</p>
+        <BeatsPage>
+          
+        </BeatsPage>
       </main>
     </div>
   );
