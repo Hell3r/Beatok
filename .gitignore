@@ -145,3 +145,5 @@ docker-compose.override.yml
 
 # Документация
 /site
+
+beats/

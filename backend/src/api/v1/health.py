@@ -1,12 +1,12 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Response
 from sqlalchemy import text
 from sqlalchemy.orm import Session
-from src.database.database import engine, get_session
+from src.database.database import engine, get_session, Base
 
 router = APIRouter(prefix="/v1/health")
 
 
-@router.get('/health', tags = ["Проверка Бэкенда"], 
+@router.get('', tags = ["Проверка Бэкенда"], 
             summary= "Проверить работу API",
             status_code= status.HTTP_200_OK)
 async def get_health():
@@ -30,3 +30,10 @@ async def db_check(db: Session = Depends(get_session)):
             "status": "error", 
             "message": f"Database connection failed: {str(e)}"
         }
+
+@router.post('/setup_db', tags=["Проверка Бэкенда"], summary= "Инициализация БД")
+async def setup_db():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+        return {"message": "Database setup successfully"}
