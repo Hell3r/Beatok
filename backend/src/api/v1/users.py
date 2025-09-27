@@ -43,6 +43,7 @@ async def login_user(
         "token_type": "bearer",
         "user_info": {
             "email": user.email,
+            "username": user.username,
             "user_id": user.id,
         }
     }
