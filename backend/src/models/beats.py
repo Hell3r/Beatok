@@ -2,7 +2,7 @@ from sqlalchemy import String, Integer, Float, DateTime, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.database.database import Base
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 
 class BeatModel(Base):
@@ -27,6 +27,7 @@ class BeatModel(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     owner: Mapped["UsersModel"] = relationship("UsersModel", back_populates="beats")
+    pricings: Mapped[List["BeatPricingModel"]] = relationship("BeatPricingModel", back_populates="bit", cascade="all, delete-orphan")
     
     def __repr__(self) -> str:
         return f"Beat(id={self.id}, name='{self.name}', author='{self.author}')"
