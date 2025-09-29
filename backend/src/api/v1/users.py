@@ -79,7 +79,7 @@ async def get_all_users(session: SessionDep):
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     
     
-@router.post("/register", response_model=TokenResponse, tags = ["Пользователи"], summary= "Регистрация")
+@router.post("/register", response_model=TokenResponse, tags=["Пользователи"], summary="Регистрация")
 async def register(
     user_data: UserCreate,
     session: SessionDep
@@ -105,7 +105,7 @@ async def register(
             birthday=user_data.birthday,
             password=hashed_password,
             is_active=True,
-            date_of_reg = date.today()
+            date_of_reg=date.today()
         )
 
         session.add(user)
@@ -121,8 +121,8 @@ async def register(
                 id=user.id,
                 username=user.username,
                 email=user.email,
-                is_active=user.is_active,
-                birthday = user.birthday
+                birthday=user.birthday,
+                is_active=user.is_active
             )
         )
 

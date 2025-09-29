@@ -13,8 +13,17 @@ export interface Beat {
   status: string;
   created_at: string;
   updated_at: string;
-  owner: {
+  owner?: {
+    id: number;
+    username: string;
+  };
+  author?: {
+    id: number;
+    username: string;
+  };
+  user?: {
     id: number;
     username: string;
   };
 }
+

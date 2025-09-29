@@ -1,4 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import AuthModal from './AuthModal';
+import type { User } from '../types/auth';
 
 interface HeaderProps {
   isAuthenticated?: boolean;
@@ -9,7 +11,27 @@ interface NavItem {
   label: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    const userInfo = localStorage.getItem('user_info');
+    
+    if (token && userInfo) {
+      try {
+        setCurrentUser(JSON.parse(userInfo));
+      } catch (error) {
+        console.error('Error parsing user info:', error);
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('user_info');
+      }
+    }
+  }, []);
+
   const navItems: NavItem[] = [
     { href: '/', label: 'Главная' },
     { href: '/library', label: 'Каталог' },
@@ -18,65 +40,103 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
 
   const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
-    console.log('Logo clicked');
     window.location.href = '/';
   };
 
   const handleAuthClick = () => {
-    console.log('Auth button clicked');
+    if (currentUser) {
+      handleLogout();
+    } else {
+      setAuthModalOpen(true);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      
+      if (token) {
+        await fetch('http://localhost:8000/api/v1/users/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      localStorage.removeItem('access_token');
+      localStorage.removeItem('user_info');
+      setCurrentUser(null);
+      window.location.reload();
+    }
+
   };
 
   return (
-    <header className="bg-neutral-900 border-b border-neutral-700 sticky top-0 z-50 backdrop-blur-sm bg-opacity-90">
-      <nav className="container mx-auto px-4 py-4 flex justify-between items-center">
-        <div className="flex items-center space-x-10">
-          <a
-            href="/"
-            onClick={handleLogoClick}
-            className="text-2xl font-bold hover:scale-105 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-red-600 rounded-md"
-            aria-label="BEATOK - переход на главную"
-          >
-            <span className="text-white">BEAT</span>
-            <span className="text-red-600">OK</span>
-          </a>
+    <>
+      <header className="bg-neutral-900 border-b border-neutral-700 sticky top-0 z-50 backdrop-blur-sm bg-opacity-90">
+        <nav className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <div className="flex items-center space-x-10">
+            <a
+              href="/"
+              onClick={handleLogoClick}
+              className="text-2xl font-bold hover:scale-105 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-red-600 rounded-md"
+              aria-label="BEATOK - переход на главную"
+            >
+              <span className="text-white">BEAT</span>
+              <span className="text-red-600">OK</span>
+            </a>
 
-          <div className="hidden md:flex space-x-6">
+            <div className="hidden md:flex space-x-6">
+              {navItems.map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className="text-gray-300 hover:text-white transition-colors duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-red-600 rounded-md px-2 py-1"
+                >
+                  {item.label}
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            {currentUser && (
+              <span className="text-neutral-300 text-sm">
+                {currentUser.username}
+              </span>
+            )}
+            <button
+              onClick={handleAuthClick}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-800 focus:ring-offset-2 focus:ring-offset-gray-900"
+              aria-label={currentUser ? 'Выйти из аккаунта' : 'Войти в аккаунт'}
+            >
+              {currentUser ? 'Выйти' : 'Войти'}
+            </button>
+          </div>
+        </nav>
+        <div className="md:hidden bg-gray-800 border-t border-gray-700">
+          <div className="container mx-auto px-4 py-2 flex flex-col space-y-2">
             {navItems.map((item) => (
               <a
                 key={item.href}
                 href={item.href}
-                className="text-gray-300 hover:text-white transition-colors duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-red-600 rounded-md px-2 py-1"
+                className="text-gray-300 hover:text-white transition-colors duration-200 font-medium py-2 px-2 focus:outline-none focus:ring-2 focus:ring-red-600 rounded-md"
               >
                 {item.label}
               </a>
             ))}
           </div>
         </div>
+      </header>
 
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={handleAuthClick}
-            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-800 focus:ring-offset-2 focus:ring-offset-gray-900"
-            aria-label={isAuthenticated ? 'Выйти из аккаунта' : 'Войти в аккаунт'}
-          >
-            {isAuthenticated ? 'Выйти' : 'Войти'}
-          </button>
-        </div>
-      </nav>
-      <div className="md:hidden bg-gray-800 border-t border-gray-700">
-        <div className="container mx-auto px-4 py-2 flex flex-col space-y-2">
-          {navItems.map((item) => (
-            <a
-              key={item.href}
-              href={item.href}
-              className="text-gray-300 hover:text-white transition-colors duration-200 font-medium py-2 px-2 focus:outline-none focus:ring-2 focus:ring-red-600 rounded-md"
-            >
-              {item.label}
-            </a>
-          ))}
-        </div>
-      </div>
-    </header>
+      <AuthModal 
+        isOpen={authModalOpen} 
+        onClose={() => setAuthModalOpen(false)} 
+      />
+    </>
   );
 };
 
