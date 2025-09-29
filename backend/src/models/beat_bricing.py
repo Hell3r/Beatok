@@ -1,0 +1,23 @@
+from sqlalchemy import String, Integer, Float, DateTime, ForeignKey, Boolean, DECIMAL, UniqueConstraint
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from src.database.database import Base
+from datetime import datetime
+from typing import Optional
+
+
+
+class BeatPricingModel(Base):
+    __tablename__ = "beat_pricing"
+    
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    bit_id: Mapped[int] = mapped_column(Integer, ForeignKey("beats.id", ondelete="CASCADE"), nullable=False)
+    tariff_name: Mapped[str] = mapped_column(String(50), ForeignKey("tariffs.name"), nullable=False)
+    price: Mapped[float] = mapped_column(DECIMAL(10, 2), nullable=True)
+    is_available: Mapped[bool] = mapped_column(Boolean, default=True)
+    
+    bit: Mapped["BeatModel"] = relationship("BeatModel", back_populates="pricings")
+    tariff: Mapped["TariffTemplateModel"] = relationship("TariffTemplateModel", back_populates="bit_pricings")
+    
+    __table_args__ = (
+        UniqueConstraint('bit_id', 'tariff_name', name='_bit_tariff_uc'),
+    )
