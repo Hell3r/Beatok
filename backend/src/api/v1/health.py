@@ -2,6 +2,12 @@ from fastapi import APIRouter, HTTPException, status, Depends, Response
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from src.database.database import engine, get_session, Base
+from src.models.users import UsersModel
+from src.models.beat_bricing import BeatPricingModel
+from src.models.beats import BeatModel
+from src.models.tarrifs import TariffTemplateModel
+
+
 
 router = APIRouter(prefix="/v1/health")
 

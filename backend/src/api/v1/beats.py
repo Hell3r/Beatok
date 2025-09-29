@@ -6,6 +6,7 @@ from sqlalchemy.orm import selectinload
 import os
 import shutil
 import aiofiles
+from mutagen import File as MutagenFile
 from pathlib import Path
 from src.dependencies import SessionDep
 from src.models.beats import BeatModel
@@ -61,28 +62,36 @@ async def create_beat(
             
             total_size = 0
             
-            if mp3_file or wav_file:
-                beat_folder = AUDIO_STORAGE / "beats" / str(beat.id)
-                beat_folder.mkdir(parents=True, exist_ok=True)
+        if mp3_file and mp3_file.filename:
+            mp3_path = beat_folder / "audio.mp3"
+            content = await mp3_file.read() 
+            async with aiofiles.open(mp3_path, "wb") as f:
+                await f.write(content)
+            beat.mp3_path = str(mp3_path.relative_to(AUDIO_STORAGE))
+            total_size += len(content)
+    
+            try:
+                audio = MutagenFile(mp3_path)
+                if audio is not None and hasattr(audio, 'info'):
+                    beat.duration = round(audio.info.length, 2)
+            except Exception as e:
+                print(f"Ошибка при получении длительности MP3: {e}")
+
+        if wav_file and wav_file.filename:
+            wav_path = beat_folder / "audio.wav"
+            content = await wav_file.read()
+            async with aiofiles.open(wav_path, "wb") as f:
+                await f.write(content)
+            beat.wav_path = str(wav_path.relative_to(AUDIO_STORAGE))
+            total_size += len(content)
             
-            total_size = 0
-            
-            if mp3_file and mp3_file.filename:
-                mp3_path = beat_folder / "audio.mp3"
-                content = await mp3_file.read() 
-                async with aiofiles.open(mp3_path, "wb") as f:
-                    await f.write(content)
-                beat.mp3_path = str(mp3_path.relative_to(AUDIO_STORAGE))
-                total_size += len(content)
-            
-            if wav_file and wav_file.filename:
-                wav_path = beat_folder / "audio.wav"
-                content = await wav_file.read()
-                async with aiofiles.open(wav_path, "wb") as f:
-                    await f.write(content)
-                beat.wav_path = str(wav_path.relative_to(AUDIO_STORAGE))
-                total_size += len(content)
-            
+            try:
+                audio = MutagenFile(wav_path)
+                if audio is not None and hasattr(audio, 'info'):
+                    beat.duration = round(audio.info.length, 2)
+            except Exception as e:
+                print(f"Ошибка при получении длительности WAV: {e}")
+                    
             beat.size = total_size
         
         await session.commit()
@@ -133,7 +142,7 @@ async def get_beat(
     
     result = await session.execute(
         select(BeatModel)
-        .options(selectinload(BeatModel.user))
+        .options(selectinload(BeatModel.owner))
         .where(BeatModel.id == beat_id)
     )
     
@@ -193,3 +202,119 @@ async def delete_beat(
     await session.commit()
     
     return {"message": "Бит удален"}
+
+
+
+
+@router.post("/generate-identical/", summary="Создание 100 одинаковых битов")
+async def generate_identical_beats(
+    session: SessionDep,
+    current_user_id: Annotated[int, Depends(get_current_user_id)],
+    name: str = Form("Default Beat Name"),
+    genre: str = Form("hip-hop"),
+    tempo: int = Form(140),
+    key: str = Form("C"),
+    mp3_file: UploadFile = File(None),
+    wav_file: UploadFile = File(None),
+):
+    try:
+        if not mp3_file and not wav_file:
+            raise HTTPException(status_code=400, detail="Необходимо загрузить хотя бы один файл (MP3 или WAV)")
+        
+        total_size = 0
+        file_duration = 180.0
+        
+        mp3_content = None
+        if mp3_file and mp3_file.filename:
+            mp3_content = await mp3_file.read()
+            total_size += len(mp3_content)
+            
+            temp_mp3_path = Path("temp_batch_audio.mp3")
+            async with aiofiles.open(temp_mp3_path, "wb") as f:
+                await f.write(mp3_content)
+            
+            try:
+                audio_info = MutagenFile(str(temp_mp3_path))
+                if audio_info and hasattr(audio_info, 'info'):
+                    file_duration = audio_info.info.length
+            except Exception as e:
+                print(f"Ошибка получения длительности MP3: {e}")
+            
+            temp_mp3_path.unlink(missing_ok=True)
+
+        wav_content = None
+        if wav_file and wav_file.filename:
+            wav_content = await wav_file.read()
+            total_size += len(wav_content)
+            
+            if file_duration == 180.0:
+                temp_wav_path = Path("temp_batch_audio.wav")
+                async with aiofiles.open(temp_wav_path, "wb") as f:
+                    await f.write(wav_content)
+                
+                try:
+                    audio_info = MutagenFile(str(temp_wav_path))
+                    if audio_info and hasattr(audio_info, 'info'):
+                        file_duration = audio_info.info.length
+                except Exception as e:
+                    print(f"Ошибка получения длительности WAV: {e}")
+                
+                temp_wav_path.unlink(missing_ok=True)
+        
+        beats_to_create = []
+        
+        for i in range(1, 101):
+            beat_folder = AUDIO_STORAGE / "beats" /f"user_{current_user_id}" / f"identical_beat_{i}"
+            beat_folder.mkdir(parents=True, exist_ok=True)
+            
+            mp3_path = None
+            wav_path = None
+            
+            if mp3_content:
+                mp3_path = beat_folder / "audio.mp3"
+                async with aiofiles.open(mp3_path, "wb") as f:
+                    await f.write(mp3_content)
+            
+            if wav_content:
+                wav_path = beat_folder / "audio.wav"
+                async with aiofiles.open(wav_path, "wb") as f:
+                    await f.write(wav_content)
+            
+            beat = BeatModel(
+                name=name,
+                author_id=current_user_id,
+                mp3_path=str(mp3_path.relative_to(AUDIO_STORAGE)) if mp3_path else None,
+                wav_path=str(wav_path.relative_to(AUDIO_STORAGE)) if wav_path else None,
+                genre=genre,
+                tempo=tempo, 
+                key=key,   
+                size=total_size,
+                duration=file_duration,
+                promotion_status="standard",
+                status="active"
+            )
+            
+            beats_to_create.append(beat)
+        
+        session.add_all(beats_to_create)
+        await session.commit()
+        
+        response_data = {
+            "message": f"Успешно создано 100 битов",
+            "details": {
+                "name": name,
+                "genre": genre,
+                "tempo": tempo,
+                "key": key,
+                "file_size": total_size,
+                "duration_seconds": round(file_duration, 2),
+                "total_records": len(beats_to_create),
+                "files_included": []
+            }
+        }
+        
+        return response_data
+        
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(status_code=500, detail=f"Ошибка при создании битов: {str(e)}")
