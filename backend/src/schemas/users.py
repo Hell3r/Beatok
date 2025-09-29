@@ -1,13 +1,12 @@
-from pydantic import BaseModel, EmailStr, field_validator, model_validator
+from pydantic import BaseModel, EmailStr, field_validator
 from typing import Optional
 from datetime import date
 
 class UserCreate(BaseModel):
     username: str
     email: EmailStr
-    birthday: Optional[date]
+    birthday: date
     password: str
-    password_confirm: str
 
     @field_validator('username')
     @classmethod
@@ -25,22 +24,15 @@ class UserCreate(BaseModel):
             raise ValueError('Password must be at least 6 characters long')
         return v
 
-    @model_validator(mode='after')
-    def passwords_match(self):
-        if self.password != self.password_confirm:
-            raise ValueError('Passwords do not match')
-        return self
-
 class UsersSchema(BaseModel):
     username: str
     email: EmailStr
-
 
 class UserResponse(BaseModel):
     id: int 
     username: str
     email: EmailStr
-    birthday: Optional[date]
+    birthday: date
     is_active: bool
 
     class Config:

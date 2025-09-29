@@ -4,6 +4,8 @@ import type { Beat } from '../types/Beat';
 interface BeatTableProps {
   beats: Beat[];
   loading?: boolean;
+  currentPlayingBeat?: Beat | null;
+  isPlaying?: boolean;
   onPlay?: (beat: Beat) => void;
   onDownload?: (beat: Beat) => void;
   onEdit?: (beat: Beat) => void;
@@ -13,29 +15,36 @@ interface BeatTableProps {
 const BeatTable: React.FC<BeatTableProps> = ({ 
   beats, 
   loading = false, 
+  currentPlayingBeat = null,
+  isPlaying = false,
   onPlay, 
   onDownload, 
-  onEdit, 
-  onDelete 
 }) => {
   const [sortField, setSortField] = useState<keyof Beat>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [expandedBeatId, setExpandedBeatId] = useState<number | null>(null);
 
-  // Функция для сокращения текста
-  const truncateText = (text: string, maxLength: number = 20): string => {
+  const getAuthorName = (beat: Beat): string => {
+    if (beat.owner?.username) return beat.owner.username;
+    if (beat.author?.username) return beat.author.username;
+    if (beat.user?.username) return beat.user.username;
+
+    if (beat.author_id) return `Пользователь ${beat.author_id}`;
+    
+    return 'Неизвестно';
+  };
+
+  const truncateText = (text: string, maxLength: number = 30): string => {
     if (text.length <= maxLength) return text;
     return text.substring(0, maxLength) + '...';
   };
 
-  // Форматирование длительности
   const formatDuration = (seconds: number): string => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Форматирование размера файла
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B';
     const k = 1024;
@@ -44,7 +53,6 @@ const BeatTable: React.FC<BeatTableProps> = ({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
-  // Форматирование даты
   const formatDate = (dateString: string): string => {
     return new Date(dateString).toLocaleDateString('ru-RU', {
       day: '2-digit',
@@ -205,28 +213,41 @@ const BeatTable: React.FC<BeatTableProps> = ({
             {sortedBeats.map((beat) => (
               <tr 
                 key={beat.id} 
-                className="border-b border-neutral-700 hover:bg-neutral-750 transition-colors group"
+                className="border-b border-neutral-700 hover:bg-neutral-700 transition-all duration-300 group"
                 onDoubleClick={() => setExpandedBeatId(expandedBeatId === beat.id ? null : beat.id)}
               >
                 <td className="p-4">
                   <div 
-                    className="text-white font-medium cursor-help"
+                    className="text-white font-medium group-hover:text-red-400 transition-colors cursor-help"
                     title={beat.name}
                   >
-                    {truncateText(beat.name, 20)}
+                    {truncateText(beat.name, 30)}
                   </div>
-                  {beat.promotion_status !== 'standard' && (
-                    <span className={`text-xs px-1 rounded ${
-                      beat.promotion_status === 'featured' 
-                        ? 'bg-red-600 text-white' 
-                        : 'bg-yellow-600 text-black'
-                    }`}>
-                      {beat.promotion_status}
-                    </span>
-                  )}
+                  <div className="flex items-center space-x-1 mt-1">
+                    {beat.promotion_status !== 'standard' && (
+                      <span className={`text-xs px-1 rounded ${
+                        beat.promotion_status === 'featured' 
+                          ? 'bg-red-600 text-white' 
+                          : 'bg-yellow-600 text-black'
+                      }`}>
+                        {beat.promotion_status}
+                      </span>
+                    )}
+                    {/* Индикатор качества звука */}
+                    {beat.wav_path && (
+                      <span className="text-xs bg-blue-600 text-white px-1 rounded" title="Доступен WAV (высокое качество)">
+                        WAV
+                      </span>
+                    )}
+                    {!beat.wav_path && beat.mp3_path && (
+                      <span className="text-xs bg-green-600 text-white px-1 rounded" title="MP3">
+                        MP3
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="p-4 text-neutral-300">
-                  {truncateText(beat.owner?.username || 'Неизвестно', 15)}
+                  {truncateText(getAuthorName(beat), 15)}
                 </td>
                 <td className="p-4">
                   <span className="bg-neutral-700 text-neutral-300 px-2 py-1 rounded text-sm">
@@ -252,44 +273,30 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   <div className="flex space-x-2">
                     <button
                       onClick={() => onPlay?.(beat)}
-                      className="p-2 text-green-400 hover:bg-green-400 hover:text-white rounded transition-colors"
-                      title="Воспроизвести"
+                      className={`${
+                        currentPlayingBeat?.id === beat.id && isPlaying
+                          ? 'bg-red-600 hover:bg-red-700' 
+                          : 'bg-red-600 hover:bg-red-700'
+                      } text-white p-2 rounded-full transition-colors cursor-pointer`}
+                      title={currentPlayingBeat?.id === beat.id && isPlaying ? "Пауза" : "Воспроизвести"}
                     >
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M8 5v14l11-7z"/>
+                        {currentPlayingBeat?.id === beat.id && isPlaying ? (
+                          <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
+                        ) : (
+                          <path d="M8 5v14l11-7z"/>
+                        )}
                       </svg>
                     </button>
                     <button
                       onClick={() => onDownload?.(beat)}
-                      className="p-2 text-blue-400 hover:bg-blue-400 hover:text-white rounded transition-colors"
+                      className="bg-neutral-700 hover:bg-neutral-600 text-white p-2 rounded-full transition-colors cursor-pointer"
                       title="Скачать"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                     </button>
-                    {onEdit && (
-                      <button
-                        onClick={() => onEdit?.(beat)}
-                        className="p-2 text-yellow-400 hover:bg-yellow-400 hover:text-white rounded transition-colors"
-                        title="Редактировать"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                      </button>
-                    )}
-                    {onDelete && (
-                      <button
-                        onClick={() => onDelete?.(beat)}
-                        className="p-2 text-red-400 hover:bg-red-400 hover:text-white rounded transition-colors"
-                        title="Удалить"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    )}
                   </div>
                 </td>
               </tr>

@@ -63,7 +63,7 @@ const BeatCard: React.FC<BeatCardProps> = ({ beat, onPlay, onDownload }) => {
       <div className="w-full bg-neutral-700 rounded-full h-1 mb-3">
         <div 
           className="bg-red-600 h-1 rounded-full transition-all duration-500"
-          style={{ width: '0%' }} // Можно добавить реальный прогресс прослушивания
+          style={{ width: '0%' }}
         ></div>
       </div>
 
