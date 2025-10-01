@@ -4,8 +4,20 @@ from datetime import date
 
 
 
-class Tarrifs(BaseModel):
-    id : int
+class TarrifSchema(BaseModel):
     name: str
     display_name: str
     description: str
+    
+    
+    
+class TarrifCreate(TarrifSchema):
+    pass
+
+
+class TarrifResponse(TarrifSchema):
+    id : int
+    
+    
+    class Config:
+        from_attributes = True

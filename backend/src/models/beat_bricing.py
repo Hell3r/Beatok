@@ -9,8 +9,8 @@ from typing import Optional
 class BeatPricingModel(Base):
     __tablename__ = "beat_pricing"
     
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    bit_id: Mapped[int] = mapped_column(Integer, ForeignKey("beats.id", ondelete="CASCADE"), nullable=False)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, autoincrement= True)
+    beat_id: Mapped[int] = mapped_column(Integer, ForeignKey("beats.id", ondelete="CASCADE"), nullable=False)
     tariff_name: Mapped[str] = mapped_column(String(50), ForeignKey("tariffs.name"), nullable=False)
     price: Mapped[float] = mapped_column(DECIMAL(10, 2), nullable=True)
     is_available: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -19,5 +19,5 @@ class BeatPricingModel(Base):
     tariff: Mapped["TariffTemplateModel"] = relationship("TariffTemplateModel", back_populates="bit_pricings")
     
     __table_args__ = (
-        UniqueConstraint('bit_id', 'tariff_name', name='_bit_tariff_uc'),
+        UniqueConstraint('beat_id', 'tariff_name', name='_bit_tariff_uc'),
     )
