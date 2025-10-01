@@ -113,7 +113,7 @@ async def create_beat(
 
 
 
-@router.get("/", response_model=List[BeatResponse])
+@router.get("/", response_model=List[BeatResponse], summary = "Получить все биты")
 async def get_beats(
     session: SessionDep,
     skip: int = 0,
@@ -133,7 +133,7 @@ async def get_beats(
     return [BeatResponse.model_validate(beat) for beat in beats]
 
 
-@router.get("/{beat_id}", response_model=BeatResponse)
+@router.get("/{beat_id}", response_model=BeatResponse, summary = "Получить бит по идентификатору")
 async def get_beat(
     beat_id: int,
     session: SessionDep
@@ -318,3 +318,8 @@ async def generate_identical_beats(
     except Exception as e:
         await session.rollback()
         raise HTTPException(status_code=500, detail=f"Ошибка при создании битов: {str(e)}")
+    
+    
+    
+    
+    
