@@ -27,6 +27,7 @@ class UserCreate(BaseModel):
 class UsersSchema(BaseModel):
     username: str
     email: EmailStr
+    
 
 class UserResponse(BaseModel):
     id: int 
@@ -34,6 +35,7 @@ class UserResponse(BaseModel):
     email: EmailStr
     birthday: date
     is_active: bool
+    avatar_path: str
 
     class Config:
         from_attributes = True

@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.database.database import Base
-from sqlalchemy import Date, Boolean
+from sqlalchemy import Date, Boolean, String
 from datetime import date
-from typing import List
+from typing import List, Optional
 
 class UsersModel(Base):
     __tablename__ = "users"
@@ -14,6 +14,9 @@ class UsersModel(Base):
     email: Mapped[str] = mapped_column()
     password: Mapped[str] = mapped_column()
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    avatar_path: Mapped[Optional[str]] = mapped_column(String(500), default = "static/default_avatar.jpg" )
+    
+    
     
     beats: Mapped[List["BeatModel"]] = relationship("BeatModel", back_populates="owner")
     
