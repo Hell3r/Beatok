@@ -9,7 +9,7 @@ from typing import Optional
 import os
 import uuid
 from datetime import date
-from src.schemas.users import DeleteUserRequest, UsersSchema, UserResponse, UserCreate, TokenResponse
+from src.schemas.users import DeleteUserRequest, UsersSchema, UserResponse, UserCreate, TokenResponse, UserUpdate
 from src.services.AuthService import (
     add_to_blacklist,
     pwd_context, 
@@ -20,7 +20,8 @@ from src.services.AuthService import (
     verify_password,
     check_username_exists,
     check_email_exists,
-    get_password_hash
+    get_password_hash,
+    get_current_user
 )
 
 router = APIRouter(prefix="/v1/users")
@@ -139,7 +140,8 @@ async def register(
                 username=user.username,
                 email=user.email,
                 birthday=user.birthday,
-                is_active=user.is_active
+                is_active=user.is_active,
+                avatar_path= user.avatar_path
             )
         )
 
@@ -169,11 +171,7 @@ async def check_email_available(
     return {"available": not exists}    
 
     
-    
-    
-    
-    
-    
+
 @router.post("/{user_id}/avatar", tags = ["Пользователи"], summary="Загрузить аватарку пользователя")
 async def upload_avatar(
     user_id: int,
@@ -272,4 +270,77 @@ async def get_user_avatar(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Ошибка при получении аватарки"
+        )
+        
+        
+        
+        
+        
+@router.patch("/me", response_model=UserResponse, tags = ["Пользователи"], summary="Обновить данные авторизованного пользователя")
+async def patch_current_user(
+    user_data: UserUpdate,
+    session: SessionDep,
+    current_user: UsersModel = Depends(get_current_user)
+):
+    try:
+        update_data = {}
+        for field, value in user_data.model_dump(exclude_unset=True).items():
+            if value is not None and value != "":
+                update_data[field] = value
+
+
+        if 'birthday' in update_data:
+           if not isinstance(update_data['birthday'], date):
+               try:
+                   if isinstance(update_data['birthday'], str):
+                       from datetime import datetime
+                       birthday = datetime.strptime(update_data['birthday'], '%Y-%m-%d').date()
+                       update_data['birthday'] = birthday
+                   else:
+                       raise HTTPException(
+                           status_code=status.HTTP_400_BAD_REQUEST,
+                           detail="Invalid birthday format"
+                       )
+               except ValueError:
+                   raise HTTPException(
+                       status_code=status.HTTP_400_BAD_REQUEST,
+                       detail="Invalid date format. Use YYYY-MM-DD"
+                   )
+
+        if 'username' in update_data and update_data['username'] != current_user.username:
+            existing_user = await session.execute(
+                select(UsersModel).where(UsersModel.username == update_data['username'])
+            )
+            if existing_user.scalar_one_or_none():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Username already taken"
+                )
+        
+        if 'email' in update_data and update_data['email'] != current_user.email:
+            existing_user = await session.execute(
+                select(UsersModel).where(UsersModel.email == update_data['email'])
+            )
+            if existing_user.scalar_one_or_none():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Email already registered"
+                )
+        
+        for field, value in update_data.items():
+            setattr(current_user, field, value)
+        
+        await session.commit()
+        await session.refresh(current_user)
+        
+        return current_user
+        
+    except HTTPException:
+        await session.rollback()
+        raise
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error updating user: {str(e)}"
         )
