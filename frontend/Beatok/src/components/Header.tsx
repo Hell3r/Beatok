@@ -35,8 +35,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
   const navItems: NavItem[] = [
     { href: '/', label: 'Главная' },
     { href: '/library', label: 'Каталог' },
-    { href: '/search', label: 'Поиск' },
-  ];
+    { href: '/about', label: 'О нас' },]
 
   const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
@@ -82,7 +81,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
             <a
               href="/"
               onClick={handleLogoClick}
-              className="text-2xl font-bold hover:scale-105 transition-transform duration-200 focus:outline-none focus:ring-2 focus:ring-red-600 rounded-md"
+              className="text-2xl font-bold hover:scale-105 transition-transform duration-200 focus:outline-none"
               aria-label="BEATOK - переход на главную"
             >
               <span className="text-white">BEAT</span>
@@ -94,7 +93,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
                 <a
                   key={item.href}
                   href={item.href}
-                  className="text-gray-300 hover:text-white transition-colors duration-200 font-medium focus:outline-none focus:ring-2 focus:ring-red-600 rounded-md px-2 py-1"
+                  className="text-gray-300 hover:text-white transition-colors duration-200 font-medium focus:outline-none"
                 >
                   {item.label}
                 </a>
@@ -105,12 +104,14 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
           <div className="flex items-center space-x-4">
             {currentUser && (
               <span className="text-neutral-300 text-sm">
+                <a href="/profile">
                 {currentUser.username}
+                </a>
               </span>
             )}
             <button
               onClick={handleAuthClick}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-800 focus:ring-offset-2 focus:ring-offset-gray-900"
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md font-medium transition-colors duration-200 focus:outline-none"
               aria-label={currentUser ? 'Выйти из аккаунта' : 'Войти в аккаунт'}
             >
               {currentUser ? 'Выйти' : 'Войти'}
@@ -123,7 +124,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
               <a
                 key={item.href}
                 href={item.href}
-                className="text-gray-300 hover:text-white transition-colors duration-200 font-medium py-2 px-2 focus:outline-none focus:ring-2 focus:ring-red-600 rounded-md"
+                className="text-gray-300 hover:text-white transition-colors duration-200 font-medium py-2 px-2 focus:outline-nones"
               >
                 {item.label}
               </a>

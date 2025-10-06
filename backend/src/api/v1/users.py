@@ -60,7 +60,8 @@ async def login_user(
             "email": user.email,
             "username": user.username,
             "user_id": user.id,
-            "avatar_path": user.avatar_path
+            "avatar_path": user.avatar_path,
+            "birthday": user.birthday
         }
     }
 
@@ -168,7 +169,78 @@ async def check_email_available(
     session: SessionDep
 ):
     exists = await check_email_exists(email, session)
-    return {"available": not exists}    
+    return {"available": not exists}
+
+@router.get("/{user_id}", response_model=UserResponse, tags=["Пользователи"], summary="Получить профиль пользователя")
+async def get_user_profile(
+    user_id: int,
+    session: SessionDep
+):
+    try:
+        user_stmt = select(UsersModel).where(UsersModel.id == user_id)
+        user_result = await session.execute(user_stmt)
+        user = user_result.scalar_one_or_none()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Пользователь не найден"
+            )
+
+        return UserResponse(
+            id=user.id,
+            username=user.username,
+            email=user.email,
+            birthday=user.birthday,
+            is_active=user.is_active,
+            avatar_path=user.avatar_path or "static/default_avatar.png"
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка при получении профиля: {str(e)}"
+        )
+
+@router.put("/{user_id}", response_model=UserResponse, tags=["Пользователи"], summary="Обновить профиль пользователя")
+async def update_user_profile(
+    user_id: int,
+    user_data: dict,
+    session: SessionDep
+):
+    try:
+        user_stmt = select(UsersModel).where(UsersModel.id == user_id)
+        user_result = await session.execute(user_stmt)
+        user = user_result.scalar_one_or_none()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Пользователь не найден"
+            )
+
+        for key, value in user_data.items():
+            if key in ['username', 'email', 'birthday']:
+                setattr(user, key, value)
+
+        await session.commit()
+        await session.refresh(user)
+
+        return UserResponse(
+            id=user.id,
+            username=user.username,
+            email=user.email,
+            birthday=user.birthday,
+            is_active=user.is_active,
+            avatar_path=user.avatar_path or "static/default_avatar.png"
+        )
+
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка при обновлении профиля: {str(e)}"
+        )
 
     
 
