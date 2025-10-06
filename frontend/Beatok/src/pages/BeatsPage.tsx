@@ -228,7 +228,6 @@ const BeatsPage: React.FC = () => {
             <p className="text-neutral-400">
               Всего битов: <span className="text-white font-semibold">{beats.length}</span>
             </p>
-            {/* Отладочная информация */}
             {currentBeat && (
               <p className="text-xs text-neutral-500 mt-1">
                 Текущий: {currentBeat.name} | 
@@ -269,7 +268,6 @@ const BeatsPage: React.FC = () => {
         )}
       </div>
 
-      {/* Аудиоплеер */}
       <AudioPlayer
         currentBeat={currentBeat}
         isPlaying={isPlaying}
@@ -281,7 +279,6 @@ const BeatsPage: React.FC = () => {
         onVolumeChange={handleVolumeChange}
       />
 
-      {/* Скрытый аудио элемент */}
       <audio ref={audioRef} preload="metadata" />
     </div>
   );
