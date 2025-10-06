@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, field_validator, ConfigDict
 from typing import Optional
 from datetime import date
 
@@ -47,3 +47,12 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str
     user: UserResponse
+    
+    
+class UserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    birthday: Optional[date] = None
+    
+    model_config = ConfigDict(from_attributes=True)
+    

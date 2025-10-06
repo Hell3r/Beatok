@@ -1,11 +1,17 @@
 from fastapi import FastAPI
 from src.api import main_router
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
 from src.scripts.create_default_avatar import create_default_avatar
 import os
 
-app = FastAPI()
+app = FastAPI(
+    title = "Beatok API",
+    version = "1.0.0",
+    docs_url= None
+)
 app.include_router(main_router)
 
 
@@ -34,7 +40,26 @@ def ensure_default_avatar_exists():
 @app.on_event("startup")
 async def startup_event():
     ensure_default_avatar_exists()
+    
+    
+
 
 
 app.mount("/audio_storage", StaticFiles(directory="audio_storage"), name="audio_storage")
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+
+
+@app.get("/docs", include_in_schema=False)
+def custom_swagger():
+    html_content = get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title="API Docs",
+        swagger_js_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui-bundle.js",
+        swagger_css_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5/swagger-ui.css",
+    ).body.decode("utf-8")
+    
+    custom_css_link = '<link rel="stylesheet" type="text/css" href="/static/dark_theme.css">'
+    html_content = html_content.replace('</head>', custom_css_link + '</head>')
+    
+    return HTMLResponse(content=html_content)
