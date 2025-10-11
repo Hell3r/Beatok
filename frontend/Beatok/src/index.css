@@ -18,3 +18,17 @@ body {
   --accent-red: #dc2626;
   --accent-red-hover: #b91c1c;
 }
+
+.typing {
+    width: 100%;
+    text-wrap: nowrap;
+    overflow: hidden;
+    animation: typing 2s steps(53) infinite alternate-reverse;
+}
+
+@keyframes typing {
+    from {
+        width: 0;
+    }
+    
+}

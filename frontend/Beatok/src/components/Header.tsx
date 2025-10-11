@@ -20,7 +20,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     const userInfo = localStorage.getItem('user_info');
-    
+
     if (token && userInfo) {
       try {
         setCurrentUser(JSON.parse(userInfo));
@@ -30,12 +30,43 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
         localStorage.removeItem('user_info');
       }
     }
+
+    const handleUserUpdate = () => {
+      const userInfo = localStorage.getItem('user_info');
+      if (userInfo) {
+        try {
+          setCurrentUser(JSON.parse(userInfo));
+        } catch (error) {
+          console.error('Error parsing updated user info:', error);
+        }
+      }
+    };
+
+    window.addEventListener('userUpdated', handleUserUpdate);
+    return () => window.removeEventListener('userUpdated', handleUserUpdate);
   }, []);
 
   const navItems: NavItem[] = [
-    { href: '/', label: 'Главная' },
-    { href: '/library', label: 'Каталог' },
-    { href: '/about', label: 'О нас' },]
+    { href: '/', label: 'ГЛАВНАЯ' },
+    { href: '/beats', label: 'БИТЫ' },
+    { href: '/chart', label: 'ЧАРТ' },
+    { href: '/freebeats', label: 'БЕСПЛАТНЫЕ' },
+    { href: '/forum', label: 'ФОРУМ' },
+    { href: '/beatmakers', label: 'БИТМЕЙКЕРЫ' },
+    { href: '/about', label: 'О НАС' },]
+    
+  const getAvatarUrl = () => {
+    if (!currentUser?.avatar_path) {
+      return 'http://localhost:8000/static/default_avatar.png';
+    }
+    if (currentUser.avatar_path.startsWith('http')) {
+      return currentUser.avatar_path;
+    }
+    if (currentUser.avatar_path === 'default_avatar.png' || currentUser.avatar_path === 'static/default_avatar.png') {
+      return 'http://localhost:8000/static/default_avatar.png';
+    }
+    return `http://localhost:8000/v1/users/${currentUser.id}/avatar`;
+  };
 
   const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
@@ -104,8 +135,16 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
           <div className="flex items-center space-x-4">
             {currentUser && (
               <span className="text-neutral-300 text-sm">
-                <a href="/profile">
-                {currentUser.username}
+                <a href="/profile" className="flex items-center space-x-2">
+                  <img
+                    src={getAvatarUrl()}
+                    alt="Аватар"
+                    className="w-8 h-8 rounded-full object-cover mx-2.5"
+                    onError={(e) => {
+                      e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
+                    }}
+                  />
+                  {currentUser.username}
                 </a>
               </span>
             )}

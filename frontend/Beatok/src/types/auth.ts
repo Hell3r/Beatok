@@ -4,6 +4,7 @@ export interface User {
   email: string;
   is_active: boolean;
   birthday: string;
+  avatar_path?: string;
 }
 
 export interface LoginFormData {
