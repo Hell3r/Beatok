@@ -34,6 +34,7 @@ class UserResponse(BaseModel):
     username: str
     email: EmailStr
     birthday: date
+    role: str
     is_active: bool
     avatar_path: str
 
