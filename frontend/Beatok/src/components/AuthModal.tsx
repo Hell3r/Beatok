@@ -155,16 +155,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
       {isOpen && (
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-          <div className="relative bg-neutral-800 rounded-lg w-full max-w-md border border-neutral-700 shadow-2xl">
+          <div className="relative bg-neutral-900 rounded-lg w-full max-w-md border border-neutral-800 shadow-2xl">
             <button 
               onClick={onClose}
-              className="absolute -top-3 -right-3 bg-neutral-700 hover:bg-neutral-600 text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200 z-10 shadow-lg"
+              className="absolute -top-3 -right-3 cursor-pointer bg-neutral-800 hover:bg-neutral-700 text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200 z-10 shadow-lg"
               aria-label="Закрыть"
             >
               ×
             </button>
 
-            <div className="p-6 border-b border-neutral-700">
+            <div className="p-6 border-b border-neutral-800">
               <h2 className="text-xl font-bold text-white">
                 {mode === 'login' ? 'Вход' : 'Регистрация'}
               </h2>
@@ -188,7 +188,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                       placeholder="your@email.com"
                       value={loginData.email}
                       onChange={(e) => setLoginData({...loginData, email: e.target.value})}
-                      className="w-full p-3 bg-neutral-700 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
+                      className="w-full p-3 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
                       required
                     />
                   </div>
@@ -202,7 +202,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                       placeholder="Введите пароль"
                       value={loginData.password}
                       onChange={(e) => setLoginData({...loginData, password: e.target.value})}
-                      className="w-full p-3 bg-neutral-700 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
+                      className="w-full p-3 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
                       required
                     />
                   </div>
@@ -210,7 +210,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   <button 
                     type="submit" 
                     disabled={loading}
-                    className="w-full bg-red-600 hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full cursor-pointer bg-red-600 hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Вход...' : 'Войти'}
                   </button>
@@ -226,7 +226,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                       placeholder="Придумайте имя (мин. 3 символа)"
                       value={registerData.username}
                       onChange={(e) => setRegisterData({...registerData, username: e.target.value})}
-                      className="w-full p-3 bg-neutral-700 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
+                      className="w-full p-3 bg-neutral-800 border border-neutral-700 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
                       required
                     />
                   </div>
@@ -240,7 +240,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                       placeholder="your@email.com"
                       value={registerData.email}
                       onChange={(e) => setRegisterData({...registerData, email: e.target.value})}
-                      className="w-full p-3 bg-neutral-700 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
+                      className="w-full p-3 bg-neutral-800 border border-neutral-700 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
                       required
                     />
                   </div>
@@ -253,7 +253,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                       type="date"
                       value={registerData.birthday}
                       onChange={(e) => setRegisterData({...registerData, birthday: e.target.value})}
-                      className="w-full p-3 bg-neutral-700 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
+                      className="w-full p-3 bg-neutral-800 border border-neutral-700 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
                       required
                     />
                   </div>
@@ -267,7 +267,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                       placeholder="Не менее 6 символов"
                       value={registerData.password}
                       onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
-                      className="w-full p-3 bg-neutral-700 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
+                      className="w-full p-3 bg-neutral-800 border border-neutral-700 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
                       required
                     />
                   </div>
@@ -281,7 +281,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                       placeholder="Повторите пароль"
                       value={registerData.confirmPassword}
                       onChange={(e) => setRegisterData({...registerData, confirmPassword: e.target.value})}
-                      className="w-full p-3 bg-neutral-700 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
+                      className="w-full p-3 bg-neutral-800 border border-neutral-700 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
                       required
                     />
                   </div>

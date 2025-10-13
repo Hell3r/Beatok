@@ -1,0 +1,3 @@
+- [x] Change root div className to 'min-h-screen w-full relative'
+- [x] Add overlay div with bg-gradient-to-t from-black/20 to-black/90
+- [x] Wrap content in relative z-10 div

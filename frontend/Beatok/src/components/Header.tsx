@@ -115,7 +115,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
 
   return (
     <>
-      <header className="bg-neutral-900 border-b border-neutral-700 sticky top-0 z-50 backdrop-blur-sm bg-opacity-90">
+      <header className="bg-neutral-950 border-b border-neutral-700 sticky top-0 z-50 backdrop-blur-sm bg-opacity-90">
         <nav className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-10">
             <a
@@ -159,7 +159,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
             )}
             <button
               onClick={handleAuthClick}
-              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md font-medium transition-colors duration-200 focus:outline-none"
+              className="bg-red-600 hover:bg-red-700 cursor-pointer text-white px-4 py-2 rounded-md font-medium transition-colors duration-200 focus:outline-none"
               aria-label={currentUser ? 'Выйти из аккаунта' : 'Войти в аккаунт'}
             >
               {currentUser ? 'Выйти' : 'Войти'}

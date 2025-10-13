@@ -19,16 +19,34 @@ body {
   --accent-red-hover: #b91c1c;
 }
 
-.typing {
-    width: 100%;
-    text-wrap: nowrap;
-    overflow: hidden;
-    animation: typing 2s steps(53) infinite alternate-reverse;
+.glitch-text {
+    position: relative;
+    animation: glitch 1s infinite;
 }
 
-@keyframes typing {
-    from {
-        width: 0;
+@keyframes glitch {
+    0%, 100% {
+        transform: translate(0);
+        text-shadow: none;
     }
-    
+    10% {
+        transform: translate(-1px, -1px);
+        text-shadow: 1px 0 #ff4444, -1px 0 #00ffff;
+    }
+    20% {
+        transform: translate(1px, 1px);
+        text-shadow: -1px 0 #ff4444, 1px 0 #00ffff;
+    }
+    30% {
+        transform: translate(-1px, 1px);
+        text-shadow: 1px 0 #ff4444, -1px 0 #00ffff;
+    }
+    40% {
+        transform: translate(1px, -1px);
+        text-shadow: -1px 0 #ff4444, 1px 0 #00ffff;
+    }
+    50% {
+        transform: translate(0);
+        text-shadow: none;
+    }
 }
