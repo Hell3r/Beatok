@@ -1,0 +1,43 @@
+import asyncio
+from telegram import Bot
+from telegram.error import TelegramError
+from .config import TelegramConfig
+from .messages import MessageTemplates
+
+class SupportBot:
+    def __init__(self):
+        self.bot = Bot(token=TelegramConfig.BOT_TOKEN)
+        self.admin_chat_ids = TelegramConfig.ADMIN_CHAT_IDS
+    
+    async def send_support_notification(self, request_data: dict, user_info: dict):
+        if not TelegramConfig.is_configured():
+            print("Telegram bot not configured - skipping notification")
+            return
+        
+        message = MessageTemplates.support_request(request_data, user_info)
+        
+        for chat_id in self.admin_chat_ids:
+            try:
+                await self.bot.send_message(
+                    chat_id=chat_id,
+                    text=message,
+                    parse_mode='HTML'
+                )
+                print(f"Notification sent to admin {chat_id}")
+            except TelegramError as e:
+                print(f"Failed to send notification to {chat_id}: {e}")
+    
+    async def send_welcome_messages(self):
+        if not TelegramConfig.is_configured():
+            return
+            
+        for chat_id in self.admin_chat_ids:
+            try:
+                await self.bot.send_message(
+                    chat_id=chat_id,
+                    text=MessageTemplates.welcome_message()
+                )
+            except TelegramError as e:
+                print(f"Failed to send welcome message to {chat_id}: {e}")
+
+support_bot = SupportBot()

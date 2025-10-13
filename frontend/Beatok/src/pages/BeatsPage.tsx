@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import BeatTable from '../components/BeatTable';
-import BeatList from '../components/BeatList';
-import ViewToggle from '../components/ViewToggle';
+import BeatTable from '../components/pages_components/beats/BeatTable';
+import ViewToggle from '../components/pages_components/beats/ViewToggle';
 import AudioPlayer from '../components/AudioPlayer';
 import { beatService } from '../services/beatService';
 import type { Beat } from '../types/Beat';
+import BeatList from '../components/pages_components/beats/BeatList';
 
 type ViewMode = 'table' | 'grid';
 

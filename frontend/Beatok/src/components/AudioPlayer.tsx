@@ -42,7 +42,6 @@ const AudioPlayer: React.FC<AudioPlayerProps> = ({
     <div className="fixed bottom-0 left-0 right-0 bg-neutral-900 border-t border-neutral-700 p-4 z-50">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between">
-          {/* Track Info */}
           <div className="flex items-center space-x-4 flex-1 min-w-0">
             <div className="flex-shrink-0 w-12 h-12 bg-neutral-800 rounded-lg flex items-center justify-center">
               <svg className="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 24 24">
