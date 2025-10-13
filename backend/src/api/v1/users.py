@@ -122,6 +122,7 @@ async def register(
             email=user_data.email,
             birthday=user_data.birthday,
             password=hashed_password,
+            role = "common",
             is_active=True,
             date_of_reg=date.today(),
             avatar_path="static/default_avatar.png"
@@ -140,6 +141,7 @@ async def register(
                 id=user.id,
                 username=user.username,
                 email=user.email,
+                role = user.role,
                 birthday=user.birthday,
                 is_active=user.is_active,
                 avatar_path= user.avatar_path
@@ -191,6 +193,7 @@ async def get_user_profile(
             id=user.id,
             username=user.username,
             email=user.email,
+            role = user.role,
             birthday=user.birthday,
             is_active=user.is_active,
             avatar_path=user.avatar_path or "static/default_avatar.png"
