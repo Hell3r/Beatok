@@ -17,7 +17,7 @@ class UsersModel(Base):
     avatar_path: Mapped[Optional[str]] = mapped_column(String(500), default = "static/default_avatar.jpg" )
     
     
-    
+    requests: Mapped[List["RequestsModel"]] = relationship("RequestsModel", back_populates="user")
     beats: Mapped[List["BeatModel"]] = relationship("BeatModel", back_populates="owner")
     
     def __repr__(self) -> str:

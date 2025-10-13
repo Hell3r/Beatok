@@ -12,6 +12,7 @@ import ChartPage from './pages/ChartPage';
 import FreeBeatsPage from './pages/FreeBeatsPage';
 import ForumPage from './pages/ForumPage';
 import AdminDashboard from './pages/AdminDashboard';
+import SupportPage from './pages/SupportPage';
 
 const App: React.FC = () => {
   const isUserAuthenticated = !!localStorage.getItem('access_token');
@@ -31,6 +32,7 @@ const App: React.FC = () => {
             <Route path="/chart" element={<ChartPage />} />
             <Route path="/freebeats" element={<FreeBeatsPage />} />
             <Route path="/forum" element={<ForumPage />} />
+            <Route path="/support" element={<SupportPage />} />
 
             <Route path="/admin" element={<AdminDashboard />} />
 

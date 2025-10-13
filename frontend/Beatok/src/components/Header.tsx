@@ -42,8 +42,16 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
       }
     };
 
+    const handleAuthRequired = () => {
+      setAuthModalOpen(true);
+    };
+
     window.addEventListener('userUpdated', handleUserUpdate);
-    return () => window.removeEventListener('userUpdated', handleUserUpdate);
+    window.addEventListener('authRequired', handleAuthRequired);
+    return () => {
+      window.removeEventListener('userUpdated', handleUserUpdate);
+      window.removeEventListener('authRequired', handleAuthRequired);
+    };
   }, []);
 
   const navItems: NavItem[] = [
@@ -53,7 +61,8 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
     { href: '/freebeats', label: 'БЕСПЛАТНЫЕ' },
     { href: '/forum', label: 'ФОРУМ' },
     { href: '/beatmakers', label: 'БИТМЕЙКЕРЫ' },
-    { href: '/about', label: 'О НАС' },]
+    { href: '/about', label: 'О НАС' },
+    { href: '/support', label: 'ТЕХ. ПОДДЕРЖКА'},]
     
   const getAvatarUrl = () => {
     if (!currentUser?.avatar_path) {
