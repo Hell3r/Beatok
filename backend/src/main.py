@@ -5,7 +5,9 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from src.scripts.create_default_avatar import create_default_avatar
-import os
+import os, asyncio
+from src.telegram_bot import support_bot, TelegramConfig
+
 
 app = FastAPI(
     title = "Beatok API",
@@ -63,3 +65,13 @@ def custom_swagger():
     html_content = html_content.replace('</head>', custom_css_link + '</head>')
     
     return HTMLResponse(content=html_content)
+
+
+
+@app.on_event("startup")
+async def startup_event():
+    if TelegramConfig.is_configured():
+        await support_bot.send_welcome_messages()
+        print("Telegram bot started")
+    else:
+        print("Telegram bot not configured - skipping startup")

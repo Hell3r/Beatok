@@ -146,19 +146,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <>
-      {/* Overlay с размытием */}
       {isOpen && (
         <div 
           className="fixed inset-0 bg-black/30 backdrop-blur-md z-40"
           onClick={onClose}
         />
       )}
-      
-      {/* Модальное окно */}
+
       {isOpen && (
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
           <div className="relative bg-neutral-800 rounded-lg w-full max-w-md border border-neutral-700 shadow-2xl">
-            {/* Кнопка закрытия */}
             <button 
               onClick={onClose}
               className="absolute -top-3 -right-3 bg-neutral-700 hover:bg-neutral-600 text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200 z-10 shadow-lg"
@@ -166,8 +163,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
             >
               ×
             </button>
-            
-            {/* Заголовок */}
+
             <div className="p-6 border-b border-neutral-700">
               <h2 className="text-xl font-bold text-white">
                 {mode === 'login' ? 'Вход' : 'Регистрация'}
