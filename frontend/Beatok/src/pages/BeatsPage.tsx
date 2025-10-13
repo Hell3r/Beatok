@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import BeatTable from '../components/pages_components/beats/BeatTable';
-import ViewToggle from '../components/pages_components/beats/ViewToggle';
+import BeatTable from '../components/UI/beats/BeatTable';
+import ViewToggle from '../components/UI/beats/ViewToggle';
 import AudioPlayer from '../components/AudioPlayer';
 import { beatService } from '../services/beatService';
 import type { Beat } from '../types/Beat';
-import BeatList from '../components/pages_components/beats/BeatList';
+import BeatList from '../components/UI/beats/BeatList';
 
 type ViewMode = 'table' | 'grid';
 
@@ -220,7 +220,7 @@ const BeatsPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-900 pb-32">
+    <div className="min-h-screen">
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
           <div>

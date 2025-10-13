@@ -98,7 +98,7 @@ const SupportPage: React.FC = () => {
                 <div className='flex justify-center'>
                     <h2 className="text-white text-2xl font-semibold mb-6">Свяжитесь с нами</h2>
                 </div>
-                <form onSubmit={handleSubmit} className="space-y-6 bg-neutral-900 rounded-xl p-6 border border-neutral-800 shadow-lg">
+                <form onSubmit={handleSubmit} className="space-y-6 bg-neutral-900 rounded-xl p-6 border border-neutral-900 shadow-lg">
                     <div>
                         <label htmlFor="problemType" className="block text-neutral-300 text-sm font-medium mb-3">
                             Тип проблемы
@@ -166,7 +166,7 @@ const SupportPage: React.FC = () => {
                 <div className="grid md:grid-cols-2 gap-6">
                     <div className="bg-neutral-900 rounded-xl p-6 border border-neutral-800 shadow-lg">
                         <h3 className="text-white font-semibold mb-3">Электронная почта</h3>
-                        <p className="text-neutral-400">beatok@mail.ru</p>
+                        <p className="text-neutral-400">beatok_service@mail.ru</p>
                     </div>
                     <div className="bg-neutral-900 rounded-xl p-6 border border-neutral-800 shadow-lg">
                         <h3 className="text-white font-semibold mb-3">Время ответа</h3>

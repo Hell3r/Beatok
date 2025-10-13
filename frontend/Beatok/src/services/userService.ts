@@ -1,5 +1,12 @@
 import api from './api';
 
+export interface TopBeatmaker {
+  user_id: number;
+  username: string;
+  avatar_path: string;
+  beat_count: number;
+}
+
 export const userService = {
   async getUserProfile(userId: number) {
     const response = await api.get(`/v1/users/${userId}`);
@@ -17,6 +24,11 @@ export const userService = {
         'Content-Type': 'multipart/form-data',
       },
     });
+    return response.data;
+  },
+
+  async getTopBeatmakers(limit: number = 10): Promise<TopBeatmaker[]> {
+    const response = await api.get(`/beats/top-beatmakers?limit=${limit}`);
     return response.data;
   },
 };

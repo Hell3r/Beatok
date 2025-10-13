@@ -120,7 +120,7 @@ async def get_beats(
     limit: int = 100
 ):
     from sqlalchemy.orm import selectinload
-    
+
     result = await session.execute(
         select(BeatModel)
         .options(selectinload(BeatModel.owner))
@@ -128,9 +128,44 @@ async def get_beats(
         .limit(limit)
         .order_by(BeatModel.created_at.desc())
     )
-    
+
     beats = result.scalars().all()
     return [BeatResponse.model_validate(beat) for beat in beats]
+
+
+@router.get("/top-beatmakers", summary="Получить топ битмейкеров по количеству битов")
+async def get_top_beatmakers(
+    session: SessionDep,
+    limit: int = 10
+):
+    from sqlalchemy.orm import selectinload
+    from src.models.users import UsersModel
+
+    # Получаем топ пользователей по количеству битов
+    result = await session.execute(
+        select(
+            BeatModel.author_id,
+            func.count(BeatModel.id).label('beat_count'),
+            UsersModel.username,
+            UsersModel.avatar_path
+        )
+        .join(UsersModel, BeatModel.author_id == UsersModel.id)
+        .group_by(BeatModel.author_id, UsersModel.username, UsersModel.avatar_path)
+        .order_by(func.count(BeatModel.id).desc())
+        .limit(limit)
+    )
+
+    top_beatmakers = result.all()
+
+    return [
+        {
+            "user_id": row.author_id,
+            "username": row.username,
+            "avatar_path": row.avatar_path,
+            "beat_count": row.beat_count
+        }
+        for row in top_beatmakers
+    ]
 
 
 @router.get("/{beat_id}", response_model=BeatResponse, summary = "Получить бит по идентификатору")

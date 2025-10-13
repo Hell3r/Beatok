@@ -14,6 +14,12 @@ import ForumPage from './pages/ForumPage';
 import AdminDashboard from './pages/AdminDashboard';
 import SupportPage from './pages/SupportPage';
 
+const PageLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="container mx-auto px-4 py-8">
+    {children}
+  </div>
+);
+
 const App: React.FC = () => {
   const isUserAuthenticated = !!localStorage.getItem('access_token');
 
@@ -22,21 +28,21 @@ const App: React.FC = () => {
       <div className="min-h-screen bg-[#0f0f0f] text-[#e5e5e5]">
         <Header isAuthenticated={isUserAuthenticated} />
         
-        <main className="container mx-auto px-4 py-8">
+        <main>
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/beats" element={<BeatsPage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/beatmakers" element={<BeatmakersPage />} />
-            <Route path="/chart" element={<ChartPage />} />
-            <Route path="/freebeats" element={<FreeBeatsPage />} />
-            <Route path="/forum" element={<ForumPage />} />
-            <Route path="/support" element={<SupportPage />} />
 
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/profile" element={<PageLayout><ProfilePage /></PageLayout>} />
+            <Route path="/beats" element={<PageLayout><BeatsPage /></PageLayout>} />
+            <Route path="/about" element={<PageLayout><AboutPage /></PageLayout>} />
+            <Route path="/beatmakers" element={<PageLayout><BeatmakersPage /></PageLayout>} />
+            <Route path="/chart" element={<PageLayout><ChartPage /></PageLayout>} />
+            <Route path="/freebeats" element={<PageLayout><FreeBeatsPage /></PageLayout>} />
+            <Route path="/forum" element={<PageLayout><ForumPage /></PageLayout>} />
+            <Route path="/support" element={<PageLayout><SupportPage /></PageLayout>} />
 
-            <Route path="*" element={<Error404 />} />
+            <Route path="*" element={<PageLayout><Error404 /></PageLayout>} />
           </Routes>
         </main>
       </div>
