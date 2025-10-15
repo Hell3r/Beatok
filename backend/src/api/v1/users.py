@@ -61,7 +61,8 @@ async def login_user(
             "username": user.username,
             "user_id": user.id,
             "avatar_path": user.avatar_path,
-            "birthday": user.birthday
+            "birthday": user.birthday,
+            "role": user.role
         }
     }
 

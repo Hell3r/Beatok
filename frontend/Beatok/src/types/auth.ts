@@ -5,6 +5,7 @@ export interface User {
   is_active: boolean;
   birthday: string;
   avatar_path?: string;
+  role: string;
 }
 
 export interface LoginFormData {
@@ -26,7 +27,10 @@ export interface AuthResponse {
   user_info?: {
     email: string;
     user_id: number;
-    username?: string
+    username?: string;
+    role?: string;
+    birthday?: string;
+    avatar_path?: string;
   };
   user?: User;
 }

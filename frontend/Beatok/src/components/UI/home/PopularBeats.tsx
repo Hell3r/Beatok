@@ -30,10 +30,10 @@ const PopularBeats: React.FC = () => {
         <h2 className="text-2xl font-bold text-white mb-4">Популярные биты</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="bg-neutral-700 rounded-lg p-4 animate-pulse">
-              <div className="h-4 bg-neutral-600 rounded mb-2"></div>
-              <div className="h-3 bg-neutral-600 rounded mb-1"></div>
-              <div className="h-3 bg-neutral-600 rounded w-2/3"></div>
+            <div key={i} className="bg-neutral-800 rounded-lg p-4 animate-pulse">
+              <div className="h-4 bg-neutral-700 rounded mb-2"></div>
+              <div className="h-3 bg-neutral-700 rounded mb-1"></div>
+              <div className="h-3 bg-neutral-700 rounded w-2/3"></div>
             </div>
           ))}
         </div>
@@ -48,7 +48,7 @@ const PopularBeats: React.FC = () => {
         {beats.map((beat) => (
           <div
             key={beat.id}
-            className="bg-neutral-700 rounded-lg p-4 hover:bg-neutral-600 transition-colors duration-200 cursor-pointer group"
+            className="bg-neutral-800 rounded-lg p-4 hover:bg-neutral-700 transition-colors duration-200 cursor-pointer group"
             onClick={() => window.location.href = '/beats'}
           >
             <div className="flex items-center space-x-3 mb-3">
