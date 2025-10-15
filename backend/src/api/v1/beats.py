@@ -299,27 +299,11 @@ async def generate_identical_beats(
         beats_to_create = []
         
         for i in range(1, 101):
-            beat_folder = AUDIO_STORAGE / "beats" /f"user_{current_user_id}" / f"identical_beat_{i}"
-            beat_folder.mkdir(parents=True, exist_ok=True)
-            
-            mp3_path = None
-            wav_path = None
-            
-            if mp3_content:
-                mp3_path = beat_folder / "audio.mp3"
-                async with aiofiles.open(mp3_path, "wb") as f:
-                    await f.write(mp3_content)
-            
-            if wav_content:
-                wav_path = beat_folder / "audio.wav"
-                async with aiofiles.open(wav_path, "wb") as f:
-                    await f.write(wav_content)
-            
             beat = BeatModel(
-                name=name,
+                name=f"{name} #{i}",
                 author_id=current_user_id,
-                mp3_path=str(mp3_path.relative_to(AUDIO_STORAGE)) if mp3_path else None,
-                wav_path=str(wav_path.relative_to(AUDIO_STORAGE)) if wav_path else None,
+                mp3_path=None,
+                wav_path=None,
                 genre=genre,
                 tempo=tempo, 
                 key=key,   
@@ -328,24 +312,61 @@ async def generate_identical_beats(
                 promotion_status="standard",
                 status="active"
             )
-            
             beats_to_create.append(beat)
         
         session.add_all(beats_to_create)
         await session.commit()
         
+
+        for beat in beats_to_create:
+            beat_folder = AUDIO_STORAGE / "beats" / str(beat.id)
+            beat_folder.mkdir(parents=True, exist_ok=True)
+            
+            mp3_path = None
+            wav_path = None
+            
+
+            if mp3_content:
+                mp3_path = beat_folder / "audio.mp3"
+                async with aiofiles.open(mp3_path, "wb") as f:
+                    await f.write(mp3_content)
+                beat.mp3_path = str(mp3_path.relative_to(AUDIO_STORAGE))
+            
+
+            if wav_content:
+                wav_path = beat_folder / "audio.wav"
+                async with aiofiles.open(wav_path, "wb") as f:
+                    await f.write(wav_content)
+                beat.wav_path = str(wav_path.relative_to(AUDIO_STORAGE))
+        
+
+        await session.commit()
+        
+
+        created_beats = []
+        for beat in beats_to_create:
+            created_beats.append({
+                "id": beat.id,
+                "name": beat.name,
+                "folder": f"beats/{beat.id}",
+                "mp3_path": beat.mp3_path,
+                "wav_path": beat.wav_path
+            })
+        
         response_data = {
             "message": f"Успешно создано 100 битов",
             "details": {
-                "name": name,
+                "name_template": name,
                 "genre": genre,
                 "tempo": tempo,
                 "key": key,
                 "file_size": total_size,
                 "duration_seconds": round(file_duration, 2),
                 "total_records": len(beats_to_create),
-                "files_included": []
-            }
+                "files_included": ["mp3" if mp3_content else None, "wav" if wav_content else None],
+                "storage_path": str(AUDIO_STORAGE)
+            },
+            "created_beats": created_beats[:10]
         }
         
         return response_data
@@ -353,8 +374,5 @@ async def generate_identical_beats(
     except Exception as e:
         await session.rollback()
         raise HTTPException(status_code=500, detail=f"Ошибка при создании битов: {str(e)}")
-    
-    
-    
     
     
