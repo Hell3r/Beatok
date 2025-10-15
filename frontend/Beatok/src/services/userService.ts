@@ -7,6 +7,17 @@ export interface TopBeatmaker {
   beat_count: number;
 }
 
+export interface Beatmaker {
+  id: number;
+  username: string;
+  email: string;
+  birthday: string;
+  is_active: boolean;
+  role: string;
+  avatar_path: string;
+  beat_count: number;
+}
+
 export const userService = {
   async getUserProfile(userId: number) {
     const response = await api.get(`/v1/users/${userId}`);
@@ -29,6 +40,11 @@ export const userService = {
 
   async getTopBeatmakers(limit: number = 10): Promise<TopBeatmaker[]> {
     const response = await api.get(`/beats/top-beatmakers?limit=${limit}`);
+    return response.data;
+  },
+
+  async getAllBeatmakers(): Promise<Beatmaker[]> {
+    const response = await api.get('/beats/beatmakers');
     return response.data;
   },
 };
