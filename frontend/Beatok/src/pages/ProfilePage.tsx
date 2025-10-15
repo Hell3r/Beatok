@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { userService } from '../services/userService';
+import { getAvatarUrl } from '../utils/getAvatarURL';
 
 interface UserProfile {
   id: number;
@@ -179,18 +180,7 @@ const ProfilePage: React.FC = () => {
     }));
   };
 
-  const getAvatarUrl = () => {
-    if (!user?.avatar_path) {
-      return 'http://localhost:8000/static/default_avatar.png';
-    }
-    if (user.avatar_path.startsWith('http')) {
-      return user.avatar_path;
-    }
-    if (user.avatar_path === 'default_avatar.png' || user.avatar_path === 'static/default_avatar.png') {
-      return 'http://localhost:8000/static/default_avatar.png';
-    }
-    return `http://localhost:8000/v1/users/${user.id}/avatar`;
-  };
+
 
   const formatDate = (date: Date | null) => {
     if (!date) return 'Не указана';
@@ -241,9 +231,9 @@ const ProfilePage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="bg-neutral-900 rounded-lg p-6 border border-neutral-700 h-full">
             <div className="flex flex-col items-center mb-6">
-              <div className="relative group">
+              <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                 <img
-                  src={getAvatarUrl()}
+                  src={getAvatarUrl(user.id, user.avatar_path)}
                   alt="Аватар"
                   className="w-32 h-32 rounded-full object-cover border-4 border-neutral-700 cursor-pointer"
                   onError={(e) => {
@@ -251,7 +241,7 @@ const ProfilePage: React.FC = () => {
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                  <span className="text-white text-sm text-center px-2 cursor-pointer">Сменить аватар</span>
+                  <span className="text-white text-sm text-center px-2">Сменить аватар</span>
                 </div>
               </div>
               
@@ -266,7 +256,7 @@ const ProfilePage: React.FC = () => {
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="mt-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 cursor-pointer rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {uploading ? 'Загрузка...' : 'Сменить аватар'}
               </button>

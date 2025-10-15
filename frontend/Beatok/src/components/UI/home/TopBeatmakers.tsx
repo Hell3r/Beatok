@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { userService, type TopBeatmaker } from '../../../services/userService';
+import { getAvatarUrl } from '../../../utils/getAvatarURL';
 
 const TopBeatmakers: React.FC = () => {
   const [beatmakers, setBeatmakers] = useState<TopBeatmaker[]>([]);
@@ -21,18 +22,7 @@ const TopBeatmakers: React.FC = () => {
     }
   };
 
-  const getAvatarUrl = (avatarPath?: string) => {
-    if (!avatarPath) {
-      return 'http://localhost:8000/static/default_avatar.png';
-    }
-    if (avatarPath.startsWith('http')) {
-      return avatarPath;
-    }
-    if (avatarPath === 'default_avatar.png' || avatarPath === 'static/default_avatar.png') {
-      return 'http://localhost:8000/static/default_avatar.png';
-    }
-    return `http://localhost:8000/v1/users/${avatarPath}`;
-  };
+
 
   if (loading) {
     return (
@@ -62,13 +52,13 @@ const TopBeatmakers: React.FC = () => {
         {beatmakers.map((beatmaker, index) => (
           <div
             key={beatmaker.user_id}
-            className="bg-neutral-700 rounded-lg p-4 hover:bg-neutral-600 transition-colors duration-200 cursor-pointer group"
+            className="bg-neutral-800 rounded-lg p-4 hover:bg-neutral-700 transition-colors duration-200 cursor-pointer group"
             onClick={() => window.location.href = '/beatmakers'}
           >
             <div className="flex items-center space-x-3">
               <div className="relative">
                 <img
-                  src={getAvatarUrl(beatmaker.avatar_path)}
+                  src={getAvatarUrl(beatmaker.user_id, beatmaker.avatar_path)}
                   alt={beatmaker.username}
                   className="w-12 h-12 rounded-full object-cover group-hover:scale-110 transition-transform duration-200"
                   onError={(e) => {
