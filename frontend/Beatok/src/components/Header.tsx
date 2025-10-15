@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AuthModal from './AuthModal';
 import type { User } from '../types/auth';
+import { getAvatarUrl } from '../utils/getAvatarURL';
 
 interface HeaderProps {
   isAuthenticated?: boolean;
@@ -10,6 +11,7 @@ interface NavItem {
   href: string;
   label: string;
 }
+
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
@@ -64,18 +66,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
     { href: '/about', label: 'О НАС' },
     { href: '/support', label: 'ТЕХ. ПОДДЕРЖКА'},]
     
-  const getAvatarUrl = () => {
-    if (!currentUser?.avatar_path) {
-      return 'http://localhost:8000/static/default_avatar.png';
-    }
-    if (currentUser.avatar_path.startsWith('http')) {
-      return currentUser.avatar_path;
-    }
-    if (currentUser.avatar_path === 'default_avatar.png' || currentUser.avatar_path === 'static/default_avatar.png') {
-      return 'http://localhost:8000/static/default_avatar.png';
-    }
-    return `http://localhost:8000/v1/users/${currentUser.id}/avatar`;
-  };
+
 
   const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
@@ -138,6 +129,14 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
                   {item.label}
                 </a>
               ))}
+              {currentUser && currentUser.role === 'admin' && (
+                <a
+                  href="/admin"
+                  className="text-gray-300 hover:text-white transition-colors duration-200 font-medium focus:outline-none"
+                >
+                  АДМИН ПАНЕЛЬ
+                </a>
+              )}
             </div>
           </div>
 
@@ -146,7 +145,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
               <span className="text-neutral-300 text-sm">
                 <a href="/profile" className="flex items-center space-x-2">
                   <img
-                    src={getAvatarUrl()}
+                    src={getAvatarUrl(currentUser.id, currentUser.avatar_path)}
                     alt="Аватар"
                     className="w-8 h-8 rounded-full object-cover mx-2.5"
                     onError={(e) => {

@@ -11,7 +11,7 @@ import BeatmakersPage from './pages/BeatmakersPage';
 import ChartPage from './pages/ChartPage';
 import FreeBeatsPage from './pages/FreeBeatsPage';
 import ForumPage from './pages/ForumPage';
-import AdminDashboard from './pages/AdminDashboard';
+import AdminSwaggerPage from './pages/AdminSwaggerPage';
 import SupportPage from './pages/SupportPage';
 
 const PageLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
@@ -32,7 +32,7 @@ const App: React.FC = () => {
           <Routes>
             <Route path="/" element={<HomePage />} />
 
-            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin" element={<AdminSwaggerPage />} />
             <Route path="/profile" element={<PageLayout><ProfilePage /></PageLayout>} />
             <Route path="/beats" element={<PageLayout><BeatsPage /></PageLayout>} />
             <Route path="/about" element={<PageLayout><AboutPage /></PageLayout>} />

@@ -168,6 +168,55 @@ async def get_top_beatmakers(
     ]
 
 
+@router.get("/beatmakers", summary="Получить всех битмейкеров (пользователей с хотя бы одним битом)")
+async def get_all_beatmakers(
+    session: SessionDep
+):
+    from src.models.users import UsersModel
+
+    # Получаем всех пользователей, у которых есть хотя бы один бит
+    result = await session.execute(
+        select(
+            BeatModel.author_id,
+            func.count(BeatModel.id).label('beat_count'),
+            UsersModel.username,
+            UsersModel.avatar_path,
+            UsersModel.email,
+            UsersModel.birthday,
+            UsersModel.is_active,
+            UsersModel.role
+        )
+        .join(UsersModel, BeatModel.author_id == UsersModel.id)
+        .group_by(
+            BeatModel.author_id,
+            UsersModel.username,
+            UsersModel.avatar_path,
+            UsersModel.email,
+            UsersModel.birthday,
+            UsersModel.is_active,
+            UsersModel.role
+        )
+        .having(func.count(BeatModel.id) >= 1)
+        .order_by(func.count(BeatModel.id).desc())
+    )
+
+    beatmakers = result.all()
+
+    return [
+        {
+            "id": row.author_id,
+            "username": row.username,
+            "email": row.email,
+            "birthday": row.birthday,
+            "is_active": row.is_active,
+            "role": row.role,
+            "avatar_path": row.avatar_path,
+            "beat_count": row.beat_count
+        }
+        for row in beatmakers
+    ]
+
+
 @router.get("/{beat_id}", response_model=BeatResponse, summary = "Получить бит по идентификатору")
 async def get_beat(
     beat_id: int,

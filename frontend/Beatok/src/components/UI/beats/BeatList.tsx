@@ -1,5 +1,7 @@
 import React from 'react';
 import type { Beat } from '../../../types/Beat';
+import { truncateText } from '../../../utils/truncateText';
+import { formatDuration } from '../../../utils/formatDuration';
 
 interface BeatListProps {
   beats: Beat[];
@@ -18,11 +20,7 @@ const BeatList: React.FC<BeatListProps> = ({
   onPlay, 
   onDownload 
 }) => {
-  const formatDuration = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+
 
   const getAuthorName = (beat: Beat): string => {
     if (beat.owner?.username) return beat.owner.username;
@@ -32,11 +30,6 @@ const BeatList: React.FC<BeatListProps> = ({
     if (beat.author_id) return `Пользователь ${beat.author_id}`;
     
     return 'Неизвестно';
-  };
-
-  const truncateText = (text: string, maxLength: number = 30): string => {
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
   };
 
   if (loading) {

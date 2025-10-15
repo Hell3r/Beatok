@@ -60,7 +60,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         username: data.user_info?.username || loginData.email.split('@')[0],
         email: data.user_info?.email || loginData.email,
         is_active: true,
-        birthday: ''
+        birthday: data.user_info?.birthday || '',
+        role: data.user_info?.role || 'common',
+        avatar_path: data.user_info?.avatar_path || 'static/default_avatar.png'
       };
       
       localStorage.setItem('user_info', JSON.stringify(userData));
@@ -129,7 +131,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           username: registerData.username,
           email: registerData.email,
           is_active: true,
-          birthday: registerData.birthday
+          birthday: registerData.birthday,
+          role: 'common'
         };
         localStorage.setItem('user_info', JSON.stringify(userData));
       }
