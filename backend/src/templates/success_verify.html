@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Email подтвержден - BEATOK</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        user-select: none;
+      }
+
+      body {
+        background-color: #0a0a0a;
+        font-family: Arial, sans-serif;
+        color: white;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+        text-align: center;
+      }
+
+      .icon {
+        width: 80px;
+        height: 80px;
+        background-color: #dc2626;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 24px auto;
+      }
+
+      .icon svg {
+        width: 40px;
+        height: 40px;
+        color: white;
+      }
+
+      h1 {
+        color: white;
+        font-weight: bold;
+        font-size: 1.875rem;
+        margin-bottom: 16px;
+      }
+
+      .description {
+        color: #e5e5e5;
+        font-size: 1.125rem;
+        line-height: 1.6;
+        max-width: 28rem;
+        margin: 0 auto 32px auto;
+      }
+
+      .login-button {
+        background-color: #dc2626;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        font-weight: 500;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+      }
+
+      .login-button:hover {
+        background-color: #b91c1c;
+      }
+
+      .login-button:focus {
+        outline: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="icon">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="3"
+            d="M5 13l4 4L19 7"
+          />
+        </svg>
+      </div>
+
+      <h1>Email подтвержден</h1>
+
+      <p class="description">
+        Ваш Email адрес подтвержден. Теперь вы можете войти в свой аккаунт и
+        полноценно пользоваться сервисом.
+      </p>
+
+      <button class="login-button" onclick="redirectToLogin()">
+        Перейти к входу
+      </button>
+    </div>
+
+    <script>
+      function redirectToLogin() {
+        window.location.href = "http://localhost:5173/";
+      }
+    </script>
+  </body>
+</html>

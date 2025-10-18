@@ -14,7 +14,7 @@ class UsersModel(Base):
     email: Mapped[str] = mapped_column()
     password: Mapped[str] = mapped_column()
     role: Mapped[str] = mapped_column(default = "common")
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=False)
     avatar_path: Mapped[Optional[str]] = mapped_column(String(500), default = "static/default_avatar.jpg" )
     
     

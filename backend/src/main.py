@@ -1,12 +1,25 @@
 from fastapi import FastAPI
 from src.api import main_router
+import logging
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
 from src.scripts.create_default_avatar import create_default_avatar
+from dotenv import load_dotenv
+from src.tasks.background import task_manager
 import os, asyncio
 from src.telegram_bot import support_bot, TelegramConfig
+
+
+logger = logging.getLogger(__name__)
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 
 
 app = FastAPI(
@@ -75,3 +88,15 @@ async def startup_event():
         print("Telegram bot started")
     else:
         print("Telegram bot not configured - skipping startup")
+
+
+
+@app.on_event("startup")
+async def startup_event_bacground():
+    task_manager.start_cleanup_tasks()
+    logger.info(" Application started with background tasks")
+
+@app.on_event("shutdown") 
+async def shutdown_event():
+    task_manager.shutdown()
+    logger.info(" Application shutdown")
