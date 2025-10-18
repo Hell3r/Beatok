@@ -141,7 +141,6 @@ async def get_top_beatmakers(
     from sqlalchemy.orm import selectinload
     from src.models.users import UsersModel
 
-    # Получаем топ пользователей по количеству битов
     result = await session.execute(
         select(
             BeatModel.author_id,
@@ -173,8 +172,8 @@ async def get_all_beatmakers(
     session: SessionDep
 ):
     from src.models.users import UsersModel
-
-    # Получаем всех пользователей, у которых есть хотя бы один бит
+    
+    
     result = await session.execute(
         select(
             BeatModel.author_id,

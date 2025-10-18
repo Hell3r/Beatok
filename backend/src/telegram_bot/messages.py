@@ -23,4 +23,4 @@ class MessageTemplates:
     
     @staticmethod
     def welcome_message() -> str:
-        return "🤖 Бот поддержки запущен! Вы будете получать уведомления о новых заявках."
+        return None

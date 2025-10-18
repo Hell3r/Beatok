@@ -30,16 +30,12 @@ class UsersSchema(BaseModel):
     
 
 class UserResponse(BaseModel):
-    id: int 
+    id: int
+    email: str
     username: str
-    email: EmailStr
-    birthday: date
-    role: str
     is_active: bool
-    avatar_path: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class DeleteUserRequest(BaseModel):
     user_id: int
@@ -57,3 +53,14 @@ class UserUpdate(BaseModel):
     
     model_config = ConfigDict(from_attributes=True)
     
+    
+    
+class VerifyEmailRequest(BaseModel):
+    token: str
+
+
+class MessageResponse(BaseModel):
+    message: str
+
+class ResendVerificationRequest(BaseModel):
+    email: EmailStr

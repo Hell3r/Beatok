@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Ошибка подтверждения</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding: 50px;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .container {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 40px;
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+      }
+      .error-icon {
+        font-size: 60px;
+        margin-bottom: 20px;
+      }
+      .btn {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 12px 30px;
+        background: white;
+        color: #f5576c;
+        text-decoration: none;
+        border-radius: 25px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="error-icon">❌</div>
+      <h1>Ошибка подтверждения email</h1>
+      <p>{{ error_message }}</p>
+      <a href="/resend-verification" class="btn">Отправить письмо повторно</a>
+    </div>
+  </body>
+</html>

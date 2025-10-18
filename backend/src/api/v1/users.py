@@ -1,16 +1,20 @@
 from typing_extensions import List
-from fastapi import APIRouter, HTTPException, status, Depends, Response, Path, Form, File, UploadFile
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, HTTPException, status, Depends, Response, Path, Form, File, UploadFile, BackgroundTasks
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.templating import Jinja2Templates
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, and_ 
 from src.models.users import UsersModel
 from src.dependencies import SessionDep
 from typing import Optional
+import logging
 import os
 import uuid
 from datetime import date
-from src.schemas.users import DeleteUserRequest, UsersSchema, UserResponse, UserCreate, TokenResponse, UserUpdate
-from src.services.AuthService import (
+from src.models.email_verification import EmailVerificationModel
+from src.schemas.users import DeleteUserRequest, UsersSchema, UserResponse, UserCreate, TokenResponse, UserUpdate, VerifyEmailRequest, MessageResponse, ResendVerificationRequest
+from src.services.EmailService import email_service
+from src.services.AuthService import (  
     add_to_blacklist,
     pwd_context, 
     oauth2_scheme,
@@ -24,7 +28,9 @@ from src.services.AuthService import (
     get_current_user
 )
 
+templates = Jinja2Templates(directory="src/templates")
 router = APIRouter(prefix="/v1/users")
+logger = logging.getLogger(__name__)
 
 AVATAR_DIR = "static/avatars"
 DEFAULT_AVATAR_PATH = "static/default_avatar.png"
@@ -38,33 +44,50 @@ MAX_FILE_SIZE = 5 * 1024 * 1024
 
 
 
-@router.post("/login", tags=["Пользователи"],summary = ["Авторизация"])
+@router.post("/login", tags=["Пользователи"], summary="Авторизация")
 async def login_user(
     session: SessionDep,
     form_data: OAuth2PasswordRequestForm = Depends()
 ):
-    user = await authenticate_user(form_data.username, form_data.password, session)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
 
-    access_token = create_access_token(data={"sub": user.email})
+    try:
+        user = await authenticate_user(form_data.username, form_data.password, session)
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Неверный email или пароль",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        if not user.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Аккаунт не активирован. Подтвердите ваш email.",
+            )
 
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user_info": {
-            "email": user.email,
-            "username": user.username,
-            "user_id": user.id,
-            "avatar_path": user.avatar_path,
-            "birthday": user.birthday,
-            "role": user.role
+        access_token = create_access_token(data={"sub": user.email})
+
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user_info": {
+                "email": user.email,
+                "username": user.username,
+                "user_id": user.id,
+                "avatar_path": user.avatar_path,
+                "birthday": user.birthday,
+                "role": user.role,
+                "is_active": user.is_active 
+            }
         }
-    }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Login error for {form_data.username}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Произошла ошибка при входе в систему"
+        )
 
 @router.post("/logout", tags=["Пользователи"], summary=["Выход"])
 async def logout_user(
@@ -98,64 +121,6 @@ async def get_all_users(session: SessionDep):
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
     
     
-@router.post("/register", response_model=TokenResponse, tags=["Пользователи"], summary="Регистрация")
-async def register(
-    user_data: UserCreate,
-    session: SessionDep
-):
-    if await check_username_exists(user_data.username, session):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Username already registered"
-        )
-
-    if await check_email_exists(user_data.email, session):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Email already registered"
-        )
-
-    try:
-        hashed_password = get_password_hash(user_data.password)
-        
-        user = UsersModel(
-            username=user_data.username,
-            email=user_data.email,
-            birthday=user_data.birthday,
-            password=hashed_password,
-            role = "common",
-            is_active=True,
-            date_of_reg=date.today(),
-            avatar_path="static/default_avatar.png"
-        )
-
-        session.add(user)
-        await session.commit()
-        await session.refresh(user)
-
-        access_token = create_access_token(data={"sub": user.username})
-
-        return TokenResponse(
-            access_token=access_token,
-            token_type="bearer",
-            user=UserResponse(
-                id=user.id,
-                username=user.username,
-                email=user.email,
-                role = user.role,
-                birthday=user.birthday,
-                is_active=user.is_active,
-                avatar_path= user.avatar_path
-            )
-        )
-
-    except Exception as e:
-        await session.rollback()
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Registration failed: {str(e)}"
-        )
-        
         
         
 @router.get("/check-username/{username}", tags = ["Пользователи"], summary="Проверить Имя на уникальность")
@@ -419,4 +384,226 @@ async def patch_current_user(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error updating user: {str(e)}"
+        )
+        
+        
+        
+@router.post(
+    "/register",
+    response_model=MessageResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Регистрация пользователя",
+    tags = ["Верификация Email и авторизация"]
+)
+async def register(
+    user_data: UserCreate,
+    background_tasks: BackgroundTasks,
+    session: SessionDep
+):
+    try:
+        existing_email = await session.execute(
+            select(UsersModel).where(UsersModel.email == user_data.email)
+        )
+        if existing_email.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Пользователь с таким email уже зарегистрирован"
+            )
+        
+        existing_username = await session.execute(
+            select(UsersModel).where(UsersModel.username == user_data.username)
+        )
+        if existing_username.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Это имя пользователя уже занято"
+            )
+        
+        hashed_password = get_password_hash(user_data.password)
+        
+        user = UsersModel(
+            email=user_data.email,
+            username=user_data.username,
+            password=hashed_password,
+            birthday=user_data.birthday,
+            is_active=False, 
+        )
+        
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)
+        
+        verification = EmailVerificationModel(
+            email=user_data.email,
+            verification_type="registration"
+        )
+        
+        session.add(verification)
+        await session.commit()
+        
+        background_tasks.add_task(
+            email_service.send_verification_email,
+            user_data.email,
+            verification.token,
+            user_data.username
+        )
+        
+        logger.info(f"New user registered: {user_data.email}, verification token: {verification.token}")
+        
+        return MessageResponse(
+            message="Регистрация успешна! На ваш email отправлено письмо с подтверждением."
+        )
+        
+    except HTTPException:
+        await session.rollback()
+        raise
+    except Exception as e:
+        await session.rollback()
+        logger.error(f"Registration error for {user_data.email}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Произошла ошибка при регистрации. Пожалуйста, попробуйте позже."
+        )
+
+
+
+@router.get(
+    "/auth/verify-email",
+    response_class=HTMLResponse,
+    summary="Подтверждение email адреса",
+    tags = ["Верификация Email и авторизация"]
+)
+async def verify_email(
+    token : str,
+    session: SessionDep
+):
+    try:
+        verification = await session.execute(
+            select(EmailVerificationModel).where(
+                EmailVerificationModel.token == token
+            )
+        )
+        verification = verification.scalar_one_or_none()
+        
+        if not verification:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Неверный или устаревший токен подтверждения"
+            )
+        
+        if not verification.is_valid():
+            if verification.is_used:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Этот токен подтверждения уже был использован"
+                )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Срок действия токена подтверждения истек"
+                )
+        
+        user = await session.execute(
+            select(UsersModel).where(UsersModel.email == verification.email)
+        )
+        user = user.scalar_one_or_none()
+        
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Пользователь не найден"
+            )
+        
+        
+        user.is_active = True
+        
+        verification.is_used = True
+        
+        await session.commit()
+        
+        access_token = create_access_token(data={"sub": user.email})
+        
+        logger.info(f"Email verified for user: {user.email}")
+        
+        return templates.TemplateResponse(
+            "success_verify.html",
+            {"request": {}}
+        )
+        
+        
+    except HTTPException:
+        await session.rollback()
+        raise
+    except Exception as e:
+        await session.rollback()
+        logger.error(f"Email verification error for token {token}: {str(e)}")
+        return templates.TemplateResponse(
+            "error_verify.html",
+            {"request": {}, "error_message": "Произошла внутренняя ошибка сервера"}
+        )
+        
+        
+        
+@router.post(
+    "/resend-verification",
+    response_model=MessageResponse,
+    summary="Повторная отправка письма подтверждения",
+    tags = ["Верификация Email и авторизация"]
+)
+async def resend_verification(
+    resend_data: ResendVerificationRequest,
+    background_tasks: BackgroundTasks,
+    session: SessionDep
+):
+    try:
+        user = await session.execute(
+            select(UsersModel).where(UsersModel.email == resend_data.email)
+        )
+        user = user.scalar_one_or_none()
+        
+        if not user:
+            return MessageResponse(
+                message="Если пользователь с таким email существует, письмо с подтверждением будет отправлено"
+            )
+        
+        await session.execute(
+            delete(EmailVerificationModel).where( 
+                and_(
+                    EmailVerificationModel.email == resend_data.email,
+                    EmailVerificationModel.verification_type == "registration",
+                    EmailVerificationModel.is_used == False
+                )
+            )
+        )
+        
+        verification = EmailVerificationModel(
+            email=resend_data.email,
+            verification_type="registration"
+        )
+        
+        session.add(verification)
+        await session.commit()
+        
+        background_tasks.add_task(
+            email_service.send_verification_email,
+            resend_data.email,
+            verification.token,
+            user.username
+        )
+        
+        logger.info(f"Verification email resent to: {resend_data.email}")
+        
+        return MessageResponse(
+            message="Письмо с подтверждением отправлено на ваш email"
+        )
+        
+    except HTTPException:
+        await session.rollback()
+        raise
+    except Exception as e:
+        await session.rollback()
+        logger.error(f"Resend verification error for {resend_data.email}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Произошла ошибка при отправке письма. Пожалуйста, попробуйте позже."
         )
