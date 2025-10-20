@@ -38,7 +38,8 @@ class BeatService {
   }
 
   async getBeats(skip: number = 0, limit: number = 100): Promise<Beat[]> {
-    return this.fetchApi(`/beats?skip=${skip}&limit=${limit}`);
+    const response = await this.fetchApi(`/beats?skip=${skip}&limit=${limit}`);
+    return response;
   }
 
   async getBeatById(id: number): Promise<Beat> {
