@@ -3,6 +3,8 @@ import PopularBeats from '../components/UI/home/PopularBeats';
 import TopBeatmakers from '../components/UI/home/TopBeatmakers';
 import CallToAction from '../components/UI/home/CallToAction';
 import Steps from '../components/UI/home/Steps';
+import HorizontalLine from '../components/UI/home/HorizontalLine';
+import InverseHorizontalLine from '../components/UI/home/InverseHorizontalLine';
 
 const HomePage: React.FC = () => {
     return (
@@ -21,11 +23,13 @@ const HomePage: React.FC = () => {
 
                 <div className="relative z-10 pt-20 pb-16 top-10 select-none">
                     <div className='container mx-auto px-2 text-center'>
-                        <h1 className="text-white font-bold text-4xl glitch-text mb-2">ДОБРО ПОЖАЛОВАТЬ</h1>
+                        <h1 className="text-white font-bold text-4xl mb-2">ДОБРО ПОЖАЛОВАТЬ</h1>
                         <div className="mb-4">
                             <h3 className="inline text-white font-bold text-4xl">на </h3>
-                            <h3 className="inline text-white font-bold text-5xl">BEAT</h3>
-                            <h3 className="inline text-red-600 font-bold text-5xl">OK</h3>
+                            <div className='inline-block glitch-text'>
+                                <h3 className="inline text-white font-bold text-5xl">BEAT</h3>
+                                <h3 className="inline text-red-600 font-bold text-5xl">OK</h3>
+                            </div>
                         </div>
                         <hr className='my-6 w-48 border-t-2 border-red-600 mx-auto' />
                         <h3 className='text-white text-xl mb-4 max-w-3xl mx-auto'>
@@ -38,17 +42,24 @@ const HomePage: React.FC = () => {
                 </div>
             </div>
 
+            <HorizontalLine />
+
             <div className="bg-neutral-925 select-none">
-                <div className="container mx-auto max-w-full py-12 space-y-16">
+                <div className="container mx-auto max-w-full space-y-8">
                     <PopularBeats />
                     <TopBeatmakers />
                 </div>
 
+
+
                 <div className="w-full select-none">
+                    <InverseHorizontalLine />
                     <CallToAction />
+                    <HorizontalLine />
                     <Steps/>
                 </div>
-                
+
+
             </div>
         </div>
     );

@@ -13,7 +13,6 @@ import FreeBeatsPage from './pages/FreeBeatsPage';
 import ForumPage from './pages/ForumPage';
 import AdminSwaggerPage from './pages/AdminSwaggerPage';
 import SupportPage from './pages/SupportPage';
-import EmailConfirmed from './pages/success/EmailConfirmed';
 
 const PageLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="container mx-auto px-4 py-8">
@@ -44,7 +43,6 @@ const App: React.FC = () => {
             <Route path="/support" element={<PageLayout><SupportPage /></PageLayout>} />
 
             <Route path="*" element={<PageLayout><Error404 /></PageLayout>} />
-            <Route path="/emailconfirmed" element={<EmailConfirmed />} />
           </Routes>
         </main>
       </div>

@@ -25,5 +25,14 @@ export interface Beat {
     id: number;
     username: string;
   };
+  pricings?: BeatPricing[];
 }
 
+export interface BeatPricing {
+  id: number;
+  beat_id: number;
+  tariff_name: string;
+  tariff_display_name?: string;
+  price: number | null;
+  is_available: boolean;
+}

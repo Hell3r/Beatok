@@ -5,6 +5,7 @@ import AudioPlayer from '../components/AudioPlayer';
 import { beatService } from '../services/beatService';
 import type { Beat } from '../types/Beat';
 import BeatList from '../components/UI/beats/BeatList';
+import Filter, { type Filters } from '../components/UI/beats/Filter';
 
 type ViewMode = 'table' | 'grid';
 
@@ -12,13 +13,23 @@ const BeatsPage: React.FC = () => {
   const [beats, setBeats] = useState<Beat[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('table');
+  const [filters, setFilters] = useState<Filters>({
+    name: '',
+    author: '',
+    genre: '',
+    bpm: '',
+    key: '',
+    minPrice: '',
+    maxPrice: '',
+    freeOnly: false
+  });
 
   const [currentBeat, setCurrentBeat] = useState<Beat | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(0.7);
-  
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
@@ -61,7 +72,20 @@ const BeatsPage: React.FC = () => {
       setLoading(true);
       const data = await beatService.getBeats();
       console.log('Loaded beats:', data);
-      setBeats(data);
+
+      const beatsWithPricings = await Promise.all(
+        data.map(async (beat) => {
+          try {
+            const pricings = await beatService.getBeatPricings(beat.id);
+            return { ...beat, pricings: pricings.pricings || [] };
+          } catch (error) {
+            console.error(`Error loading pricings for beat ${beat.id}:`, error);
+            return { ...beat, pricings: [] };
+          }
+        })
+      );
+
+      setBeats(beatsWithPricings);
     } catch (error) {
       console.error('Error loading beats:', error);
     } finally {
@@ -167,7 +191,7 @@ const BeatsPage: React.FC = () => {
   const handleDownload = (beat: Beat) => {
     const downloadSource = getAudioSource(beat);
     const fileExtension = beat.wav_path ? 'wav' : 'mp3';
-    
+
     if (downloadSource) {
       const link = document.createElement('a');
       link.href = downloadSource;
@@ -176,14 +200,6 @@ const BeatsPage: React.FC = () => {
     } else {
       alert('Файл для скачивания не доступен');
     }
-  };
-
-  const handleEdit = (beat: Beat) => {
-    console.log('Edit:', beat);
-  };
-
-  const handleDelete = (beat: Beat) => {
-    console.log('Delete:', beat);
   };
 
   const handlePlayPause = async () => {
@@ -221,7 +237,7 @@ const BeatsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4">
         <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
           <div>
             <h1 className="text-3xl font-bold text-white mb-2">Биты</h1>
@@ -230,42 +246,50 @@ const BeatsPage: React.FC = () => {
             </p>
             {currentBeat && (
               <p className="text-xs text-neutral-500 mt-1">
-                Текущий: {currentBeat.name} | 
-                WAV: {currentBeat.wav_path ? '✓' : '✗'} | 
+                Текущий: {currentBeat.name} |
+                WAV: {currentBeat.wav_path ? '✓' : '✗'} |
                 MP3: {currentBeat.mp3_path ? '✓' : '✗'}
               </p>
             )}
           </div>
-          
+
           <ViewToggle currentView={viewMode} onViewChange={setViewMode} />
         </div>
 
-        {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
-            <p className="text-neutral-400 mt-4">Загрузка битов...</p>
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="lg:w-80 flex-shrink-0">
+            <Filter filters={filters} onFiltersChange={setFilters} />
           </div>
-        ) : viewMode === 'table' ? (
-          <BeatTable 
-            beats={beats}
-            loading={loading}
-            currentPlayingBeat={currentBeat}
-            isPlaying={isPlaying}
-            onPlay={handlePlay}
-            onDownload={handleDownload}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-          />
-        ) : (
-          <BeatList 
-            beats={beats}
-            loading={loading}
-            currentPlayingBeat={currentBeat}
-            isPlaying={isPlaying}
-            onPlay={handlePlay}
-            onDownload={handleDownload}
-          />
-        )}
+
+          <div className="flex-1">
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
+                <p className="text-neutral-400 mt-4">Загрузка битов...</p>
+              </div>
+            ) : viewMode === 'table' ? (
+              <BeatTable
+                beats={beats}
+                loading={loading}
+                currentPlayingBeat={currentBeat}
+                isPlaying={isPlaying}
+                onPlay={handlePlay}
+                onDownload={handleDownload}
+                filters={filters}
+              />
+            ) : (
+              <BeatList
+                beats={beats}
+                loading={loading}
+                currentPlayingBeat={currentBeat}
+                isPlaying={isPlaying}
+                onPlay={handlePlay}
+                onDownload={handleDownload}
+                filters={filters}
+              />
+            )}
+          </div>
+        </div>
       </div>
 
       <AudioPlayer
