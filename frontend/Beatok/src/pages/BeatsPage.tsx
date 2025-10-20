@@ -72,20 +72,7 @@ const BeatsPage: React.FC = () => {
       setLoading(true);
       const data = await beatService.getBeats();
       console.log('Loaded beats:', data);
-
-      const beatsWithPricings = await Promise.all(
-        data.map(async (beat) => {
-          try {
-            const pricings = await beatService.getBeatPricings(beat.id);
-            return { ...beat, pricings: pricings.pricings || [] };
-          } catch (error) {
-            console.error(`Error loading pricings for beat ${beat.id}:`, error);
-            return { ...beat, pricings: [] };
-          }
-        })
-      );
-
-      setBeats(beatsWithPricings);
+      setBeats(data);
     } catch (error) {
       console.error('Error loading beats:', error);
     } finally {

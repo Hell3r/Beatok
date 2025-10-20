@@ -10,6 +10,7 @@ from mutagen import File as MutagenFile
 from pathlib import Path
 from src.database.deps import SessionDep
 from src.models.beats import BeatModel
+from src.models.beat_bricing import BeatPricingModel
 from src.schemas.beats import BeatResponse, BeatListResponse
 from src.services.AuthService import get_current_user
 from src.dependencies.auth import get_current_user_id
@@ -124,13 +125,16 @@ async def get_beats(
 
     result = await session.execute(
         select(BeatModel)
-        .options(selectinload(BeatModel.owner))
+        .options(
+            selectinload(BeatModel.owner),
+            selectinload(BeatModel.pricings).joinedload(BeatPricingModel.tariff)
+        )
         .offset(skip)
         .limit(limit)
         .order_by(BeatModel.created_at.desc())
     )
 
-    beats = result.scalars().all()
+    beats = result.unique().scalars().all()
     return [BeatResponse.model_validate(beat) for beat in beats]
 
 
@@ -359,7 +363,7 @@ async def generate_identical_beats(
                 size=total_size,
                 duration=file_duration,
                 promotion_status="standard",
-                status="active"
+                status="MODERATED"
             )
             beats_to_create.append(beat)
         
