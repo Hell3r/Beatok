@@ -5,7 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from typing import List
 from sqlalchemy.orm import Session
 from src.database.database import engine, get_session, Base
-from src.dependencies import SessionDep
+from src.database.deps import SessionDep
 from src.schemas.beat_pricing import BeatPricingCreateSchema, BeatPricingResponseSchema, BeatAllPricingsResponseSchema
 from src.models.beat_bricing import BeatPricingModel
 from src.models.beats import BeatModel

@@ -5,7 +5,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy import select, delete, and_ 
 from src.models.users import UsersModel
-from src.dependencies import SessionDep
+from src.database.deps import SessionDep
 from typing import Optional
 import logging
 import os

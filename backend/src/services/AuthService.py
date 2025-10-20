@@ -3,7 +3,7 @@ from typing import Optional
 from typing_extensions import Annotated
 from fastapi import Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.dependencies import SessionDep
+from src.database.deps import SessionDep
 from passlib.context import CryptContext
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
@@ -114,9 +114,3 @@ async def check_email_exists(email: str, session: AsyncSession) -> bool:
         select(UsersModel).where(UsersModel.email == email)
     )
     return result.scalar_one_or_none() is not None
-
-
-
-
-async def get_current_user_id(current_user: Annotated[UsersModel, Depends(get_current_user)]) -> int:
-    return current_user.id
