@@ -16,7 +16,7 @@ export interface ApiError {
 class BeatService {
   private async fetchApi(endpoint: string, options: RequestInit = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
-    
+
     try {
       const response = await fetch(url, {
         headers: {
@@ -48,8 +48,12 @@ class BeatService {
   async searchBeats(query: string, genre?: string): Promise<Beat[]> {
     const params = new URLSearchParams({ q: query });
     if (genre) params.append('genre', genre);
-    
+
     return this.fetchApi(`/beats/search?${params.toString()}`);
+  }
+
+  async getBeatPricings(beatId: number) {
+    return this.fetchApi(`/v1/pricing/${beatId}/pricings`);
   }
 }
 

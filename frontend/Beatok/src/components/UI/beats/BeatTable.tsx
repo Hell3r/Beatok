@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import type { Beat } from '../../../types/Beat';
 import { truncateText } from '../../../utils/truncateText';
 import { formatDuration } from '../../../utils/formatDuration';
+import type { Filters } from './Filter';
 
 interface BeatTableProps {
   beats: Beat[];
@@ -10,30 +11,42 @@ interface BeatTableProps {
   isPlaying?: boolean;
   onPlay?: (beat: Beat) => void;
   onDownload?: (beat: Beat) => void;
-  onEdit?: (beat: Beat) => void;
-  onDelete?: (beat: Beat) => void;
+  filters: Filters;
 }
 
-const BeatTable: React.FC<BeatTableProps> = ({ 
-  beats, 
-  loading = false, 
+const BeatTable: React.FC<BeatTableProps> = ({
+  beats,
+  loading = false,
   currentPlayingBeat = null,
   isPlaying = false,
-  onPlay, 
-  onDownload, 
+  onPlay,
+  onDownload,
+  filters,
 }) => {
   const [sortField, setSortField] = useState<keyof Beat>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [expandedBeatId, setExpandedBeatId] = useState<number | null>(null);
 
+  const isFree = (beat: Beat): boolean => {
+    if (!beat.pricings || beat.pricings.length === 0) return true;
+    const availablePrices = beat.pricings.filter(p => p.price !== null && p.is_available);
+    if (availablePrices.length === 0) return true;
+    return Math.min(...availablePrices.map(p => p.price!)) === 0;
+  };
+
   const getAuthorName = (beat: Beat): string => {
     if (beat.owner?.username) return beat.owner.username;
     if (beat.author?.username) return beat.author.username;
     if (beat.user?.username) return beat.user.username;
-
     if (beat.author_id) return `Пользователь ${beat.author_id}`;
-    
     return 'Неизвестно';
+  };
+
+  const getBeatMinPrice = (beat: Beat): number | null => {
+    if (!beat.pricings || beat.pricings.length === 0) return null;
+    const availablePrices = beat.pricings.filter(p => p.price !== null && p.is_available);
+    if (availablePrices.length === 0) return null;
+    return Math.min(...availablePrices.map(p => p.price!));
   };
 
   const formatFileSize = (bytes: number): string => {
@@ -51,22 +64,69 @@ const BeatTable: React.FC<BeatTableProps> = ({
       year: 'numeric'
     });
   };
+  
+  const filteredBeats = useMemo(() => {
+    return beats.filter((beat) => {
+      if (filters.name && !beat.name.toLowerCase().includes(filters.name.toLowerCase())) {
+        return false;
+      }
+      if (filters.author && !getAuthorName(beat).toLowerCase().includes(filters.author.toLowerCase())) {
+        return false;
+      }
+      if (filters.genre && !beat.genre.toLowerCase().includes(filters.genre.toLowerCase())) {
+        return false;
+      }
+      if (filters.bpm && !beat.tempo.toString().includes(filters.bpm)) {
+        return false;
+      }
+      if (filters.key && beat.key !== filters.key) {
+        return false;
+      }
 
-  const sortedBeats = [...beats].sort((a, b) => {
-    let aValue = a[sortField];
-    let bValue = b[sortField];
+      if (filters.freeOnly) {
+        const isBeatFree = isFree(beat);
+        if (!isBeatFree) return false;
+      }
 
-    if (sortField === 'created_at' || sortField === 'updated_at') {
-      aValue = new Date(aValue as string).getTime();
-      bValue = new Date(bValue as string).getTime();
-    }
+      if (!filters.freeOnly) {
+        const beatMinPrice = getBeatMinPrice(beat);
+        
+        if (filters.minPrice) {
+          const minPrice = parseFloat(filters.minPrice);
+          if (beatMinPrice === null || beatMinPrice < minPrice) {
+            return false;
+          }
+        }
+        
+        if (filters.maxPrice) {
+          const maxPrice = parseFloat(filters.maxPrice);
+          if (beatMinPrice === null || beatMinPrice > maxPrice) {
+            return false;
+          }
+        }
+      }
 
-    if ((aValue ?? Number.MIN_SAFE_INTEGER) < (bValue ?? Number.MIN_SAFE_INTEGER)) 
-        return sortDirection === 'asc' ? -1 : 1;
-    if ((aValue ?? Number.MIN_SAFE_INTEGER) > (bValue ?? Number.MIN_SAFE_INTEGER)) 
-        return sortDirection === 'asc' ? 1 : -1;
-    return 0;
-  });
+      return true;
+    });
+  }, [beats, filters]);
+
+  const sortedBeats = useMemo(() => {
+    return [...filteredBeats].sort((a, b) => {
+      let aValue = a[sortField];
+      let bValue = b[sortField];
+
+      if (sortField === 'created_at' || sortField === 'updated_at') {
+        aValue = new Date(aValue as string).getTime();
+        bValue = new Date(bValue as string).getTime();
+      }
+
+      if ((aValue ?? Number.MIN_SAFE_INTEGER) < (bValue ?? Number.MIN_SAFE_INTEGER))
+          return sortDirection === 'asc' ? -1 : 1;
+      if ((aValue ?? Number.MIN_SAFE_INTEGER) > (bValue ?? Number.MIN_SAFE_INTEGER))
+          return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [filteredBeats, sortField, sortDirection]);
 
   const handleSort = (field: keyof Beat) => {
     if (sortField === field) {
@@ -94,8 +154,8 @@ const BeatTable: React.FC<BeatTableProps> = ({
               <th className="p-4 text-left">Темп</th>
               <th className="p-4 text-left">Тональность</th>
               <th className="p-4 text-left">Длительность</th>
-              <th className="p-4 text-left">Размер</th>
-              <th className="p-4 text-left">Дата</th>
+              <th className="p-4 text-left hidden md:table-cell">Размер</th>
+              <th className="p-4 text-left hidden md:table-cell">Дата создания</th>
               <th className="p-4 text-left">Действия</th>
             </tr>
           </thead>
@@ -125,16 +185,16 @@ const BeatTable: React.FC<BeatTableProps> = ({
         <table className="w-full">
           <thead>
             <tr className="bg-neutral-900">
-              <th 
+              <th
                 className="p-4 text-left text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
                 onClick={() => handleSort('name')}
               >
                 <div className="flex items-center space-x-2">
-                  <span>Название</span>
+                  <span>Название бита</span>
                   <SortIcon field="name" />
                 </div>
               </th>
-              <th 
+              <th
                 className="p-4 text-left text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
                 onClick={() => handleSort('owner')}
               >
@@ -143,7 +203,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   <SortIcon field="owner" />
                 </div>
               </th>
-              <th 
+              <th
                 className="p-4 text-left text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
                 onClick={() => handleSort('genre')}
               >
@@ -152,7 +212,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   <SortIcon field="genre" />
                 </div>
               </th>
-              <th 
+              <th
                 className="p-4 text-left text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
                 onClick={() => handleSort('tempo')}
               >
@@ -161,26 +221,26 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   <SortIcon field="tempo" />
                 </div>
               </th>
-              <th 
+              <th
                 className="p-4 text-left text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
                 onClick={() => handleSort('key')}
               >
                 <div className="flex items-center space-x-2">
-                  <span>Тональность</span>
+                  <span>Тон</span>
                   <SortIcon field="key" />
                 </div>
               </th>
-              <th 
+              <th
                 className="p-4 text-left text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
                 onClick={() => handleSort('duration')}
               >
                 <div className="flex items-center space-x-2">
-                  <span>Длительность</span>
+                  <span>Длина</span>
                   <SortIcon field="duration" />
                 </div>
               </th>
-              <th 
-                className="p-4 text-left text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
+              <th
+                className="p-4 text-left text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors hidden md:table-cell"
                 onClick={() => handleSort('size')}
               >
                 <div className="flex items-center space-x-2">
@@ -188,8 +248,8 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   <SortIcon field="size" />
                 </div>
               </th>
-              <th 
-                className="p-4 text-left text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
+              <th
+                className="p-4 text-left text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors hidden md:table-cell"
                 onClick={() => handleSort('created_at')}
               >
                 <div className="flex items-center space-x-2">
@@ -202,13 +262,13 @@ const BeatTable: React.FC<BeatTableProps> = ({
           </thead>
           <tbody>
             {sortedBeats.map((beat) => (
-              <tr 
-                key={beat.id} 
+              <tr
+                key={beat.id}
                 className="border-b border-neutral-800 hover:bg-neutral-800 transition-all duration-300 group"
                 onDoubleClick={() => setExpandedBeatId(expandedBeatId === beat.id ? null : beat.id)}
               >
                 <td className="p-4">
-                  <div 
+                  <div
                     className="text-white font-medium group-hover:text-red-400 transition-colors cursor-help"
                     title={beat.name}
                   >
@@ -217,14 +277,13 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   <div className="flex items-center space-x-1 mt-1">
                     {beat.promotion_status !== 'standard' && (
                       <span className={`text-xs px-1 rounded ${
-                        beat.promotion_status === 'featured' 
-                          ? 'bg-red-600 text-white' 
+                        beat.promotion_status === 'featured'
+                          ? 'bg-red-600 text-white'
                           : 'bg-yellow-600 text-black'
                       }`}>
                         {beat.promotion_status}
                       </span>
                     )}
-                    {/* Индикатор качества звука */}
                     {beat.wav_path && (
                       <span className="text-xs bg-blue-600 text-white px-1 rounded" title="Доступен WAV (высокое качество)">
                         WAV
@@ -254,21 +313,21 @@ const BeatTable: React.FC<BeatTableProps> = ({
                 <td className="p-4 text-neutral-300">
                   {formatDuration(beat.duration)}
                 </td>
-                <td className="p-4 text-neutral-300 text-sm">
+                <td className="p-4 text-neutral-300 text-sm hidden md:table-cell">
                   {formatFileSize(beat.size)}
                 </td>
-                <td className="p-4 text-neutral-400 text-sm">
+                <td className="p-4 text-neutral-400 text-sm hidden md:table-cell">
                   {formatDate(beat.created_at)}
                 </td>
-                <td className="p-4">
+                <td className="p-4 relative">
                   <div className="flex space-x-2">
                     <button
                       onClick={() => onPlay?.(beat)}
                       className={`${
                         currentPlayingBeat?.id === beat.id && isPlaying
-                          ? 'bg-red-600 hover:bg-red-700' 
+                          ? 'bg-red-600 hover:bg-red-700'
                           : 'bg-red-600 hover:bg-red-700'
-                      } text-white p-2 rounded-full transition-colors cursor-pointer`}
+                      } text-white p-3 rounded-full transition-colors cursor-pointer`}
                       title={currentPlayingBeat?.id === beat.id && isPlaying ? "Пауза" : "Воспроизвести"}
                     >
                       <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -279,15 +338,28 @@ const BeatTable: React.FC<BeatTableProps> = ({
                         )}
                       </svg>
                     </button>
-                    <button
-                      onClick={() => onDownload?.(beat)}
-                      className="bg-neutral-700 hover:bg-neutral-600 text-white p-2 rounded-full transition-colors cursor-pointer"
-                      title="Скачать"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </button>
+                    {beat.pricings && beat.pricings.length > 0 ? (
+                      <button
+                        className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full transition-colors cursor-pointer"
+                        title="Купить"
+                      >
+                        от {Math.min(...beat.pricings.filter(p => p.price !== null && p.is_available).map(p => p.price!))} р.
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => onDownload?.(beat)}
+                        className="bg-neutral-700 hover:bg-neutral-600 text-white px-6 py-2 rounded-full transition-colors cursor-pointer relative"
+                        style={{ minWidth: '120px' }}
+                        title="Скачать"
+                      >
+                        Скачать
+                        {isFree(beat) && (
+                          <div className="absolute -top-1 -right-3 bg-red-600 text-white text-xs font-bold px-1 py-0.5 rounded">
+                            Бесплатно
+                          </div>
+                        )}
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
@@ -296,7 +368,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
         </table>
       </div>
 
-      {beats.length === 0 && !loading && (
+      {filteredBeats.length === 0 && !loading && (
         <div className="text-center py-12 text-neutral-500">
           <svg className="w-12 h-12 mx-auto mb-4 text-neutral-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />

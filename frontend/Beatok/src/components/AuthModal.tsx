@@ -292,7 +292,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   <button 
                     type="submit" 
                     disabled={loading}
-                    className="w-full bg-red-600 hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full bg-red-600 cursor-pointer hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Регистрация...' : 'Зарегистрироваться'}
                   </button>
@@ -308,7 +308,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                       setMode(mode === 'login' ? 'register' : 'login');
                       setError('');
                     }}
-                    className="text-red-400 hover:text-red-300 font-medium transition-colors duration-200"
+                    className="text-red-400  cursor-pointer hover:text-red-300 font-medium transition-colors duration-200"
                   >
                     {mode === 'login' ? 'Зарегистрироваться' : 'Войти'}
                   </button>

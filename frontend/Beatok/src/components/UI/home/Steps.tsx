@@ -3,7 +3,6 @@ import React from 'react';
 const Steps: React.FC = () => {
   return (
     <div>
-      {/* Блок пути битмейкера */}
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-white mb-4">🚀 Твой путь в мире битмейкинга</h2>
@@ -16,7 +15,7 @@ const Steps: React.FC = () => {
           <div className="bg-neutral-800 rounded-xl p-6 text-center border border-neutral-700 hover:border-red-500 transition-all duration-300">
             <div className="text-3xl mb-4">🎵</div>
             <h3 className="text-white font-semibold text-xl mb-3">Создавай</h3>
-            <p className="text-gray-300">Используй нашу библиотеку сэмплов и уроки для создания уникальных битов</p>
+            <p className="text-gray-300">Вдохновляйся работами артистов и битмейкеров и твори</p>
           </div>
 
           <div className="bg-neutral-800 rounded-xl p-6 text-center border border-neutral-700 hover:border-red-500 transition-all duration-300">
@@ -39,7 +38,6 @@ const Steps: React.FC = () => {
         </div>
       </div>
 
-      {/* Статистика сообщества */}
       <div className="bg-neutral-900 py-16">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
