@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import type { Beat } from '../../../types/Beat';
 import { truncateText } from '../../../utils/truncateText';
 import { formatDuration } from '../../../utils/formatDuration';
+import type { Filters } from './Filter';
 
 interface BeatListProps {
   beats: Beat[];
@@ -10,17 +11,25 @@ interface BeatListProps {
   isPlaying?: boolean;
   onPlay?: (beat: Beat) => void;
   onDownload?: (beat: Beat) => void;
+  filters: Filters;
 }
 
-const BeatList: React.FC<BeatListProps> = ({ 
-  beats, 
-  loading = false, 
+const BeatList: React.FC<BeatListProps> = ({
+  beats,
+  loading = false,
   currentPlayingBeat = null,
   isPlaying = false,
-  onPlay, 
-  onDownload 
+  onPlay,
+  onDownload,
+  filters,
 }) => {
 
+  const isFree = (beat: Beat): boolean => {
+    if (!beat.pricings || beat.pricings.length === 0) return true;
+    const availablePrices = beat.pricings.filter(p => p.price !== null && p.is_available);
+    if (availablePrices.length === 0) return true;
+    return Math.min(...availablePrices.map(p => p.price!)) === 0;
+  };
 
   const getAuthorName = (beat: Beat): string => {
     if (beat.owner?.username) return beat.owner.username;
@@ -28,13 +37,65 @@ const BeatList: React.FC<BeatListProps> = ({
     if (beat.user?.username) return beat.user.username;
 
     if (beat.author_id) return `Пользователь ${beat.author_id}`;
-    
+
     return 'Неизвестно';
   };
 
+  const getBeatMinPrice = (beat: Beat): number | null => {
+    if (!beat.pricings || beat.pricings.length === 0) return null;
+    const availablePrices = beat.pricings.filter(p => p.price !== null && p.is_available);
+    if (availablePrices.length === 0) return null;
+    return Math.min(...availablePrices.map(p => p.price!));
+  };
+
+  const filteredBeats = useMemo(() => {
+    return beats.filter((beat) => {
+      if (filters.name && !beat.name.toLowerCase().includes(filters.name.toLowerCase())) {
+        return false;
+      }
+      if (filters.author && !getAuthorName(beat).toLowerCase().includes(filters.author.toLowerCase())) {
+        return false;
+      }
+      if (filters.genre && !beat.genre.toLowerCase().includes(filters.genre.toLowerCase())) {
+        return false;
+      }
+      if (filters.bpm && !beat.tempo.toString().includes(filters.bpm)) {
+        return false;
+      }
+      if (filters.key && beat.key !== filters.key) {
+        return false;
+      }
+
+      if (filters.freeOnly) {
+        const isBeatFree = isFree(beat);
+        if (!isBeatFree) return false;
+      }
+      
+      if (!filters.freeOnly) {
+        const beatMinPrice = getBeatMinPrice(beat);
+        
+        if (filters.minPrice) {
+          const minPrice = parseFloat(filters.minPrice);
+          if (beatMinPrice === null || beatMinPrice < minPrice) {
+            return false;
+          }
+        }
+        
+        if (filters.maxPrice) {
+          const maxPrice = parseFloat(filters.maxPrice);
+          if (beatMinPrice === null || beatMinPrice > maxPrice) {
+            return false;
+          }
+        }
+      }
+
+      return true;
+    });
+  }, [beats, filters]);
+
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
         {[...Array(8)].map((_, i) => (
           <div key={i} className="bg-neutral-800 rounded-lg p-4 animate-pulse">
             <div className="h-4 bg-neutral-700 rounded mb-3"></div>
@@ -56,12 +117,17 @@ const BeatList: React.FC<BeatListProps> = ({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {beats.map(beat => (
-        <div key={beat.id} className="bg-neutral-800 rounded-lg p-4 hover:bg-neutral-700 transition-all duration-300 group border border-neutral-700">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+      {filteredBeats.map(beat => (
+        <div key={beat.id} className="bg-neutral-900 rounded-lg p-4 hover:bg-neutral-800 transition-all duration-300 group border border-neutral-700 relative">
+          {isFree(beat) && (
+            <div className="absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-bl-lg">
+              Бесплатно
+            </div>
+          )}
           <div className="flex justify-between items-start mb-3">
             <div className="flex-1">
-              <h3 
+              <h3
                 className="text-white font-semibold text-lg group-hover:text-red-400 transition-colors"
                 title={beat.name}
               >
@@ -71,18 +137,17 @@ const BeatList: React.FC<BeatListProps> = ({
                 by {getAuthorName(beat)}
               </p>
             </div>
-            
+
             <div className="flex flex-col items-end space-y-1">
               {beat.promotion_status !== 'standard' && (
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  beat.promotion_status === 'featured' 
-                    ? 'bg-red-600 text-white' 
+                  beat.promotion_status === 'featured'
+                    ? 'bg-red-600 text-white'
                     : 'bg-yellow-600 text-black'
                 }`}>
                   {beat.promotion_status}
                 </span>
               )}
-              {/* Индикатор качества звука */}
               {beat.wav_path && (
                 <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded-full" title="Доступен WAV (высокое качество)">
                   WAV
@@ -107,7 +172,7 @@ const BeatList: React.FC<BeatListProps> = ({
               <span className="text-neutral-500">Тональность:</span> {beat.key}
             </div>
             <div className="text-neutral-300">
-              <span className="text-neutral-500">Длительность:</span> {formatDuration(beat.duration)}
+              <span className="text-neutral-500">Длина:</span> {formatDuration(beat.duration)}
             </div>
           </div>
 
@@ -117,9 +182,9 @@ const BeatList: React.FC<BeatListProps> = ({
                 onClick={() => onPlay?.(beat)}
                 className={`${
                   currentPlayingBeat?.id === beat.id && isPlaying
-                    ? 'bg-red-600 hover:bg-red-700' 
+                    ? 'bg-red-600 hover:bg-red-700'
                     : 'bg-red-600 hover:bg-red-700'
-                } text-white p-2 rounded-full transition-colors cursor-pointer`}
+                } text-white p-3 rounded-full transition-colors cursor-pointer`}
                 title={currentPlayingBeat?.id === beat.id && isPlaying ? "Пауза" : "Воспроизвести"}
               >
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -130,16 +195,24 @@ const BeatList: React.FC<BeatListProps> = ({
                   )}
                 </svg>
               </button>
-              
-              <button
-                onClick={() => onDownload?.(beat)}
-                className="bg-neutral-700 hover:bg-neutral-600 text-white p-2 rounded-full transition-colors cursor-pointer"
-                title="Download"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </button>
+
+              {isFree(beat) ? (
+                <button
+                  onClick={() => onDownload?.(beat)}
+                  className="bg-neutral-700 hover:bg-neutral-600 text-white px-6 py-2 rounded-full transition-colors cursor-pointer"
+                  style={{ minWidth: '90px' }}
+                  title="Скачать"
+                >
+                  Скачать
+                </button>
+              ) : (
+                <button
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full transition-colors cursor-pointer"
+                  title="Купить"
+                >
+                  от {Math.min(...beat.pricings!.filter(p => p.price !== null && p.is_available).map(p => p.price!))} р.
+                </button>
+              )}
             </div>
 
             <div className="text-xs text-neutral-500">
