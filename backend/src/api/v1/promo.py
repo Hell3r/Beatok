@@ -9,11 +9,11 @@ from src.schemas.promo import ActivatePromoResponse, ActivatePromoRequest, Apply
 
 
 
-router = APIRouter(prefix="/v1/promo", tags=["Промокоды"])
+router = APIRouter(prefix="/v1/promo", tags=["Промокоды (Система недоработана)"])
 
 
 
-@router.post("/activate", response_model=ActivatePromoResponse, summary="Активировать промокод")
+@router.post("/activate", response_model=ActivatePromoResponse, summary="Активировать промокод (Система недоработана)")
 async def activate_promo_code(
     request: ActivatePromoRequest,
     promo_service: PromoServiceDep,
@@ -32,7 +32,7 @@ async def activate_promo_code(
     
     return result
 
-@router.post("/apply", response_model=ApplyPromoResponse, summary="Применить промокод")
+@router.post("/apply", response_model=ApplyPromoResponse, summary="Применить промокод (Система недоработана)")
 async def apply_promo_code(
     request: ApplyPromoRequest,
     promo_service: PromoServiceDep, 
@@ -51,7 +51,7 @@ async def apply_promo_code(
     
     return result
 
-@router.get("/active", response_model=List[UserPromoCodeResponse], summary="Получить активные промокоды пользователя")
+@router.get("/active", response_model=List[UserPromoCodeResponse], summary="Получить активные промокоды пользователя (Система недоработана)")
 async def get_active_promos(
     promo_service: PromoServiceDep,  
     current_user: CurrentUser        
@@ -59,7 +59,7 @@ async def get_active_promos(
 
     return await promo_service.get_user_active_promos(current_user.id)
 
-@router.get("/history", response_model=List[PromoCodeUsageResponse], summary="История использованных промокодов пользвоателя")
+@router.get("/history", response_model=List[PromoCodeUsageResponse], summary="История использованных промокодов пользвоателя (Система недоработана)")
 async def get_promo_history(
     promo_service: PromoServiceDep,  
     current_user: CurrentUser,       
@@ -75,7 +75,7 @@ async def get_promo_history(
 
 
 
-@router.post("/admin/create", response_model=PromoCodeResponse, summary="Создать промокод (админ)")
+@router.post("/admin/create", response_model=PromoCodeResponse, summary="Создать промокод (админ) (Система недоработана)")
 async def create_promo_code(
     promo_data: PromoCodeCreate,
     promo_service: PromoServiceDep,  
@@ -90,7 +90,7 @@ async def create_promo_code(
             detail=str(e)
         )
 
-@router.get("/admin/list", response_model=List[PromoCodeResponse], summary="Получить лист всех промокодов (админ)")
+@router.get("/admin/list", response_model=List[PromoCodeResponse], summary="Получить лист всех промокодов (админ) (Система недоработана)")
 async def get_promo_codes_list(
     session: SessionDep,
     admin_user: AdminUser,           

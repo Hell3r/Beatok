@@ -1,8 +1,15 @@
-from sqlalchemy import String, Integer, Float, DateTime, ForeignKey
+from sqlalchemy import String, Integer, Float, DateTime, ForeignKey, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.database.database import Base
 from datetime import datetime
 from typing import Optional, List
+import enum
+
+
+class StatusType(enum.Enum):
+    MODERATED = "moderated"
+    AVAILABLE = "available"
+    DENIED = "denied"
 
 
 class BeatModel(Base):
@@ -22,7 +29,7 @@ class BeatModel(Base):
     size: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     duration: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     promotion_status: Mapped[str] = mapped_column(String(20), default="standard")
-    status: Mapped[str] = mapped_column(String(20), default="active")
+    status: Mapped[StatusType] = mapped_column(Enum(StatusType), nullable = False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
