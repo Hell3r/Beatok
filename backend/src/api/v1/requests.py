@@ -6,10 +6,11 @@ from sqlalchemy.orm import selectinload
 from mutagen import File as MutagenFile
 from pathlib import Path
 from src.models.users import UsersModel
-from src.dependencies import SessionDep
+from src.database.deps import SessionDep
 from src.models.requests import RequestsModel
 from src.schemas.requests import RequestsSchema, RequestsResponse, RequestCreate
-from src.services.AuthService import get_current_user, get_current_user_id
+from src.services.AuthService import get_current_user
+from src.dependencies.auth import get_current_user_id
 from pydantic import BaseModel
 
 

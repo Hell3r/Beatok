@@ -3,7 +3,7 @@ from sqlalchemy import text, select
 from typing import List
 from sqlalchemy.orm import Session
 from src.database.database import engine, get_session, Base
-from src.dependencies import SessionDep
+from src.database.deps import SessionDep
 from src.schemas.tarrifs import TarrifCreate, TarrifResponse
 from src.models.tarrifs import TariffTemplateModel
 
