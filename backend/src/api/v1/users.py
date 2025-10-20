@@ -607,3 +607,91 @@ async def resend_verification(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Произошла ошибка при отправке письма. Пожалуйста, попробуйте позже."
         )
+
+
+@router.put(
+    "/{user_id}/activate", 
+    response_model=MessageResponse, 
+    tags=["Верификация Email и авторизация"], 
+    summary="Быстро активировать аккаунт пользователя"
+)
+async def quick_activate_user(
+    session: SessionDep,
+    user_id: int = Path(..., description="ID пользователя для активации")
+):
+    try:
+        user_stmt = select(UsersModel).where(UsersModel.id == user_id)
+        user_result = await session.execute(user_stmt)
+        user = user_result.scalar_one_or_none()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Пользователь не найден"
+            )
+
+        if user.is_active:
+            return MessageResponse(
+                message=f"Аккаунт пользователя {user.username} (ID: {user_id}) уже активирован"
+            )
+
+        user.is_active = True
+        await session.commit()
+
+        return MessageResponse(
+            message=f"Аккаунт пользователя {user.username} (ID: {user_id}) успешно активирован"
+        )
+
+    except HTTPException:
+        await session.rollback()
+        raise
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка при активации аккаунта: {str(e)}"
+        )
+    
+
+@router.put(
+    "/{user_id}/change_to_admin", 
+    response_model=MessageResponse, 
+    tags=["Пользователи"], 
+    summary="Повысить пользователя до админа"
+)
+async def change_user_to_admin(
+    session: SessionDep,
+    user_id: int = Path(..., description="ID пользователя для повышения роли")
+):
+    try:
+        user_stmt = select(UsersModel).where(UsersModel.id == user_id)
+        user_result = await session.execute(user_stmt)
+        user = user_result.scalar_one_or_none()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Пользователь не найден"
+            )
+
+        if user.role == "admin":
+            return MessageResponse(
+                message=f"Пользователь {user.username} (ID: {user_id}) уже администратор."
+            )
+
+        user.role = "admin"
+        await session.commit()
+
+        return MessageResponse(
+            message=f"Роль пользователя {user.username} (ID: {user_id}) успешно повышена."
+        )
+
+    except HTTPException:
+        await session.rollback()
+        raise
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка при повышении роли: {str(e)}"
+        )
