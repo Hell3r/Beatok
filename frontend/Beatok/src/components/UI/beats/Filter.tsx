@@ -55,7 +55,7 @@ const Filter: React.FC<FilterProps> = ({ filters, onFiltersChange }) => {
   );
 
   return (
-    <div className="bg-neutral-900 rounded-lg p-6 border border-neutral-700 mb-6">
+    <div className="bg-neutral-900 rounded-lg p-6 border border-neutral-700">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-white font-semibold text-lg">Фильтры</h3>
         {hasActiveFilters && (

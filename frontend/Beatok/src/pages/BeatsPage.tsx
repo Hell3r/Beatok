@@ -81,7 +81,7 @@ const BeatsPage: React.FC = () => {
   };
 
   const getAudioSource = (beat: Beat): string | null => {
-    const baseUrl = 'http://localhost:8000';
+    const baseUrl = 'http://localhost:8000'
     const beatFolder = `beats/${beat.id}`;
 
     const wavUrl = `${baseUrl}/audio_storage/${beatFolder}/audio.wav`;
@@ -106,7 +106,7 @@ const BeatsPage: React.FC = () => {
   const handlePlay = async (beat: Beat) => {
     console.log('Play clicked for beat:', beat);
 
-    const baseUrl = 'http://localhost:8000';
+    const baseUrl = 'http://localhost:8000'
     const beatFolder = `beats/${beat.id}`;
 
     const wavUrl = `${baseUrl}/audio_storage/${beatFolder}/audio.wav`;
@@ -227,9 +227,8 @@ const BeatsPage: React.FC = () => {
       <div className="container mx-auto px-4">
         <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Биты</h1>
             <p className="text-neutral-400">
-              Всего битов: <span className="text-white font-semibold">{beats.length}</span>
+              Всего битов: <span className="text-white font-semibold">{beats.filter(beat => beat.status === 'available').length}</span>
             </p>
             {currentBeat && (
               <p className="text-xs text-neutral-500 mt-1">
@@ -244,7 +243,7 @@ const BeatsPage: React.FC = () => {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6">
-          <div className="lg:w-80 flex-shrink-0">
+          <div className="lg:w-80 flex-shrink-0 sticky top-22 self-start">
             <Filter filters={filters} onFiltersChange={setFilters} />
           </div>
 

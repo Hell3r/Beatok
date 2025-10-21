@@ -143,16 +143,18 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
           <div className="flex items-center space-x-4">
             {currentUser && (
               <span className="text-neutral-300 text-sm">
-                <a href="/profile" className="flex items-center space-x-2">
+                <a href="/profile" className="flex items-center space-x-6">
+                  <div className='mx-0 bg-red-500 hover:bg-red-700 transition-colors font-bold px-3 py-2 rounded-full'>
+                      {currentUser.balance?.toFixed(2)} ₽
+                  </div>
                   <img
                     src={getAvatarUrl(currentUser.id, currentUser.avatar_path)}
                     alt="Аватар"
-                    className="w-8 h-8 rounded-full object-cover mx-2.5"
+                    className="w-8 h-8 rounded-full object-cover ml-4"
                     onError={(e) => {
-                      e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
+                      e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png'
                     }}
                   />
-                  {currentUser.username}
                 </a>
               </span>
             )}

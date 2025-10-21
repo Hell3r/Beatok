@@ -67,6 +67,9 @@ const BeatTable: React.FC<BeatTableProps> = ({
   
   const filteredBeats = useMemo(() => {
     return beats.filter((beat) => {
+      if (beat.status !== 'available') {
+        return false;
+      }
       if (filters.name && !beat.name.toLowerCase().includes(filters.name.toLowerCase())) {
         return false;
       }
@@ -148,29 +151,29 @@ const BeatTable: React.FC<BeatTableProps> = ({
         <table className="w-full">
           <thead>
             <tr className="bg-neutral-900">
-              <th className="p-4 text-left">Название</th>
-              <th className="p-4 text-left">Автор</th>
-              <th className="p-4 text-left">Жанр</th>
-              <th className="p-4 text-left">Темп</th>
-              <th className="p-4 text-left">Тональность</th>
-              <th className="p-4 text-left">Длительность</th>
-              <th className="p-4 text-left hidden md:table-cell">Размер</th>
-              <th className="p-4 text-left hidden md:table-cell">Дата создания</th>
-              <th className="p-4 text-left">Действия</th>
+              <th className="p-4 text-center">Название</th>
+              <th className="p-4 text-center">Автор</th>
+              <th className="p-4 text-center">Жанр</th>
+              <th className="p-4 text-center">Темп</th>
+              <th className="p-4 text-center">Тональность</th>
+              <th className="p-4 text-center">Длительность</th>
+              <th className="p-4 text-center hidden md:table-cell">Размер</th>
+              <th className="p-4 text-center hidden md:table-cell">Дата создания</th>
+              <th className="p-4 text-center">Действия</th>
             </tr>
           </thead>
           <tbody>
             {[...Array(5)].map((_, i) => (
               <tr key={i} className="border-b border-neutral-700 animate-pulse">
-                <td className="p-4"><div className="h-4 bg-neutral-700 rounded"></div></td>
-                <td className="p-4"><div className="h-4 bg-neutral-700 rounded w-3/4"></div></td>
-                <td className="p-4"><div className="h-4 bg-neutral-700 rounded w-1/2"></div></td>
-                <td className="p-4"><div className="h-4 bg-neutral-700 rounded w-1/4"></div></td>
-                <td className="p-4"><div className="h-4 bg-neutral-700 rounded w-1/4"></div></td>
-                <td className="p-4"><div className="h-4 bg-neutral-700 rounded w-1/4"></div></td>
-                <td className="p-4"><div className="h-4 bg-neutral-700 rounded w-1/3"></div></td>
-                <td className="p-4"><div className="h-4 bg-neutral-700 rounded w-2/3"></div></td>
-                <td className="p-4"><div className="h-8 bg-neutral-700 rounded w-full"></div></td>
+                <td className="p-4"><div className="h-4 bg-neutral-700 rounded mx-auto w-3/4"></div></td>
+                <td className="p-4"><div className="h-4 bg-neutral-700 rounded mx-auto w-2/3"></div></td>
+                <td className="p-4"><div className="h-4 bg-neutral-700 rounded mx-auto w-1/2"></div></td>
+                <td className="p-4"><div className="h-4 bg-neutral-700 rounded mx-auto w-1/4"></div></td>
+                <td className="p-4"><div className="h-4 bg-neutral-700 rounded mx-auto w-1/4"></div></td>
+                <td className="p-4"><div className="h-4 bg-neutral-700 rounded mx-auto w-1/4"></div></td>
+                <td className="p-4"><div className="h-4 bg-neutral-700 rounded mx-auto w-1/3"></div></td>
+                <td className="p-4"><div className="h-4 bg-neutral-700 rounded mx-auto w-2/3"></div></td>
+                <td className="p-4"><div className="h-8 bg-neutral-700 rounded mx-auto w-full"></div></td>
               </tr>
             ))}
           </tbody>
@@ -186,78 +189,78 @@ const BeatTable: React.FC<BeatTableProps> = ({
           <thead>
             <tr className="bg-neutral-900">
               <th
-                className="p-4 text-left text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
+                className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
                 onClick={() => handleSort('name')}
               >
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center justify-center space-x-2">
                   <span>Название бита</span>
                   <SortIcon field="name" />
                 </div>
               </th>
               <th
-                className="p-4 text-left text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
+                className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
                 onClick={() => handleSort('owner')}
               >
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center justify-center space-x-2">
                   <span>Автор</span>
                   <SortIcon field="owner" />
                 </div>
               </th>
               <th
-                className="p-4 text-left text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
+                className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
                 onClick={() => handleSort('genre')}
               >
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center justify-center space-x-2">
                   <span>Жанр</span>
                   <SortIcon field="genre" />
                 </div>
               </th>
               <th
-                className="p-4 text-left text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
+                className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
                 onClick={() => handleSort('tempo')}
               >
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center justify-center space-x-2">
                   <span>Темп</span>
                   <SortIcon field="tempo" />
                 </div>
               </th>
               <th
-                className="p-4 text-left text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
+                className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
                 onClick={() => handleSort('key')}
               >
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center justify-center space-x-2">
                   <span>Тон</span>
                   <SortIcon field="key" />
                 </div>
               </th>
               <th
-                className="p-4 text-left text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
+                className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
                 onClick={() => handleSort('duration')}
               >
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center justify-center space-x-2">
                   <span>Длина</span>
                   <SortIcon field="duration" />
                 </div>
               </th>
               <th
-                className="p-4 text-left text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors hidden md:table-cell"
+                className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors hidden md:table-cell"
                 onClick={() => handleSort('size')}
               >
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center justify-center space-x-2">
                   <span>Размер</span>
                   <SortIcon field="size" />
                 </div>
               </th>
               <th
-                className="p-4 text-left text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors hidden md:table-cell"
+                className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors hidden md:table-cell"
                 onClick={() => handleSort('created_at')}
               >
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center justify-center space-x-2">
                   <span>Дата создания</span>
                   <SortIcon field="created_at" />
                 </div>
               </th>
-              <th className="p-4 text-left text-white font-semibold">Действия</th>
+              <th className="p-4 text-center text-white font-semibold">Действия</th>
             </tr>
           </thead>
           <tbody>
@@ -267,14 +270,14 @@ const BeatTable: React.FC<BeatTableProps> = ({
                 className="border-b border-neutral-800 hover:bg-neutral-800 transition-all duration-300 group"
                 onDoubleClick={() => setExpandedBeatId(expandedBeatId === beat.id ? null : beat.id)}
               >
-                <td className="p-4">
+                <td className="p-4 text-center">
                   <div
-                    className="text-white font-medium group-hover:text-red-400 transition-colors cursor-help"
+                    className="text-white font-medium group-hover:text-red-400 transition-colors cursor-help mx-auto"
                     title={beat.name}
                   >
                     {truncateText(beat.name, 30)}
                   </div>
-                  <div className="flex items-center space-x-1 mt-1">
+                  <div className="flex items-center justify-center space-x-1 mt-1">
                     {beat.promotion_status !== 'standard' && (
                       <span className={`text-xs px-1 rounded ${
                         beat.promotion_status === 'featured'
@@ -296,31 +299,31 @@ const BeatTable: React.FC<BeatTableProps> = ({
                     )}
                   </div>
                 </td>
-                <td className="p-4 text-neutral-300">
+                <td className="p-4 text-neutral-300 text-center">
                   {truncateText(getAuthorName(beat), 15)}
                 </td>
-                <td className="p-4">
-                  <span className="bg-neutral-700 text-neutral-300 px-2 py-2 rounded text-sm">
+                <td className="p-4 text-center">
+                  <span className="bg-neutral-700 text-neutral-300 px-3 py-2 rounded text-sm min-w-[80px] inline-block">
                     {beat.genre}
                   </span>
                 </td>
-                <td className="p-4 text-neutral-300 font-mono">
+                <td className="p-4 text-neutral-300 font-mono text-center">
                   {beat.tempo} BPM
                 </td>
-                <td className="p-4 text-neutral-300 font-mono">
+                <td className="p-4 text-neutral-300 font-mono text-center">
                   {beat.key}
                 </td>
-                <td className="p-4 text-neutral-300">
+                <td className="p-4 text-neutral-300 text-center">
                   {formatDuration(beat.duration)}
                 </td>
-                <td className="p-4 text-neutral-300 text-sm hidden md:table-cell">
+                <td className="p-4 text-neutral-300 text-sm hidden md:table-cell text-center">
                   {formatFileSize(beat.size)}
                 </td>
-                <td className="p-4 text-neutral-400 text-sm hidden md:table-cell">
+                <td className="p-4 text-neutral-400 text-sm hidden md:table-cell text-center">
                   {formatDate(beat.created_at)}
                 </td>
-                <td className="p-4 relative">
-                  <div className="flex space-x-2">
+                <td className="p-4 text-center">
+                  <div className="flex justify-center space-x-2">
                     <button
                       onClick={() => onPlay?.(beat)}
                       className={`${
@@ -340,10 +343,11 @@ const BeatTable: React.FC<BeatTableProps> = ({
                     </button>
                     {beat.pricings && beat.pricings.length > 0 ? (
                       <button
-                        className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-full transition-colors cursor-pointer"
+                        className="bg-red-500 hover:bg-red-700 text-white font-bold px-6 py-2 rounded-full transition-colors cursor-pointer"
+                        style={{ minWidth: '120px' }}
                         title="Купить"
                       >
-                        от {Math.min(...beat.pricings.filter(p => p.price !== null && p.is_available).map(p => p.price!))} р.
+                        от {Math.min(...beat.pricings.filter(p => p.price !== null && p.is_available).map(p => p.price!))} ₽
                       </button>
                     ) : (
                       <button

@@ -18,6 +18,7 @@ export const authService = {
     return response.json();
   },
 
+
   async register(userData: unknown) {
     const response = await fetch('http://localhost:8000/v1/users/register', {
       method: 'POST',

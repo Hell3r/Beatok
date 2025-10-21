@@ -62,7 +62,7 @@ const TopBeatmakers: React.FC = () => {
                   alt={beatmaker.username}
                   className="w-12 h-12 rounded-full object-cover group-hover:scale-110 transition-transform duration-200"
                   onError={(e) => {
-                    e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
+                    e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png'
                   }}
                 />
                 <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-600 rounded-full flex items-center justify-center text-white text-xs font-bold">
