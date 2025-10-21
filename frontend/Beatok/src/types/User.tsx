@@ -4,5 +4,6 @@ export interface User {
   email: string;
   birthday?: string;
   avatar_path?: string;
+  balance?: number;
   is_active?: boolean;
 }

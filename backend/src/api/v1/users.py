@@ -76,7 +76,8 @@ async def login_user(
                 "avatar_path": user.avatar_path,
                 "birthday": user.birthday,
                 "role": user.role,
-                "is_active": user.is_active 
+                "balance": user.balance,
+                "is_active": user.is_active
             }
         }
         
@@ -159,6 +160,7 @@ async def get_user_profile(
             id=user.id,
             username=user.username,
             email=user.email,
+            balance=user.balance,
             role = user.role,
             birthday=user.birthday,
             is_active=user.is_active,
@@ -199,6 +201,7 @@ async def update_user_profile(
             id=user.id,
             username=user.username,
             email=user.email,
+            balance=user.balance,
             birthday=user.birthday,
             is_active=user.is_active,
             avatar_path=user.avatar_path or "static/default_avatar.png"

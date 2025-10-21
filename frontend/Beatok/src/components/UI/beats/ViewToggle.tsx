@@ -12,7 +12,7 @@ const ViewToggle: React.FC<ViewToggleProps> = ({ currentView, onViewChange }) =>
     <div className="flex bg-neutral-800 rounded-lg p-1 border border-neutral-700">
       <button
         onClick={() => onViewChange('table')}
-        className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-colors ${
+        className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-colors cursor-pointer ${
           currentView === 'table' 
             ? 'bg-red-600 text-white'  
             : 'text-neutral-400 hover:text-white'
@@ -25,7 +25,7 @@ const ViewToggle: React.FC<ViewToggleProps> = ({ currentView, onViewChange }) =>
       
       <button
         onClick={() => onViewChange('grid')}
-        className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-colors ${
+        className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-colors cursor-pointer ${
           currentView === 'grid' 
             ? 'bg-red-600 text-white' 
             : 'text-neutral-400 hover:text-white'

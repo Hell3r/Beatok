@@ -1,5 +1,9 @@
 {
   "devDependencies": {
     "@types/swagger-ui-react": "^5.18.0"
+  },
+  "dependencies": {
+    "@types/react": "^19.2.2",
+    "react": "^19.2.0"
   }
 }

@@ -50,6 +50,9 @@ const BeatList: React.FC<BeatListProps> = ({
 
   const filteredBeats = useMemo(() => {
     return beats.filter((beat) => {
+      if (beat.status !== 'available') {
+        return false;
+      }
       if (filters.name && !beat.name.toLowerCase().includes(filters.name.toLowerCase())) {
         return false;
       }
@@ -200,17 +203,18 @@ const BeatList: React.FC<BeatListProps> = ({
                 <button
                   onClick={() => onDownload?.(beat)}
                   className="bg-neutral-700 hover:bg-neutral-600 text-white px-6 py-2 rounded-full transition-colors cursor-pointer"
-                  style={{ minWidth: '90px' }}
+                  style={{ minWidth: '120px' }}
                   title="Скачать"
                 >
                   Скачать
                 </button>
               ) : (
                 <button
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-full transition-colors cursor-pointer"
+                  className="bg-red-500 hover:bg-red-700 text-white font-bold px-4 py-2 rounded-full transition-colors cursor-pointer"
+                  style={{ minWidth: '120px' }}
                   title="Купить"
                 >
-                  от {Math.min(...beat.pricings!.filter(p => p.price !== null && p.is_available).map(p => p.price!))} р.
+                  от {Math.min(...beat.pricings!.filter(p => p.price !== null && p.is_available).map(p => p.price!))} ₽
                 </button>
               )}
             </div>

@@ -5,6 +5,7 @@ export interface User {
   is_active: boolean;
   birthday: string;
   avatar_path?: string;
+  balance?: number;
   role: string;
 }
 

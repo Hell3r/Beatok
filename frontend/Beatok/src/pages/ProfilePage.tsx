@@ -9,6 +9,7 @@ interface UserProfile {
   username: string;
   email: string;
   birthday: Date | null;
+  balance: number;
   avatar_path?: string;
   is_active?: boolean;
 }
@@ -22,6 +23,7 @@ const ProfilePage: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [avatarUpdateKey, setAvatarUpdateKey] = useState(0);
 
   const [formData, setFormData] = useState({
     username: '',
@@ -198,8 +200,8 @@ const ProfilePage: React.FC = () => {
 
       const response = await userService.uploadAvatar(user.id, formData);
       updateUserInStorage({ avatar_path: response.avatar_path });
-      
-      alert('Аватар успешно обновлен!');
+      setAvatarUpdateKey(prev => prev + 1);
+
     } catch (error) {
         console.error('Failed to update user:', error);
       alert('Ошибка при загрузке аватарки');
@@ -274,18 +276,15 @@ const ProfilePage: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="bg-neutral-900 rounded-lg p-6 border border-neutral-700 h-full">
                   <div className="flex flex-col items-center mb-6">
-                    <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                    <div className="relative group select-none">
                       <img
-                        src={getAvatarUrl(user.id, user.avatar_path)}
+                        src={`${getAvatarUrl(user.id, user.avatar_path)}?key=${avatarUpdateKey}`}
                         alt="Аватар"
                         className="w-32 h-32 rounded-full object-cover border-4 border-neutral-700 cursor-pointer"
                         onError={(e) => {
                           e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
                         }}
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                        <span className="text-white text-sm text-center px-2">Сменить аватар</span>
-                      </div>
                     </div>
 
                     <input
@@ -312,7 +311,11 @@ const ProfilePage: React.FC = () => {
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="text-neutral-400">ID:</span>
-                      <span className="text-white font-mono">#{user.id}</span>
+                      <span className="text-white font-bold">#{user.id}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-neutral-400">Баланс:</span>
+                      <span className="text-white font-bold">{user.balance.toFixed(2)} ₽</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-neutral-400">Статус:</span>
