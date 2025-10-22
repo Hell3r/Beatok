@@ -7,8 +7,7 @@ from src.models.beat_bricing import BeatPricingModel
 from src.models.beats import BeatModel
 from src.models.tarrifs import TariffTemplateModel
 from src.models.email_verification import EmailVerificationModel
-from src.models.promo import PromoCodeModel, PromoCodeUsageModel
-from src.models.purchase import PurchaseModel, PurchaseItemModel
+from src.models.promo import PromoCodeModel, UserPromoCodeModel
 from src.models.requests import RequestsModel
 from src.services.EmailService import email_service
 
