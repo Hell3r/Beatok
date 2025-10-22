@@ -30,6 +30,7 @@ class BeatModel(Base):
     duration: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
     promotion_status: Mapped[str] = mapped_column(String(20), default="standard")
     status: Mapped[StatusType] = mapped_column(Enum(StatusType), nullable = False, default = StatusType.MODERATED)
+    rejection_reason: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

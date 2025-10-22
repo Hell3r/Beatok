@@ -37,8 +37,12 @@ class BeatService {
     }
   }
 
-  async getBeats(skip: number = 0, limit: number = 100): Promise<Beat[]> {
-    const response = await this.fetchApi(`/beats?skip=${skip}&limit=${limit}`);
+  async getBeats(skip: number = 0, limit: number = 100, authorId?: number): Promise<Beat[]> {
+    const params = new URLSearchParams({ skip: skip.toString(), limit: limit.toString() });
+    if (authorId !== undefined) {
+      params.append('author_id', authorId.toString());
+    }
+    const response = await this.fetchApi(`/beats?${params.toString()}`);
     return response;
   }
 
@@ -55,6 +59,10 @@ class BeatService {
 
   async getBeatPricings(beatId: number) {
     return this.fetchApi(`/v1/pricing/${beatId}/pricings`);
+  }
+
+  async getUserBeats(userId: number): Promise<Beat[]> {
+    return this.getBeats(0, 100, userId);
   }
 }
 

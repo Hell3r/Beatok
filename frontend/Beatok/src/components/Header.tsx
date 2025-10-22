@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AuthModal from './AuthModal';
+import AddBeatModal from './AddBeatModal';
 import type { User } from '../types/auth';
 import { getAvatarUrl } from '../utils/getAvatarURL';
 
@@ -16,6 +17,7 @@ interface NavItem {
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [addBeatModalOpen, setAddBeatModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
 
@@ -60,7 +62,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
     { href: '/', label: 'ГЛАВНАЯ' },
     { href: '/beats', label: 'БИТЫ' },
     { href: '/chart', label: 'ЧАРТ' },
-    { href: '/freebeats', label: 'БЕСПЛАТНЫЕ' },
+    { href: '/beats?free=true', label: 'БЕСПЛАТНЫЕ' },
     { href: '/forum', label: 'ФОРУМ' },
     { href: '/beatmakers', label: 'БИТМЕЙКЕРЫ' },
     { href: '/about', label: 'О НАС' },
@@ -106,13 +108,13 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
 
   return (
     <>
-      <header className="bg-neutral-950 border-b border-neutral-700 sticky top-0 z-50 backdrop-blur-sm bg-opacity-90">
+      <header className="bg-neutral-950 border-b select-none border-neutral-700 sticky top-0 z-50 backdrop-blur-sm bg-opacity-90">
         <nav className="container mx-auto px-4 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-10">
             <a
               href="/"
               onClick={handleLogoClick}
-              className="text-2xl font-bold hover:scale-105 transition-transform duration-200 focus:outline-none"
+              className="text-2xl font-bold hover:scale-105 transition-all duration-200 focus:outline-none"
               aria-label="BEATOK - переход на главную"
             >
               <span className="text-white">BEAT</span>
@@ -143,19 +145,28 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
           <div className="flex items-center space-x-4">
             {currentUser && (
               <span className="text-neutral-300 text-sm">
-                <a href="/profile" className="flex items-center space-x-6">
-                  <div className='mx-0 bg-red-500 hover:bg-red-700 transition-colors font-bold px-3 py-2 rounded-full'>
-                      {currentUser.balance?.toFixed(2)} ₽
-                  </div>
-                  <img
-                    src={getAvatarUrl(currentUser.id, currentUser.avatar_path)}
-                    alt="Аватар"
-                    className="w-8 h-8 rounded-full object-cover ml-4"
-                    onError={(e) => {
-                      e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png'
-                    }}
-                  />
-                </a>
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={() => setAddBeatModalOpen(true)}
+                    className="bg-white hover:bg-gray-300 cursor-pointer text-red-600 px-3 py-2 rounded-md font-medium transition-colors duration-200 focus:outline-none"
+                    aria-label="Добавить бит"
+                  >
+                    Добавить бит
+                  </button>
+                  <a href="/profile" className="flex items-center space-x-6">
+                    <div className='mx-0 bg-red-500 hover:bg-red-700 transition-colors font-bold px-3 py-2 rounded-full'>
+                        {currentUser.balance?.toFixed(2)} ₽
+                    </div>
+                    <img
+                      src={getAvatarUrl(currentUser.id, currentUser.avatar_path)}
+                      alt="Аватар"
+                      className="w-10 h-10 rounded-full object-cover ml-4"
+                      onError={(e) => {
+                        e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png'
+                      }}
+                    />
+                  </a>
+                </div>
               </span>
             )}
             <button
@@ -182,9 +193,14 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
         </div>
       </header>
 
-      <AuthModal 
-        isOpen={authModalOpen} 
-        onClose={() => setAuthModalOpen(false)} 
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+      />
+
+      <AddBeatModal
+        isOpen={addBeatModalOpen}
+        onClose={() => setAddBeatModalOpen(false)}
       />
     </>
   );
