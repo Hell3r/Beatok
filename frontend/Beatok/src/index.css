@@ -26,6 +26,15 @@ body {
     animation: glitch 1s infinite;
 }
 
+.smooth-expand {
+  transition: all 0.3s ease-in-out;
+  overflow: hidden;
+}
+
+.grid-transition {
+  transition: grid-template-columns 0.3s ease-in-out;
+}
+
 @keyframes glitch {
     0%, 100% {
         transform: translate(0);

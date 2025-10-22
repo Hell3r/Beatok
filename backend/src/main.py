@@ -40,9 +40,9 @@ origins = [
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=True, 
-    allow_methods=["*"],     
-    allow_headers=["*"],   
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 def ensure_default_avatar_exists():
@@ -57,7 +57,8 @@ async def startup_event():
     global telegram_bot_started
     if TelegramConfig.is_configured() and not telegram_bot_started:
         await support_bot.send_welcome_messages()
-        asyncio.create_task(run_telegram_bot())
+        # Start bot in background task with error handling
+        asyncio.create_task(run_telegram_bot_with_error_handling())
         telegram_bot_started = True
         print("Telegram bot started")
     else:
@@ -65,6 +66,15 @@ async def startup_event():
 
     task_manager.start_cleanup_tasks()
     logger.info(" Application started with background tasks")
+
+async def run_telegram_bot_with_error_handling():
+    try:
+        await run_telegram_bot()
+    except Exception as e:
+        print(f"Telegram bot failed: {e}")
+        # Reset flag to allow restart if needed
+        global telegram_bot_started
+        telegram_bot_started = False
 
 app.mount("/audio_storage", StaticFiles(directory="audio_storage"), name="audio_storage")
 app.mount("/static", StaticFiles(directory="static"), name="static")

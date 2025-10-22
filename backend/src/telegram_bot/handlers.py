@@ -1,5 +1,5 @@
 from telegram import Update
-from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
+from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 from .config import TelegramConfig
 from .messages import MessageTemplates
 from ..database.deps import SessionDep
@@ -11,6 +11,7 @@ from contextlib import asynccontextmanager
 class TelegramBotHandlers:
     def __init__(self, session_factory):
         self.session_factory = session_factory
+        self.pending_rejections = {}  # user_id -> beat_id
 
     @asynccontextmanager
     async def get_session(self):
@@ -83,21 +84,62 @@ class TelegramBotHandlers:
                     await query.edit_message_text("Бит уже был обработан.")
                     return
 
-                beat.status = StatusType.DENIED
-                await session.commit()
+                # Устанавливаем состояние ожидания причины отказа
+                user_id = query.from_user.id
+                self.pending_rejections[user_id] = beat_id
 
                 await query.edit_message_text(
-                    f"❌ Бит '{beat.name}' (ID: {beat.id}) отклонен."
+                    f"❌ Вы отклонили бит '{beat.name}' (ID: {beat.id}).\n\n"
+                    f"📝 Пожалуйста, введите причину отклонения в следующем сообщении."
                 )
             except Exception as e:
                 await session.rollback()
                 await query.edit_message_text(f"Ошибка при отклонении бита: {str(e)}")
                 print(f"Error rejecting beat {beat_id}: {e}")
 
+    async def handle_text_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        user_id = update.effective_user.id
+        message_text = update.message.text
+
+        if user_id in self.pending_rejections:
+            beat_id = self.pending_rejections[user_id]
+            del self.pending_rejections[user_id]
+
+            async with self.get_session() as session:
+                try:
+                    result = await session.execute(
+                        select(BeatModel).where(BeatModel.id == beat_id)
+                    )
+                    beat = result.scalar_one_or_none()
+
+                    if not beat:
+                        await update.message.reply_text("Бит не найден.")
+                        return
+
+                    if beat.status != StatusType.MODERATED:
+                        await update.message.reply_text("Бит уже был обработан.")
+                        return
+
+                    beat.status = StatusType.DENIED
+                    beat.rejection_reason = message_text
+                    await session.commit()
+
+                    await update.message.reply_text(
+                        f"✅ Бит '{beat.name}' (ID: {beat.id}) отклонен.\n"
+                        f"📝 Причина: {message_text}"
+                    )
+                except Exception as e:
+                    await session.rollback()
+                    await update.message.reply_text(f"Ошибка при сохранении причины отклонения: {str(e)}")
+                    print(f"Error saving rejection reason for beat {beat_id}: {e}")
+        else:
+            await update.message.reply_text("Я не ожидаю причину отклонения. Используйте кнопки для модерации битов.")
+
 def setup_bot_handlers(application: Application, session_factory):
     handlers = TelegramBotHandlers(session_factory)
 
     application.add_handler(CommandHandler("start", handlers.start_command))
     application.add_handler(CallbackQueryHandler(handlers.handle_callback))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.handle_text_message))
 
     return application
