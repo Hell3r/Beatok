@@ -12,6 +12,8 @@ interface BeatTableProps {
   onPlay?: (beat: Beat) => void;
   onDownload?: (beat: Beat) => void;
   filters: Filters;
+  isProfileView?: boolean;
+  onShowRejectionReason?: (beat: Beat) => void;
 }
 
 const BeatTable: React.FC<BeatTableProps> = ({
@@ -22,6 +24,8 @@ const BeatTable: React.FC<BeatTableProps> = ({
   onPlay,
   onDownload,
   filters,
+  isProfileView = false,
+  onShowRejectionReason,
 }) => {
   const [sortField, setSortField] = useState<keyof Beat>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -67,13 +71,13 @@ const BeatTable: React.FC<BeatTableProps> = ({
   
   const filteredBeats = useMemo(() => {
     return beats.filter((beat) => {
-      if (beat.status !== 'available') {
+      if (!isProfileView && beat.status !== 'available') {
         return false;
       }
       if (filters.name && !beat.name.toLowerCase().includes(filters.name.toLowerCase())) {
         return false;
       }
-      if (filters.author && !getAuthorName(beat).toLowerCase().includes(filters.author.toLowerCase())) {
+      if (!isProfileView && filters.author && !getAuthorName(beat).toLowerCase().includes(filters.author.toLowerCase())) {
         return false;
       }
       if (filters.genre && !beat.genre.toLowerCase().includes(filters.genre.toLowerCase())) {
@@ -86,12 +90,12 @@ const BeatTable: React.FC<BeatTableProps> = ({
         return false;
       }
 
-      if (filters.freeOnly) {
+      if (!isProfileView && filters.freeOnly) {
         const isBeatFree = isFree(beat);
         if (!isBeatFree) return false;
       }
 
-      if (!filters.freeOnly) {
+      if (!isProfileView && !filters.freeOnly) {
         const beatMinPrice = getBeatMinPrice(beat);
         
         if (filters.minPrice) {
@@ -111,7 +115,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
 
       return true;
     });
-  }, [beats, filters]);
+  }, [beats, filters, isProfileView]);
 
   const sortedBeats = useMemo(() => {
     return [...filteredBeats].sort((a, b) => {
@@ -197,15 +201,17 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   <SortIcon field="name" />
                 </div>
               </th>
-              <th
-                className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
-                onClick={() => handleSort('owner')}
-              >
-                <div className="flex items-center justify-center space-x-2">
-                  <span>Автор</span>
-                  <SortIcon field="owner" />
-                </div>
-              </th>
+              {!isProfileView && (
+                <th
+                  className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
+                  onClick={() => handleSort('owner')}
+                >
+                  <div className="flex items-center justify-center space-x-2">
+                    <span>Автор</span>
+                    <SortIcon field="owner" />
+                  </div>
+                </th>
+              )}
               <th
                 className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
                 onClick={() => handleSort('genre')}
@@ -260,7 +266,11 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   <SortIcon field="created_at" />
                 </div>
               </th>
-              <th className="p-4 text-center text-white font-semibold">Действия</th>
+              {isProfileView ? (
+                <th className="p-4 text-center text-white font-semibold">Статус</th>
+              ) : (
+                <th className="p-4 text-center text-white font-semibold">Действия</th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -299,9 +309,11 @@ const BeatTable: React.FC<BeatTableProps> = ({
                     )}
                   </div>
                 </td>
-                <td className="p-4 text-neutral-300 text-center">
-                  {truncateText(getAuthorName(beat), 15)}
-                </td>
+                {!isProfileView && (
+                  <td className="p-4 text-neutral-300 text-center">
+                    {truncateText(getAuthorName(beat), 15)}
+                  </td>
+                )}
                 <td className="p-4 text-center">
                   <span className="bg-neutral-700 text-neutral-300 px-3 py-2 rounded text-sm min-w-[80px] inline-block">
                     {beat.genre}
@@ -322,50 +334,70 @@ const BeatTable: React.FC<BeatTableProps> = ({
                 <td className="p-4 text-neutral-400 text-sm hidden md:table-cell text-center">
                   {formatDate(beat.created_at)}
                 </td>
-                <td className="p-4 text-center">
-                  <div className="flex justify-center space-x-2">
-                    <button
-                      onClick={() => onPlay?.(beat)}
-                      className={`${
-                        currentPlayingBeat?.id === beat.id && isPlaying
-                          ? 'bg-red-600 hover:bg-red-700'
-                          : 'bg-red-600 hover:bg-red-700'
-                      } text-white p-3 rounded-full transition-colors cursor-pointer`}
-                      title={currentPlayingBeat?.id === beat.id && isPlaying ? "Пауза" : "Воспроизвести"}
+                {isProfileView ? (
+                  <td className="p-4 text-center">
+                    <span
+                      className={`px-3 py-2 rounded text-sm font-medium cursor-pointer ${
+                        beat.status === 'available'
+                          ? 'bg-green-600 text-white'
+                          : beat.status === 'moderated'
+                          ? 'bg-neutral-950 text-white'
+                          : beat.status === 'denied'
+                          ? 'bg-red-600 text-white hover:bg-red-700'
+                          : 'bg-red-600 text-white'
+                      }`}
+                      onClick={() => beat.status === 'denied' && beat.rejection_reason && onShowRejectionReason?.(beat)}
+                      title={beat.status === 'denied' && beat.rejection_reason ? 'Нажмите для просмотра причины' : ''}
                     >
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                        {currentPlayingBeat?.id === beat.id && isPlaying ? (
-                          <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
-                        ) : (
-                          <path d="M8 5v14l11-7z"/>
-                        )}
-                      </svg>
-                    </button>
-                    {beat.pricings && beat.pricings.length > 0 ? (
+                      {beat.status === 'available' ? 'Доступен' : beat.status === 'moderated' ? 'На модерации' : 'Отклонён'}
+                    </span>
+                  </td>
+                ) : (
+                  <td className="p-4 text-center">
+                    <div className="flex justify-center space-x-2">
                       <button
-                        className="bg-red-500 hover:bg-red-700 text-white font-bold px-6 py-2 rounded-full transition-colors cursor-pointer"
-                        style={{ minWidth: '120px' }}
-                        title="Купить"
+                        onClick={() => onPlay?.(beat)}
+                        className={`${
+                          currentPlayingBeat?.id === beat.id && isPlaying
+                            ? 'bg-red-600 hover:bg-red-700'
+                            : 'bg-red-600 hover:bg-red-700'
+                        } text-white p-3 rounded-full transition-colors cursor-pointer`}
+                        title={currentPlayingBeat?.id === beat.id && isPlaying ? "Пауза" : "Воспроизвести"}
                       >
-                        от {Math.min(...beat.pricings.filter(p => p.price !== null && p.is_available).map(p => p.price!))} ₽
+                        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                          {currentPlayingBeat?.id === beat.id && isPlaying ? (
+                            <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
+                          ) : (
+                            <path d="M8 5v14l11-7z"/>
+                          )}
+                        </svg>
                       </button>
-                    ) : (
-                      <button
-                        onClick={() => onDownload?.(beat)}
-                        className="bg-neutral-700 hover:bg-neutral-600 text-white px-6 py-2 rounded-full transition-colors cursor-pointer relative"
-                        style={{ minWidth: '120px' }}
-                        title="Скачать"
-                      >
-                        Скачать
-                        {isFree(beat) && (
-                          <div className="absolute -top-1 -right-3 bg-red-600 text-white text-xs font-bold px-1 py-0.5 rounded">
-                            Бесплатно
-                          </div>
-                        )}
-                      </button>
-                    )}
-                  </div>
-                </td>
+                      {beat.pricings && beat.pricings.length > 0 ? (
+                        <button
+                          className="bg-red-500 hover:bg-red-700 text-white font-bold px-6 py-2 rounded-full transition-colors cursor-pointer"
+                          style={{ minWidth: '120px' }}
+                          title="Купить"
+                        >
+                          от {Math.min(...beat.pricings.filter(p => p.price !== null && p.is_available).map(p => p.price!))} ₽
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => onDownload?.(beat)}
+                          className="bg-neutral-700 hover:bg-neutral-600 text-white px-6 py-2 rounded-full transition-colors cursor-pointer relative"
+                          style={{ minWidth: '120px' }}
+                          title="Скачать"
+                        >
+                          Скачать
+                          {isFree(beat) && (
+                            <div className="absolute -top-1 -right-3 bg-red-600 text-white text-xs font-bold px-1 py-0.5 rounded">
+                              Бесплатно
+                            </div>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

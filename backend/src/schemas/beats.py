@@ -29,6 +29,7 @@ class BeatResponse(BaseModel):
     key: str
     promotion_status: str
     status: str
+    rejection_reason: Optional[str] = None
     size: int
     duration: float
     created_at: datetime
@@ -49,6 +50,7 @@ class BeatResponse(BaseModel):
                 "key": obj.key,
                 "promotion_status": obj.promotion_status,
                 "status": obj.status,
+                "rejection_reason": obj.rejection_reason,
                 "size": obj.size,
                 "duration": obj.duration,
                 "created_at": obj.created_at,

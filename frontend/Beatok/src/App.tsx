@@ -9,7 +9,6 @@ import AboutPage from './pages/AboutPage';
 import Error404 from './pages/errors/404';
 import BeatmakersPage from './pages/BeatmakersPage';
 import ChartPage from './pages/ChartPage';
-import FreeBeatsPage from './pages/FreeBeatsPage';
 import ForumPage from './pages/ForumPage';
 import AdminSwaggerPage from './pages/AdminSwaggerPage';
 import SupportPage from './pages/SupportPage';
@@ -38,7 +37,6 @@ const App: React.FC = () => {
             <Route path="/about" element={<PageLayout><AboutPage /></PageLayout>} />
             <Route path="/beatmakers" element={<PageLayout><BeatmakersPage /></PageLayout>} />
             <Route path="/chart" element={<PageLayout><ChartPage /></PageLayout>} />
-            <Route path="/freebeats" element={<PageLayout><FreeBeatsPage /></PageLayout>} />
             <Route path="/forum" element={<PageLayout><ForumPage /></PageLayout>} />
             <Route path="/support" element={<PageLayout><SupportPage /></PageLayout>} />
 

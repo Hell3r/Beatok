@@ -64,6 +64,11 @@ const BeatsPage: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const freeParam = urlParams.get('free');
+    if (freeParam === 'true') {
+      setFilters(prev => ({ ...prev, freeOnly: true }));
+    }
     loadBeats();
   }, []);
 

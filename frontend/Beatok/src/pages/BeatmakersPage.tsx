@@ -48,7 +48,7 @@ const BeatmakersPage: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-neutral-900 p-6">
+        <div className="min-h-screen select-none p-6">
             <div className="max-w-7xl mx-auto">
                 <h1 className="text-3xl font-bold text-white mb-8">Битмейкеры</h1>
 
