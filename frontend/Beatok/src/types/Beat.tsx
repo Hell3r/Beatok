@@ -11,6 +11,7 @@ export interface Beat {
   duration: number;
   promotion_status: string;
   status: string;
+  rejection_reason?: string;
   created_at: string;
   updated_at: string;
   owner?: {

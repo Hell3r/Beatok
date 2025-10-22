@@ -152,16 +152,21 @@ async def create_beat(
 async def get_beats(
     session: SessionDep,
     skip: int = 0,
-    limit: int = 100
+    limit: int = 100,
+    author_id: Optional[int] = None
 ):
     from sqlalchemy.orm import selectinload
 
+    query = select(BeatModel).options(
+        selectinload(BeatModel.owner),
+        selectinload(BeatModel.pricings).joinedload(BeatPricingModel.tariff)
+    )
+
+    if author_id is not None:
+        query = query.where(BeatModel.author_id == author_id)
+
     result = await session.execute(
-        select(BeatModel)
-        .options(
-            selectinload(BeatModel.owner),
-            selectinload(BeatModel.pricings).joinedload(BeatPricingModel.tariff)
-        )
+        query
         .offset(skip)
         .limit(limit)
         .order_by(BeatModel.created_at.desc())
