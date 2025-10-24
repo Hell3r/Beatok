@@ -21,6 +21,10 @@ const musicalKeys = [
   'Cm', 'C#m', 'Dm', 'D#m', 'Em', 'Fm', 'F#m', 'Gm', 'G#m', 'Am', 'A#m', 'Bm'
 ];
 
+const genres = [
+  'Hip-Hop', 'Trap', 'Trap-Metal', 'Lo-fi', 'R&B', 'Pop', 'Rock', 'Metal', 'Electronic', 'Dubstep', 'Other'
+];
+
 const Filter: React.FC<FilterProps> = ({ filters, onFiltersChange }) => {
   const handleFilterChange = (key: keyof Filters, value: string | boolean) => {
     onFiltersChange({
@@ -120,13 +124,18 @@ const Filter: React.FC<FilterProps> = ({ filters, onFiltersChange }) => {
 
         <div>
           <label className="block text-neutral-400 text-sm mb-2">Жанр</label>
-          <input
-            type="text"
+          <select
             value={filters.genre}
             onChange={(e) => handleFilterChange('genre', e.target.value)}
-            placeholder="Поиск по жанру..."
-            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2 text-white placeholder-neutral-500 focus:outline-none focus:border-red-500 transition-colors"
-          />
+            className="w-full bg-neutral-800 border cursor-pointer border-neutral-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-red-500 transition-colors"
+          >
+            <option className='cursor-pointer' value="">Все жанры</option>
+            {genres.map((genre) => (
+              <option className='cursor-pointer' key={genre} value={genre}>
+                {genre}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="space-y-3 space-x-4">

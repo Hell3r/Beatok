@@ -17,14 +17,17 @@ export interface Beat {
   owner?: {
     id: number;
     username: string;
+    avatar_path?: string;
   };
   author?: {
     id: number;
     username: string;
+    avatar_path?: string;
   };
   user?: {
     id: number;
     username: string;
+    avatar_path?: string;
   };
   pricings?: BeatPricing[];
 }

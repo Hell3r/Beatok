@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AuthModal from './AuthModal';
 import AddBeatModal from './AddBeatModal';
+import AvatarDropdown from './AvatarDropdown';
 import type { User } from '../types/auth';
 import { getAvatarUrl } from '../utils/getAvatarURL';
 
@@ -18,7 +19,9 @@ interface NavItem {
 const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [addBeatModalOpen, setAddBeatModalOpen] = useState(false);
+  const [avatarDropdownOpen, setAvatarDropdownOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [avatarKey, setAvatarKey] = useState(0);
 
 
   useEffect(() => {
@@ -40,6 +43,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
       if (userInfo) {
         try {
           setCurrentUser(JSON.parse(userInfo));
+          setAvatarKey(prev => prev + 1);
         } catch (error) {
           console.error('Error parsing updated user info:', error);
         }
@@ -109,7 +113,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
   return (
     <>
       <header className="bg-neutral-950 border-b select-none border-neutral-700 sticky top-0 z-50 backdrop-blur-sm bg-opacity-90">
-        <nav className="container mx-auto px-4 py-4 flex justify-between items-center">
+        <nav className="container mx-auto px-4 py-2 flex justify-between items-center">
           <div className="flex items-center space-x-10">
             <a
               href="/"
@@ -143,9 +147,9 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
           </div>
 
           <div className="flex items-center space-x-4">
-            {currentUser && (
+            {currentUser ? (
               <span className="text-neutral-300 text-sm">
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
                   <button
                     onClick={() => setAddBeatModalOpen(true)}
                     className="bg-white hover:bg-gray-300 cursor-pointer text-red-600 px-3 py-2 rounded-md font-medium transition-colors duration-200 focus:outline-none"
@@ -153,29 +157,38 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
                   >
                     Добавить бит
                   </button>
-                  <a href="/profile" className="flex items-center space-x-6">
-                    <div className='mx-0 bg-red-500 hover:bg-red-700 transition-colors font-bold px-3 py-2 rounded-full'>
+                  <div className='bg-red-500 hover:bg-red-700 transition-colors font-bold px-3 py-2 rounded-full cursor-pointer' onClick={() => window.location.href = '/profile?tab=balance'}>
                         {currentUser.balance?.toFixed(2)} ₽
                     </div>
-                    <img
-                      src={getAvatarUrl(currentUser.id, currentUser.avatar_path)}
-                      alt="Аватар"
-                      className="w-10 h-10 rounded-full object-cover ml-4"
-                      onError={(e) => {
-                        e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png'
-                      }}
+                  <div className="relative flex items-center">
+                    <div className="flex items-center border border-neutral-600 rounded-full px-3 py-1 cursor-pointer hover:bg-neutral-800 transition-colors" onClick={() => setAvatarDropdownOpen(!avatarDropdownOpen)}>
+                      <img
+                        src={`${getAvatarUrl(currentUser.id, currentUser.avatar_path)}?t=${avatarKey}`}
+                        alt="Аватар"
+                        className="w-8 h-8 rounded-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png'
+                        }}
+                      />
+                      <span className="text-white ml-2 font-medium text-sm">{currentUser.username}</span>
+                    </div>
+                    <AvatarDropdown
+                      isOpen={avatarDropdownOpen}
+                      onClose={() => setAvatarDropdownOpen(false)}
                     />
-                  </a>
+                  </div>
                 </div>
               </span>
+            ) : (
+              <button
+                onClick={() => setAuthModalOpen(true)}
+                className="bg-red-600 hover:bg-red-700 cursor-pointer text-white px-4 py-2 rounded-md font-medium transition-colors duration-200 focus:outline-none"
+                aria-label="Войти в аккаунт"
+              >
+                Войти
+              </button>
             )}
-            <button
-              onClick={handleAuthClick}
-              className="bg-red-600 hover:bg-red-700 cursor-pointer text-white px-4 py-2 rounded-md font-medium transition-colors duration-200 focus:outline-none"
-              aria-label={currentUser ? 'Выйти из аккаунта' : 'Войти в аккаунт'}
-            >
-              {currentUser ? 'Выйти' : 'Войти'}
-            </button>
+
           </div>
         </nav>
         <div className="md:hidden bg-gray-800 border-t border-gray-700">

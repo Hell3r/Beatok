@@ -66,6 +66,10 @@ async def login_user(
 
         access_token = create_access_token(data={"sub": user.email})
 
+        from datetime import datetime
+        user.last_login = datetime.utcnow()
+        await session.commit()
+
         return {
             "access_token": access_token,
             "token_type": "bearer",
@@ -77,7 +81,10 @@ async def login_user(
                 "birthday": user.birthday,
                 "role": user.role,
                 "balance": user.balance,
-                "is_active": user.is_active
+                "is_active": user.is_active,
+                "date_of_reg": user.date_of_reg,
+                "last_login": user.last_login,
+                "description": user.description
             }
         }
         
@@ -161,10 +168,12 @@ async def get_user_profile(
             username=user.username,
             email=user.email,
             balance=user.balance,
-            role = user.role,
-            birthday=user.birthday,
             is_active=user.is_active,
-            avatar_path=user.avatar_path or "static/default_avatar.png"
+            avatar_path=user.avatar_path,
+            date_of_reg=user.date_of_reg,
+            last_login=user.last_login,
+            description=user.description,
+            birthday=user.birthday
         )
 
     except Exception as e:
@@ -180,6 +189,8 @@ async def update_user_profile(
     session: SessionDep
 ):
     try:
+        print(f"Updating user {user_id} with data: {user_data}")
+        
         user_stmt = select(UsersModel).where(UsersModel.id == user_id)
         user_result = await session.execute(user_stmt)
         user = user_result.scalar_one_or_none()
@@ -191,7 +202,8 @@ async def update_user_profile(
             )
 
         for key, value in user_data.items():
-            if key in ['username', 'email', 'birthday']:
+            if key in ['username', 'email', 'birthday', 'description']:
+                print(f"Setting {key} = {value}")
                 setattr(user, key, value)
 
         await session.commit()
@@ -204,11 +216,13 @@ async def update_user_profile(
             balance=user.balance,
             birthday=user.birthday,
             is_active=user.is_active,
-            avatar_path=user.avatar_path or "static/default_avatar.png"
+            avatar_path=user.avatar_path,
+            description=user.description
         )
 
     except Exception as e:
         await session.rollback()
+        print(f"Error updating user: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Ошибка при обновлении профиля: {str(e)}"
@@ -519,15 +533,13 @@ async def verify_email(
         
         
         user.is_active = True
-        
+
         verification.is_used = True
-        
+
         await session.commit()
-        
-        access_token = create_access_token(data={"sub": user.email})
-        
+
         logger.info(f"Email verified for user: {user.email}")
-        
+
         return templates.TemplateResponse(
             "success_verify.html",
             {"request": {}}
@@ -657,9 +669,9 @@ async def quick_activate_user(
     
 
 @router.put(
-    "/{user_id}/change_to_admin", 
-    response_model=MessageResponse, 
-    tags=["Пользователи"], 
+    "/{user_id}/change_to_admin",
+    response_model=MessageResponse,
+    tags=["Пользователи"],
     summary="Повысить пользователя до админа"
 )
 async def change_user_to_admin(
@@ -697,4 +709,45 @@ async def change_user_to_admin(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Ошибка при повышении роли: {str(e)}"
+        )
+
+
+@router.get("/{user_id}/stats", tags=["Пользователи"], summary="Получить статистику пользователя")
+async def get_user_stats(
+    user_id: int,
+    session: SessionDep
+):
+    try:
+        from src.models.beats import BeatModel, StatusType
+
+        beats_count = await session.execute(
+            select(func.count(BeatModel.id)).where(BeatModel.author_id == user_id)
+        )
+        beats_count = beats_count.scalar()
+
+        sold_count = await session.execute(
+            select(func.count(BeatModel.id)).where(
+                BeatModel.author_id == user_id,
+                BeatModel.status == StatusType.SOLD
+            )
+        )
+        sold_count = sold_count.scalar()
+
+        user_stmt = select(UsersModel.download_count).where(UsersModel.id == user_id)
+        download_count_result = await session.execute(user_stmt)
+        download_count = download_count_result.scalar()
+
+        if download_count is None:
+            download_count = 0
+
+        return {
+            "beats_count": beats_count,
+            "sold_count": sold_count,
+            "download_count": download_count
+        }
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка при получении статистики: {str(e)}"
         )

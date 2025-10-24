@@ -29,7 +29,7 @@ const PopularBeats: React.FC = () => {
       <div className="bg-neutral-800 rounded-lg p-6 w-full">
         <h2 className="text-2xl font-bold text-white mb-4">Популярные биты</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
+          {[...Array(5)].map((_, i) => (
             <div key={i} className="bg-neutral-800 rounded-lg p-4 animate-pulse">
               <div className="h-4 bg-neutral-700 rounded mb-2"></div>
               <div className="h-3 bg-neutral-700 rounded mb-1"></div>
@@ -42,9 +42,15 @@ const PopularBeats: React.FC = () => {
   }
 
   return (
-    <div className="bg-neutral-900 p-6 w-full">
-      <h2 className="text-2xl font-bold text-white mb-4">Популярные биты</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="bg-neutral-925 p-6 w-full">
+      <div className="container mx-auto px-4 py-4">
+        <div className="text-center justify-center">
+          <div className="text-3xl font-bold text-white mb-2">Популярные биты</div>
+          <div className="text-gray-300">Выбери подходящий бит для своего трека среди самых качественных.</div>
+          <hr className='text-red-500 my-4 mx-auto border max-w-200'/>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         {beats.map((beat) => (
           <div
             key={beat.id}

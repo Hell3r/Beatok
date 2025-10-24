@@ -13,6 +13,20 @@ export interface ApiError {
   status: number;
 }
 
+export interface Tariff {
+  id: number;
+  name: string;
+  display_name: string;
+  description: string;
+}
+
+export interface BeatPricingCreate {
+  beat_id: number;
+  tariff_name: string;
+  price: number;
+  is_available: boolean;
+}
+
 class BeatService {
   private async fetchApi(endpoint: string, options: RequestInit = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
@@ -63,6 +77,17 @@ class BeatService {
 
   async getUserBeats(userId: number): Promise<Beat[]> {
     return this.getBeats(0, 100, userId);
+  }
+
+  async getTariffs(): Promise<Tariff[]> {
+    return this.fetchApi('/v1/tarrifs');
+  }
+
+  async createBeatPricing(pricing: BeatPricingCreate) {
+    return this.fetchApi('/v1/pricing/', {
+      method: 'POST',
+      body: JSON.stringify(pricing),
+    });
   }
 }
 

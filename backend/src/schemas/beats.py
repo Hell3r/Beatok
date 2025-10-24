@@ -7,6 +7,7 @@ from src.schemas.beat_pricing import BeatPricingResponseSchema
 class UserInfo(BaseModel):
     id : int
     username: str
+    avatar_path: Optional[str] = None
 
 
 
@@ -57,7 +58,8 @@ class BeatResponse(BaseModel):
                 "updated_at": obj.updated_at,
                 "author": {
                     "id": obj.owner.id,
-                    "username": obj.owner.username
+                    "username": obj.owner.username,
+                    "avatar_path": obj.owner.avatar_path
                 },
                 "pricings": [
                     {

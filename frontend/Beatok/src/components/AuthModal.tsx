@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { User, AuthResponse } from '../types/auth';
 
 interface AuthModalProps {
@@ -6,12 +6,14 @@ interface AuthModalProps {
   onClose: () => void;
 }
 
-type AuthMode = 'login' | 'register';
+type AuthMode = 'login' | 'register' | 'emailVerification';
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const [mode, setMode] = useState<AuthMode>('login');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [verificationEmail, setVerificationEmail] = useState('');
+  const [resendCooldown, setResendCooldown] = useState(0);
 
   const [loginData, setLoginData] = useState({
     email: '',
@@ -26,7 +28,45 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     birthday: ''
   });
 
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
+
+  const handleResend = async () => {
+    if (resendCooldown > 0) return;
+
+    try {
+      const response = await fetch('http://localhost:8000/v1/users/resend-verification', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: verificationEmail })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Ошибка при отправке письма');
+      }
+
+      setResendCooldown(60);
+      setError('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Произошла ошибка при отправке письма');
+    }
+  };
+
   if (!isOpen) return null;
+
+  const maskEmail = (email: string) => {
+    const [localPart, domain] = email.split('@');
+    if (localPart.length <= 2) return email;
+    const maskedLocal = localPart[0] + '*'.repeat(localPart.length - 2) + localPart[localPart.length - 1];
+    return `${maskedLocal}@${domain}`;
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,11 +88,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
       if (!response.ok) {
         const errorData = await response.json();
+        if (errorData.detail === 'Аккаунт не активирован. Подтвердите ваш email.') {
+          setVerificationEmail(loginData.email);
+          setMode('emailVerification');
+          setLoading(false);
+          return;
+        }
         throw new Error(errorData.detail || 'Ошибка авторизации');
       }
 
       const data: AuthResponse = await response.json();
-      
+
       localStorage.setItem('access_token', data.access_token);
 
       const userData: User = {
@@ -62,14 +108,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         is_active: true,
         birthday: data.user_info?.birthday || '',
         role: data.user_info?.role || 'common',
-        avatar_path: data.user_info?.avatar_path || 'static/default_avatar.png'
+        avatar_path: data.user_info?.avatar_path || 'static/default_avatar.png',
+        balance: data.user_info?.balance || 0
       };
-      
+
       localStorage.setItem('user_info', JSON.stringify(userData));
-      
+
       onClose();
-      window.location.reload();
-      
+      window.dispatchEvent(new Event('userUpdated'));
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Произошла ошибка при авторизации');
     } finally {
@@ -120,29 +167,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       }
 
       const data: AuthResponse = await response.json();
-      
-      localStorage.setItem('access_token', data.access_token);
 
-      if (data.user) {
-        localStorage.setItem('user_info', JSON.stringify(data.user));
-      } else {
-        const userData: User = {
-          id: 0,
-          username: registerData.username,
-          email: registerData.email,
-          is_active: true,
-          birthday: registerData.birthday,
-          role: 'common'
-        };
-        localStorage.setItem('user_info', JSON.stringify(userData));
-      }
-      
-      onClose();
-      window.location.reload();
-      
+      setVerificationEmail(registerData.email);
+      setMode('emailVerification');
+      setLoading(false);
+
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Произошла ошибка при регистрации');
-    } finally {
       setLoading(false);
     }
   };
@@ -161,15 +192,15 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           <div className="relative bg-neutral-900 rounded-lg w-full max-w-md border border-neutral-800 shadow-2xl">
             <button 
               onClick={onClose}
-              className="absolute -top-3 -right-3 cursor-pointer bg-neutral-800 hover:bg-neutral-700 text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200 z-10 shadow-lg"
+              className="absolute select-none -top-3 -right-3 cursor-pointer bg-neutral-800 hover:bg-neutral-700 text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200 z-10 shadow-lg"
               aria-label="Закрыть"
             >
               ×
             </button>
 
-            <div className="p-6 border-b border-neutral-800">
+            <div className="p-6 border-b border-neutral-800 text-center select-none">
               <h2 className="text-xl font-bold text-white">
-                {mode === 'login' ? 'Вход' : 'Регистрация'}
+                {mode === 'login' ? 'Вход' : mode === 'register' ? 'Регистрация' : 'Подтверждение Email'}
               </h2>
             </div>
 
@@ -195,7 +226,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                       required
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-neutral-300 mb-2">
                       Пароль
@@ -209,16 +240,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                       required
                     />
                   </div>
-                  
-                  <button 
-                    type="submit" 
+
+                  <button
+                    type="submit"
                     disabled={loading}
                     className="w-full cursor-pointer bg-red-600 hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Вход...' : 'Войти'}
                   </button>
                 </form>
-              ) : (
+              ) : mode === 'register' ? (
                 <form onSubmit={handleRegister} className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-neutral-300 mb-2">
@@ -233,7 +264,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                       required
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-neutral-300 mb-2">
                       Email
@@ -247,7 +278,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                       required
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-neutral-300 mb-2">
                       Дата рождения
@@ -260,7 +291,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                       required
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-neutral-300 mb-2">
                       Пароль
@@ -274,7 +305,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                       required
                     />
                   </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium text-neutral-300 mb-2">
                       Подтвердите пароль
@@ -288,15 +319,53 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                       required
                     />
                   </div>
-                  
-                  <button 
-                    type="submit" 
+
+                  <button
+                    type="submit"
                     disabled={loading}
                     className="w-full bg-red-600 cursor-pointer hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {loading ? 'Регистрация...' : 'Зарегистрироваться'}
                   </button>
                 </form>
+              ) : (
+                <div className="space-y-4">
+                  <div className="text-center select-none">
+                    <div className="mb-4">
+                      <svg className="mx-auto h-12 w-12 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-lg font-medium text-white mb-2">Регистрация успешна!</h3>
+                    <p className="text-neutral-300 mb-4">
+                      Мы отправили письмо с подтверждением на адрес <strong>{maskEmail(verificationEmail)}</strong>
+                    </p>
+                    <p className="text-sm text-neutral-400 mb-6">
+                      Пожалуйста, проверьте свою почту и перейдите по ссылке в письме для активации аккаунта.
+                    </p>
+                    <div className="space-y-3">
+                      <button
+                        onClick={() => {
+                          setMode('login');
+                          setVerificationEmail('');
+                          setError('');
+                          setResendCooldown(0);
+                        }}
+                        className="w-full select-none cursor-pointer bg-red-600 hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200"
+                      >
+                        Понятно
+                      </button>
+
+                      <button
+                        onClick={handleResend}
+                        disabled={resendCooldown > 0}
+                        className="w-full select-none cursor-pointer bg-neutral-700 hover:bg-neutral-600 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {resendCooldown > 0 ? `Отправить ещё раз (${resendCooldown} сек)` : 'Отправить ещё раз'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               )}
 
               <div className="mt-6 text-center">

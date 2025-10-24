@@ -6,4 +6,5 @@ export interface User {
   avatar_path?: string;
   balance?: number;
   is_active?: boolean;
+  description?: string;
 }

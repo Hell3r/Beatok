@@ -47,15 +47,18 @@ const HomePage: React.FC = () => {
             <div className="bg-neutral-925 select-none">
                 <div className="container mx-auto max-w-full space-y-8">
                     <PopularBeats />
-                    <TopBeatmakers />
                 </div>
-
-
 
                 <div className="w-full select-none">
                     <InverseHorizontalLine />
                     <CallToAction />
                     <HorizontalLine />
+                </div>
+                <div className="container mx-auto max-w-full space-y-8"> 
+                    <TopBeatmakers />
+                </div>
+                    <HorizontalLine />
+                <div className="w-full select-none">
                     <Steps/>
                 </div>
 

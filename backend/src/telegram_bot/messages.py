@@ -22,8 +22,21 @@ class MessageTemplates:
         """.strip()
 
     @staticmethod
-    def beat_moderation_request(beat_data: dict, user_info: dict) -> str:
+    def beat_moderation_request(beat_data: dict, user_info: dict, pricings=None) -> str:
         timestamp = datetime.now().strftime("%d.%m.%Y %H:%M")
+
+        pricing_text = ""
+        if pricings:
+            pricing_lines = []
+            for pricing in pricings:
+                tariff_name = pricing.tariff.display_name if pricing.tariff else pricing.tariff_name
+                pricing_lines.append(f"   • {tariff_name}: {pricing.price} ₽")
+            if pricing_lines:
+                pricing_text = "\n💰 <b>Цены:</b>\n" + "\n".join(pricing_lines)
+            else:
+                pricing_text = "\n💰 <b>Цены:</b> Бесплатно"
+        else:
+            pricing_text = "\n💰 <b>Цены:</b> Не указаны"
 
         return f"""
 🎵 <b>Новая заявка на модерацию бита</b>
@@ -39,7 +52,7 @@ class MessageTemplates:
    • Жанр: {beat_data.get('genre', 'N/A')}
    • Темп: {beat_data.get('tempo', 'N/A')} BPM
    • Тональность: {beat_data.get('key', 'N/A')}
-   • Статус продвижения: {beat_data.get('promotion_status', 'N/A')}
+   • Статус продвижения: {beat_data.get('promotion_status', 'N/A')}{pricing_text}
 
 ⏰ <b>Время создания:</b> {timestamp}
 

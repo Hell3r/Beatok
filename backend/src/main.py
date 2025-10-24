@@ -76,8 +76,8 @@ async def run_telegram_bot_with_error_handling():
         global telegram_bot_started
         telegram_bot_started = False
 
-app.mount("/audio_storage", StaticFiles(directory="audio_storage"), name="audio_storage")
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/audio_storage", StaticFiles(directory="audio_storage", html=False), name="audio_storage")
+app.mount("/static", StaticFiles(directory="static", html=False), name="static")
 
 @app.get("/docs", include_in_schema=False)
 def custom_swagger():

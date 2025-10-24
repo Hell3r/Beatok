@@ -9,6 +9,7 @@ const Steps: React.FC = () => {
           <p className="text-gray-300 text-lg max-w-2xl mx-auto">
             От новичка до профессионального продюсера - мы поможем на каждом этапе
           </p>
+          <hr className='text-red-500 my-4 mx-auto border max-w-200'/>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">

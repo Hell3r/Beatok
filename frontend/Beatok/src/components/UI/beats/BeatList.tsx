@@ -1,7 +1,9 @@
 import React, { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Beat } from '../../../types/Beat';
 import { truncateText } from '../../../utils/truncateText';
 import { formatDuration } from '../../../utils/formatDuration';
+import { getAvatarUrl } from '../../../utils/getAvatarURL';
 import type { Filters } from './Filter';
 
 interface BeatListProps {
@@ -11,6 +13,7 @@ interface BeatListProps {
   isPlaying?: boolean;
   onPlay?: (beat: Beat) => void;
   onDownload?: (beat: Beat) => void;
+  isProfileView?: boolean;
   filters: Filters;
 }
 
@@ -23,6 +26,7 @@ const BeatList: React.FC<BeatListProps> = ({
   onDownload,
   filters,
 }) => {
+  const navigate = useNavigate();
 
   const isFree = (beat: Beat): boolean => {
     if (!beat.pricings || beat.pricings.length === 0) return true;
@@ -39,6 +43,31 @@ const BeatList: React.FC<BeatListProps> = ({
     if (beat.author_id) return `Пользователь ${beat.author_id}`;
 
     return 'Неизвестно';
+  };
+
+  const getAuthorId = (beat: Beat): number | null => {
+    if (beat.owner?.id) return beat.owner.id;
+    if (beat.author?.id) return beat.author.id;
+    if (beat.user?.id) return beat.user.id;
+    return beat.author_id || null;
+  };
+
+  const getAuthorAvatar = (beat: Beat): string => {
+    const authorId = getAuthorId(beat);
+    if (!authorId) return 'http://localhost:8000/static/default_avatar.png';
+
+    if (beat.owner?.avatar_path) return getAvatarUrl(authorId, beat.owner.avatar_path);
+    if (beat.author?.avatar_path) return getAvatarUrl(authorId, beat.author.avatar_path);
+    if (beat.user?.avatar_path) return getAvatarUrl(authorId, beat.user.avatar_path);
+
+    return 'http://localhost:8000/static/default_avatar.png';
+  };
+
+  const handleAuthorClick = (beat: Beat) => {
+    const authorId = getAuthorId(beat);
+    if (authorId) {
+      navigate(`/profile/${authorId}`);
+    }
   };
 
   const getBeatMinPrice = (beat: Beat): number | null => {
@@ -136,9 +165,23 @@ const BeatList: React.FC<BeatListProps> = ({
               >
                 {truncateText(beat.name, 30)}
               </h3>
-              <p className="text-neutral-400 text-sm truncate">
-                by {getAuthorName(beat)}
-              </p>
+              <div className="flex items-center space-x-2">
+                <img
+                  src={getAuthorAvatar(beat)}
+                  alt="Аватар автора"
+                  className="w-5 h-5 rounded-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
+                  }}
+                />
+                <p
+                  className="text-neutral-400 text-sm truncate cursor-pointer hover:text-red-400 transition-colors"
+                  onClick={() => handleAuthorClick(beat)}
+                  title={`Перейти в профиль ${getAuthorName(beat)}`}
+                >
+                  by {getAuthorName(beat)}
+                </p>
+              </div>
             </div>
 
             <div className="flex flex-col items-end space-y-1">
