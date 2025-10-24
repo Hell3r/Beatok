@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { userService } from '../services/userService';
 import { beatService } from '../services/beatService';
 import { getAvatarUrl } from '../utils/getAvatarURL';
 import AuthModal from '../components/AuthModal';
 import BeatTable from '../components/UI/beats/BeatTable';
 import BeatList from '../components/UI/beats/BeatList';
-import ViewToggle from '../components/UI/beats/ViewToggle';
 import RejectionReasonModal from '../components/RejectionReasonModal';
 import type { User } from '../types/auth';
 import type { Beat } from '../types/Beat';
+import Filter from '../components/UI/beats/Filter';
 
 interface UserProfile {
   id: number;
@@ -18,24 +19,37 @@ interface UserProfile {
   balance: number;
   avatar_path?: string;
   is_active?: boolean;
+  date_of_reg: Date | null;
+  last_login: Date | null;
+  download_count?: number;
+  description?: string;
 }
 
 const ProfilePage: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const isOwnProfile = !id;
+  const profileUserId = id ? parseInt(id) : null;
+
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [avatarUpdateKey, setAvatarUpdateKey] = useState(0);
-  const [activeTab, setActiveTab] = useState<'info' | 'balance' | 'mybeats' | 'stats'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'balance' | 'mybeats' | 'stats'>(
+    isOwnProfile ? 'info' : 'mybeats'
+  );
 
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     birthday: '',
+    description: '',
   });
 
   const [myBeats, setMyBeats] = useState<Beat[]>([]);
@@ -53,6 +67,12 @@ const ProfilePage: React.FC = () => {
   });
   const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
   const [selectedBeat, setSelectedBeat] = useState<Beat | null>(null);
+  const [userStats, setUserStats] = useState<{
+    beats_count: number;
+    sold_count: number;
+    download_count: number;
+  } | null>(null);
+  const [statsLoading, setStatsLoading] = useState(false);
 
   const getCurrentUser = (): UserProfile | null => {
     try {
@@ -67,9 +87,19 @@ const ProfilePage: React.FC = () => {
       if (parsed.birthday) {
         parsed.birthday = new Date(parsed.birthday);
       }
+      if (parsed.date_of_reg) {
+        parsed.date_of_reg = new Date(parsed.date_of_reg);
+      } else {
+        parsed.date_of_reg = null;
+      }
+      if (parsed.last_login) {
+        parsed.last_login = new Date(parsed.last_login);
+      } else {
+        parsed.last_login = null;
+      }
       return parsed;
     } catch (error) {
-        console.error('Failed to update user:', error);
+      console.error('Failed to get current user:', error);
       return null;
     }
   };
@@ -84,56 +114,42 @@ const ProfilePage: React.FC = () => {
         window.dispatchEvent(new Event('userUpdated'));
       }
     } catch (error) {
-        console.error('Failed to update user:', error);
+      console.error('Failed to update user:', error);
     }
   };
 
-  const handleAuthClick = () => {
-    console.log('handleAuthClick called, currentUser:', currentUser);
-    console.log('authModalOpen before:', authModalOpen);
-    if (currentUser) {
-      handleLogout();
+  const handlePlayBeat = (beat: Beat) => {
+    console.log('Play beat:', beat);
+  };
+
+  const handleDownloadBeat = (beat: Beat) => {
+    console.log('Download beat:', beat);
+  };
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && ['info', 'balance', 'mybeats', 'stats'].includes(tab)) {
+      setActiveTab(tab as 'info' | 'balance' | 'mybeats' | 'stats');
     } else {
-      console.log('Opening auth modal');
-      setAuthModalOpen(true);
-      console.log('authModalOpen after:', authModalOpen);
+      setActiveTab(isOwnProfile ? 'info' : 'mybeats');
     }
-  };
-
-  const handleLogout = async () => {
-    try {
-      const token = localStorage.getItem('access_token');
-      
-      if (token) {
-        await fetch('http://localhost:8000/api/v1/users/logout', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user_info');
-      setCurrentUser(null);
-      window.location.reload();
-    }
-
-  };
+  }, [searchParams, isOwnProfile]);
 
   useEffect(() => {
     loadUserProfile();
-  }, []);
-
-
+  }, [id]);
 
   useEffect(() => {
-    if (activeTab === 'mybeats' && user && myBeats.length === 0) {
+    if (user && myBeats.length === 0) {
       loadMyBeats();
     }
-  }, [activeTab, user]);
+  }, [user]);
+
+  useEffect(() => {
+    if (user && activeTab === 'stats' && !userStats) {
+      loadUserStats();
+    }
+  }, [user, activeTab, userStats]);
 
   const loadMyBeats = async () => {
     if (!user) return;
@@ -141,7 +157,8 @@ const ProfilePage: React.FC = () => {
     try {
       setBeatsLoading(true);
       const beats = await beatService.getUserBeats(user.id);
-      setMyBeats(beats);
+      const filteredBeats = isOwnProfile ? beats : beats.filter(beat => beat.status === 'available');
+      setMyBeats(filteredBeats);
     } catch (error) {
       console.error('Failed to load user beats:', error);
     } finally {
@@ -149,32 +166,77 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  const loadUserStats = async () => {
+    if (!user) return;
+
+    try {
+      setStatsLoading(true);
+      const stats = await userService.getUserStats(user.id);
+      setUserStats(stats);
+    } catch (error) {
+      console.error('Failed to load user stats:', error);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
   const loadUserProfile = async () => {
     try {
       setLoading(true);
-      const currentUser = getCurrentUser();
       
-      if (currentUser) {
-        setUser(currentUser);
-        setFormData({
-          username: currentUser.username,
-          email: currentUser.email,
-          birthday: currentUser.birthday ? currentUser.birthday.toISOString().split('T')[0] : '',
-        });
+      if (isOwnProfile) {
+        const currentUser = getCurrentUser();
+        if (currentUser) {
+          setUser(currentUser);
+          setFormData({
+            username: currentUser.username,
+            email: currentUser.email,
+            birthday: currentUser.birthday ? currentUser.birthday.toISOString().split('T')[0] : '',
+            description: currentUser.description || '',
+          });
 
-        try {
-          const userProfile = await userService.getUserProfile(currentUser.id);
-          if (userProfile.birthday && typeof userProfile.birthday === 'string') {
-            userProfile.birthday = new Date(userProfile.birthday);
+          try {
+            const userProfile = await userService.getUserProfile(currentUser.id);
+            if (userProfile.birthday && typeof userProfile.birthday === 'string') {
+              userProfile.birthday = new Date(userProfile.birthday);
+            }
+            if (userProfile.date_of_reg && typeof userProfile.date_of_reg === 'string') {
+              userProfile.date_of_reg = new Date(userProfile.date_of_reg);
+            }
+            userProfile.date_of_reg = userProfile.date_of_reg ?? null;
+            if (userProfile.last_login && typeof userProfile.last_login === 'string') {
+              userProfile.last_login = new Date(userProfile.last_login);
+            }
+            userProfile.last_login = userProfile.last_login ?? null;
+            setUser(userProfile);
+            updateUserInStorage(userProfile);
+          } catch (error) {
+            console.error('Failed to update user profile:', error);
           }
-          setUser(userProfile);
-          updateUserInStorage(userProfile);
-        } catch (error) {
-            console.error('Failed to update user:', error);
+        }
+      } else {
+        if (profileUserId) {
+          try {
+            const userProfile = await userService.getUserProfile(profileUserId);
+            if (userProfile.birthday && typeof userProfile.birthday === 'string') {
+              userProfile.birthday = new Date(userProfile.birthday);
+            }
+            if (userProfile.date_of_reg && typeof userProfile.date_of_reg === 'string') {
+              userProfile.date_of_reg = new Date(userProfile.date_of_reg);
+            }
+            userProfile.date_of_reg = userProfile.date_of_reg ?? null;
+            if (userProfile.last_login && typeof userProfile.last_login === 'string') {
+              userProfile.last_login = new Date(userProfile.last_login);
+            }
+            userProfile.last_login = userProfile.last_login ?? null;
+            setUser(userProfile);
+          } catch (error) {
+            console.error('Failed to load user profile:', error);
+          }
         }
       }
     } catch (error) {
-        console.error('Failed to update user:', error);
+      console.error('Failed to load user profile:', error);
     } finally {
       setLoading(false);
     }
@@ -191,36 +253,48 @@ const ProfilePage: React.FC = () => {
         username: user.username,
         email: user.email,
         birthday: user.birthday ? user.birthday.toISOString().split('T')[0] : '',
+        description: user.description || '',
       });
     }
   };
 
   const handleSave = async () => {
-    try {
-      setSaving(true);
+  try {
+    setSaving(true);
 
-      if (!user) return;
+    if (!user) return;
 
-      await userService.updateUserProfile(user.id, {
-        username: formData.username,
-        email: formData.email,
-        birthday: formData.birthday ? new Date(formData.birthday) : null,
-      });
+    const updateData: any = {
+      username: formData.username,
+      email: formData.email,
+      description: formData.description,
+    };
 
-      updateUserInStorage({
-        username: formData.username,
-        email: formData.email,
-        birthday: formData.birthday ? new Date(formData.birthday) : null,
-      });
-
-      setEditing(false);
-    } catch (error) {
-        console.error('Failed to update user:', error);
-      alert('Ошибка при сохранении данных');
-    } finally {
-      setSaving(false);
+    if (formData.birthday) {
+      updateData.birthday = formData.birthday;
+    } else {
+      updateData.birthday = null;
     }
-  };
+
+    console.log('Saving data:', updateData);
+
+    await userService.updateUserProfile(user.id, updateData);
+
+    updateUserInStorage({
+      username: formData.username,
+      email: formData.email,
+      birthday: formData.birthday ? new Date(formData.birthday) : null,
+      description: formData.description,
+    });
+
+    setEditing(false);
+  } catch (error) {
+    console.error('Failed to update user:', error);
+    alert('Ошибка при сохранении данных');
+  } finally {
+    setSaving(false);
+  }
+};
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -240,15 +314,15 @@ const ProfilePage: React.FC = () => {
         return;
       }
 
-      const formData = new FormData();
-      formData.append('file', file);
+      const avatarFormData = new FormData();
+      avatarFormData.append('file', file);
 
-      const response = await userService.uploadAvatar(user.id, formData);
+      const response = await userService.uploadAvatar(user.id, avatarFormData);
       updateUserInStorage({ avatar_path: response.avatar_path });
       setAvatarUpdateKey(prev => prev + 1);
 
     } catch (error) {
-        console.error('Failed to update user:', error);
+      console.error('Failed to upload avatar:', error);
       alert('Ошибка при загрузке аватарки');
     } finally {
       setUploading(false);
@@ -258,7 +332,7 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -287,7 +361,7 @@ const ProfilePage: React.FC = () => {
                 <div className="text-white text-xl mb-6 select-none">Вы не авторизованы</div>
                 <button
                   type="button"
-                  onClick={handleAuthClick}
+                  onClick={() => setAuthModalOpen(true)}
                   className="bg-red-600 select-none cursor-pointer hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors"
                 >
                   Войти
@@ -317,7 +391,23 @@ const ProfilePage: React.FC = () => {
           <div className="min-h-screen overflow-y-auto">
             <div className="container mx-auto px-4 max-w-6xl">
               <div className="mb-8 text-center select-none">
-                <h1 className="text-3xl font-bold text-white mx-auto">Привет, {user.username}!</h1>
+                <h1 className="text-3xl font-bold text-white mx-auto flex items-center justify-center gap-3">
+                  {isOwnProfile ? (
+                    `Привет, ${user.username}!`
+                  ) : (
+                    <>
+                      <img
+                        src={getAvatarUrl(user.id, user.avatar_path)}
+                        alt="Аватар"
+                        className="w-8 h-8 rounded-full object-cover border border-neutral-600 mt-1"
+                        onError={(e) => {
+                          e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
+                        }}
+                      />
+                      {user.username}
+                    </>
+                  )}
+                </h1>
               </div>
 
               <div className={`grid gap-8 min-h-125 ${activeTab === 'mybeats' ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'}`}>
@@ -325,7 +415,7 @@ const ProfilePage: React.FC = () => {
                   <div className="flex flex-col items-center mb-6">
                     <div className="relative group select-none">
                       <img
-                        src={`${getAvatarUrl(user.id, user.avatar_path)}?key=${avatarUpdateKey}`}
+                        src={getAvatarUrl(user.id, user.avatar_path)}
                         alt="Аватар"
                         className="w-32 h-32 rounded-full object-cover border-4 border-neutral-700 select-none"
                         onError={(e) => {
@@ -334,79 +424,123 @@ const ProfilePage: React.FC = () => {
                       />
                     </div>
 
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      onChange={handleAvatarUpload}
-                      accept="image/jpeg,image/png,image/gif"
-                      className="hidden"
-                    />
+                    <div className="text-center mt-4">
+                      <h2 className="text-xl font-semibold text-white">{user.username}</h2>
+                      {isOwnProfile && (
+                        <p className="text-neutral-400 text-sm mt-1">ID: #{user.id}</p>
+                      )}
+                    </div>
 
-                    <button
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading}
-                      className="mt-4 select-none bg-red-600 hover:bg-red-700 text-white px-4 py-2 cursor-pointer rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {uploading ? 'Загрузка...' : 'Сменить аватар'}
-                    </button>
+                    {isOwnProfile && (
+                      <>
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleAvatarUpload}
+                          accept="image/jpeg,image/png,image/gif"
+                          className="hidden"
+                        />
 
-                    <p className="text-xs text-neutral-400 mt-2 text-center select-none">
-                      JPG, PNG или GIF, не более 5MB
-                    </p>
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={uploading}
+                          className="mt-4 select-none bg-red-600 hover:bg-red-700 text-white px-4 py-2 cursor-pointer rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {uploading ? 'Загрузка...' : 'Сменить аватар'}
+                        </button>
+
+                        <p className="text-xs text-neutral-400 mt-2 text-center select-none">
+                          JPG, PNG или GIF, не более 5MB
+                        </p>
+                      </>
+                    )}
                   </div>
 
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center">
-                      <span className="text-neutral-400">ID:</span>
-                      <span className="text-white font-bold">#{user.id}</span>
+                  <div className="mt-4">
+                    <div className="flex justify-between items-center mb-2">
+                      <label className="block text-neutral-400 text-sm font-medium">
+                        Описание
+                      </label>
+                      {isOwnProfile && !editing && (
+                        <button
+                          onClick={handleEdit}
+                          className="text-red-500 cursor-pointer select-none hover:text-red-400 text-sm transition-colors"
+                        >
+                          Редактировать
+                        </button>
+                      )}
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-neutral-400">Баланс:</span>
-                      <span className="text-white font-bold">{user.balance.toFixed(2)} ₽</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-neutral-400">Статус:</span>
-                      <span className="text-green-500">Активен</span>
-                    </div>
+                    
+                    {isOwnProfile && editing ? (
+                      <textarea
+                        name="description"
+                        value={formData.description}
+                        onChange={handleInputChange}
+                        rows={4}
+                        className="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-red-500 resize-none text-sm"
+                        placeholder="Расскажите о себе..."
+                      />
+                    ) : (
+                      <div className="text-white text-sm bg-neutral-800 p-3 rounded-lg min-h-[100px] whitespace-pre-wrap">
+                        {user.description || 'Не указано'}
+                      </div>
+                    )}
                   </div>
                 </div>
 
                 <div className={`${activeTab === 'mybeats' ? '' : 'lg:col-span-2'} transition-all duration-700 ease-in-out`}>
                   <div className="bg-neutral-900 rounded-lg p-6 border border-neutral-700 min-h-125">
+
                     <div className="bg-neutral-800 rounded-lg p-4 border border-neutral-700 mb-6">
                       <div className="flex space-x-4 justify-center">
+                        {isOwnProfile && (
+                          <button
+                            onClick={() => {
+                              setActiveTab('info');
+                              setSearchParams({ tab: 'info' });
+                            }}
+                            className={`px-4 py-2 rounded-lg transition-colors cursor-pointer select-none ${
+                              activeTab === 'info'
+                                ? 'bg-red-600 text-white'
+                                : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                            }`}
+                          >
+                            Основная информация
+                          </button>
+                        )}
+                        {isOwnProfile && (
+                          <button
+                            onClick={() => {
+                              setActiveTab('balance');
+                              setSearchParams({ tab: 'balance' });
+                            }}
+                            className={`px-4 py-2 rounded-lg transition-colors cursor-pointer select-none ${
+                              activeTab === 'balance'
+                                ? 'bg-red-600 text-white'
+                                : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                            }`}
+                          >
+                            Баланс
+                          </button>
+                        )}
                         <button
-                          onClick={() => setActiveTab('info')}
-                          className={`px-4 py-2 rounded-lg transition-colors cursor-pointer select-none ${
-                            activeTab === 'info'
-                              ? 'bg-red-600 text-white'
-                              : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
-                          }`}
-                        >
-                          Основная информация
-                        </button>
-                        <button
-                          onClick={() => setActiveTab('balance')}
-                          className={`px-4 py-2 rounded-lg transition-colors cursor-pointer select-none ${
-                            activeTab === 'balance'
-                              ? 'bg-red-600 text-white'
-                              : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
-                          }`}
-                        >
-                          Баланс
-                        </button>
-                        <button
-                          onClick={() => setActiveTab('mybeats')}
+                          onClick={() => {
+                            setActiveTab('mybeats');
+                            setSearchParams({ tab: 'mybeats' });
+                          }}
                           className={`px-4 py-2 rounded-lg transition-colors cursor-pointer select-none ${
                             activeTab === 'mybeats'
                               ? 'bg-red-600 text-white'
                               : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
                           }`}
                         >
-                          Мои биты
+                          {isOwnProfile ? 'Мои биты' : 'Биты'}
                         </button>
                         <button
-                          onClick={() => setActiveTab('stats')}
+                          onClick={() => {
+                            setActiveTab('stats');
+                            setSearchParams({ tab: 'stats' });
+                          }}
                           className={`px-4 py-2 rounded-lg transition-colors cursor-pointer select-none ${
                             activeTab === 'stats'
                               ? 'bg-red-600 text-white'
@@ -418,7 +552,7 @@ const ProfilePage: React.FC = () => {
                       </div>
                     </div>
 
-                    {activeTab === 'info' && (
+                    {activeTab === 'info' && isOwnProfile && (
                       <div>
                         <div className="flex justify-between items-center mb-6">
                           <h2 className="text-xl font-semibold text-white">Основная информация</h2>
@@ -448,7 +582,7 @@ const ProfilePage: React.FC = () => {
                           )}
                         </div>
 
-                        <div className="space-y-6">
+                        <div className="space-y-2">
                           <div>
                             <label className="block text-neutral-400 text-sm font-medium mb-2">
                               Имя пользователя
@@ -465,7 +599,7 @@ const ProfilePage: React.FC = () => {
                               <div className="text-white text-lg">{user.username}</div>
                             )}
                           </div>
-                            <hr className='text-neutral-600' />
+                          <hr className='text-neutral-600' />
                           <div>
                             <label className="block text-neutral-400 text-sm font-medium mb-2">
                               Email
@@ -482,8 +616,7 @@ const ProfilePage: React.FC = () => {
                               <div className="text-white text-lg">{user.email}</div>
                             )}
                           </div>
-                            <hr className='text-neutral-600' />
-
+                          <hr className='text-neutral-600' />
                           <div>
                             <label className="block text-neutral-400 text-sm font-medium mb-2">
                               Дата рождения
@@ -500,11 +633,18 @@ const ProfilePage: React.FC = () => {
                               <div className="text-white text-lg">{formatDate(user.birthday)}</div>
                             )}
                           </div>
+                          <hr className='text-neutral-600' />
+                          <div>
+                            <label className="block text-neutral-400 text-sm font-medium mb-2">
+                              Статус
+                            </label>
+                            <div className="text-green-500 text-lg">Активен</div>
+                          </div>
                         </div>
                       </div>
                     )}
 
-                    {activeTab === 'balance' && (
+                    {activeTab === 'balance' && isOwnProfile && (
                       <div>
                         <h2 className="text-xl font-semibold text-white mb-2">Баланс</h2>
                         <div className="space-y-6">
@@ -535,7 +675,14 @@ const ProfilePage: React.FC = () => {
                     {activeTab === 'mybeats' && (
                       <div>
                         <div className="flex justify-between items-center mb-6">
-                          <h2 className="text-xl font-semibold text-white">Мои биты</h2>
+                          <h2 className="text-xl font-semibold text-white">
+                            {isOwnProfile ? 'Мои биты' : `Биты ${user.username}`}
+                          </h2>
+                          {!isOwnProfile && (
+                            <div className="text-sm text-neutral-400">
+                              {myBeats.length} бит{myBeats.length !== 1 ? 'ов' : ''}
+                            </div>
+                          )}
                         </div>
 
                         {beatsLoading ? (
@@ -544,12 +691,28 @@ const ProfilePage: React.FC = () => {
                           </div>
                         ) : myBeats.length === 0 ? (
                           <div className="text-center py-8">
-                            <p className="text-neutral-400">У вас пока нет загруженных битов</p>
+                            <p className="text-neutral-400">
+                              {isOwnProfile ? 'У вас пока нет загруженных битов' : 'У пользователя нет битов'}
+                            </p>
                           </div>
                         ) : viewMode === 'table' ? (
-                          <BeatTable beats={myBeats} filters={filters} isProfileView={true} onShowRejectionReason={handleShowRejectionReason} />
+                          <BeatTable 
+                            beats={myBeats} 
+                            filters={filters} 
+                            isProfileView={isOwnProfile}
+                            hideAuthorColumn={true}
+                            onShowRejectionReason={isOwnProfile ? handleShowRejectionReason : undefined}
+                            onPlay={!isOwnProfile ? handlePlayBeat : undefined}
+                            onDownload={!isOwnProfile ? handleDownloadBeat : undefined}
+                          />
                         ) : (
-                          <BeatList beats={myBeats} filters={filters} />
+                          <BeatList 
+                            beats={myBeats} 
+                            filters={filters} 
+                            isProfileView={isOwnProfile}
+                            onPlay={!isOwnProfile ? handlePlayBeat : undefined}
+                            onDownload={!isOwnProfile ? handleDownloadBeat : undefined}
+                          />
                         )}
                       </div>
                     )}
@@ -558,40 +721,46 @@ const ProfilePage: React.FC = () => {
                       <div>
                         <h2 className="text-xl font-semibold text-white">Статистика</h2>
 
-                        <div className="space-y-6">
-                          <div className="bg-neutral-750 rounded-lg p-4">
-                            <div className="space-y-3">
-                              <div className="flex justify-between items-center">
-                                <span className="text-neutral-400">Загружено битов:</span>
-                                <span className="text-white font-semibold">{myBeats.length}</span>
-                              </div>
-                              <hr className='text-neutral-600' />
-                              <div className="flex justify-between items-center">
-                                <span className="text-neutral-400">Скачано битов:</span>
-                                <span className="text-white font-semibold">0</span>
-                              </div>
-                              <hr className='text-neutral-600' />
-                              <div className="flex justify-between items-center">
-                                <span className="text-neutral-400">Продано битов:</span>
-                                <span className="text-white font-semibold">0</span>
+                        {statsLoading ? (
+                          <div className="flex justify-center py-8">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                          </div>
+                        ) : (
+                          <div className="space-y-6">
+                            <div className="bg-neutral-750 rounded-lg p-4">
+                              <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-neutral-400">Загружено битов:</span>
+                                  <span className="text-white font-semibold">{userStats?.beats_count || myBeats.length}</span>
+                                </div>
+                                <hr className='text-neutral-600' />
+                                <div className="flex justify-between items-center">
+                                  <span className="text-neutral-400">Скачано битов:</span>
+                                  <span className="text-white font-semibold">{userStats?.download_count || user.download_count || 0}</span>
+                                </div>
+                                <hr className='text-neutral-600' />
+                                <div className="flex justify-between items-center">
+                                  <span className="text-neutral-400">Продано битов:</span>
+                                  <span className="text-white font-semibold">{userStats?.sold_count || 0}</span>
+                                </div>
                               </div>
                             </div>
-                          </div>
 
-                          <div className="bg-neutral-750 rounded-lg p-4">
-                            <h3 className="text-neutral-400 text-sm font-medium mb-3">Активность</h3>
-                            <div className="space-y-3">
-                              <div className="flex justify-between items-center">
-                                <span className="text-neutral-400">Последний вход:</span>
-                                <span className="text-white font-semibold">Сегодня</span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span className="text-neutral-400">Регистрация:</span>
-                                <span className="text-white font-semibold">{formatDate(user.birthday)}</span>
+                            <div className="bg-neutral-750 rounded-lg p-4">
+                              <h3 className="text-neutral-400 text-sm font-medium mb-3">Активность</h3>
+                              <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-neutral-400">Последний вход:</span>
+                                  <span className="text-white font-semibold">{formatDate(user.last_login)}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                  <span className="text-neutral-400">Регистрация:</span>
+                                  <span className="text-white font-semibold">{formatDate(user.date_of_reg)}</span>
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -604,10 +773,7 @@ const ProfilePage: React.FC = () => {
 
       <AuthModal
         isOpen={authModalOpen}
-        onClose={() => {
-          console.log('Closing auth modal');
-          setAuthModalOpen(false);
-        }}
+        onClose={() => setAuthModalOpen(false)}
       />
 
       <RejectionReasonModal

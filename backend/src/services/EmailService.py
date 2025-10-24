@@ -43,12 +43,23 @@ class EmailService:
     
     async def send_verification_email(self, email: str, token: str, username: str) -> bool:
         self._initialize()
-        
+
+        if not self.base_url:
+            logger.error("BASE_URL not configured")
+            return False
+
+        # Ensure BASE_URL has protocol
+        if not self.base_url.startswith(('http://', 'https://')):
+            self.base_url = f"http://{self.base_url}"
+            logger.warning(f"BASE_URL updated to include protocol: {self.base_url}")
+
         if not all([self.smtp_username, self.smtp_password]):
-            logger.warning(f"Verification URL: {self.base_url}/api/v1/auth/verify-email?token={token}")
+            logger.warning(f"Verification URL: {self.base_url}/v1/users/auth/verify-email?token={token}")
             return True
-            
+
         verification_url = f"{self.base_url}/v1/users/auth/verify-email?token={token}"
+
+        print(verification_url)
         
         logger.info(f"Sending verification email to {email}")
         
@@ -128,8 +139,9 @@ class EmailService:
         <body style="margin:0; padding:20px; background:#f6f6f6; font-family:Arial, sans-serif;">
         <table width="100%" cellpadding="0" cellspacing="0" bgcolor="#333333" border="0" style="max-width:600px; margin:0 auto; font-family: Arial, sans-serif; border-radius: 10px; border-collapse: separate; border-spacing: 0;">
         <tr>
-            <td style="padding:30px; text-align:center; background:#dc2626; border-top-left-radius: 10px; border-top-right-radius: 10px;">
-                <span style="color:#ffffff; font-size:24px; font-weight:bold; display:block;">Beatok</span>
+            <td style="padding:30px; text-align:center; background:#222222; border-top-left-radius: 10px; border-top-right-radius: 10px;">
+                <span style="color:#ffffff; display: inline; font-size:24px; font-weight:bold;">BEAT</span>
+                <span style="color:#dc2626; display: inline; font-size:24px; font-weight:bold;">OK</span>
             </td>
         </tr>
         <tr>
@@ -160,7 +172,7 @@ class EmailService:
         </tr>
         <tr>
             <td style="padding:20px 30px 20px 30px; color:#ffffff; font-size:12px; border:none; word-break:break-word;">
-                <a style = "text-decoration:none; outline:none; color:#ffffff; ">{{ verification_url }}</a>
+                <a href="{{ verification_url }}" style="text-decoration:none; outline:none; color:#ffffff;">{{ verification_url }}</a>
             </td>
         </tr>
         <tr>

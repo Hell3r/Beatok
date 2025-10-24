@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { beatService, type Tariff, type BeatPricingCreate } from '../services/beatService';
 
 interface AddBeatModalProps {
   isOpen: boolean;
@@ -11,12 +12,13 @@ const musicalKeys = [
 ];
 
 const genres = [
-  'hip-hop', 'trap', 'lo-fi', 'r&b', 'pop', 'rock', 'electronic', 'other'
+  'Hip-Hop', 'Trap', 'Trap-Metal', 'Lo-fi', 'R&B', 'Pop', 'Rock', 'Metal', 'Electronic', 'Dubstep', 'Other'
 ];
 
 const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [tariffs, setTariffs] = useState<Tariff[]>([]);
 
   const [beatData, setBeatData] = useState({
     name: '',
@@ -24,8 +26,25 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
     tempo: '',
     key: '',
     mp3_file: null as File | null,
-    wav_file: null as File | null
+    wav_file: null as File | null,
+    pricings: {} as Record<string, string>,
+    is_free: false
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      loadTariffs();
+    }
+  }, [isOpen]);
+
+  const loadTariffs = async () => {
+    try {
+      const tariffsData = await beatService.getTariffs();
+      setTariffs(tariffsData);
+    } catch (err) {
+      console.error('Ошибка загрузки тарифов:', err);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -99,14 +118,39 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
         throw new Error(errorData.detail || 'Ошибка при добавлении бита');
       }
 
-      // Сброс формы
+      const beatResponse = await response.json();
+      const beatId = beatResponse.id;
+
+      if (!beatData.is_free) {
+        for (const tariff of tariffs) {
+          const priceStr = beatData.pricings[tariff.name];
+          if (priceStr && priceStr.trim()) {
+            const price = parseFloat(priceStr);
+            if (!isNaN(price) && price >= 0) {
+              try {
+                await beatService.createBeatPricing({
+                  beat_id: beatId,
+                  tariff_name: tariff.name,
+                  price: price,
+                  is_available: true
+                });
+              } catch (pricingErr) {
+                console.error(`Ошибка создания цены для тарифа ${tariff.name}:`, pricingErr);
+              }
+            }
+          }
+        }
+      }
+
       setBeatData({
         name: '',
         genre: '',
         tempo: '',
         key: '',
         mp3_file: null,
-        wav_file: null
+        wav_file: null,
+        pricings: {},
+        is_free: false
       });
 
       onClose();
@@ -135,6 +179,16 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  const handlePricingChange = (tariffName: string, price: string) => {
+    setBeatData({
+      ...beatData,
+      pricings: {
+        ...beatData.pricings,
+        [tariffName]: price
+      }
+    });
+  };
+
   return (
     <>
       {isOpen && (
@@ -146,10 +200,10 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
 
       {isOpen && (
         <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-          <div className="relative bg-neutral-900 rounded-lg w-full max-w-2xl max-h-xl border border-neutral-800 shadow-2xl">
+          <div className="relative bg-neutral-900 rounded-lg w-full max-w-4xl max-h-[95vh] border border-neutral-800 shadow-2xl">
             <button
               onClick={onClose}
-              className="absolute select-none -top-3 -right-3 cursor-pointer bg-neutral-800 hover:bg-neutral-700 text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200 z-10 shadow-lg"
+              className="absolute select-none -top-3 -right-2 cursor-pointer bg-neutral-800 hover:bg-neutral-700 text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200 z-10 shadow-lg"
               aria-label="Закрыть"
             >
               ×
@@ -265,6 +319,51 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                     </div>
                   </div>
                 </div>
+
+                <div className="border-t border-neutral-700 pt-4">
+                  <div className="flex items-center mb-4">
+                    <input
+                      type="checkbox"
+                      id="is_free"
+                      checked={beatData.is_free}
+                      onChange={(e) => setBeatData({ ...beatData, is_free: e.target.checked })}
+                      className="mr-2"
+                    />
+                    <label htmlFor="is_free" className="text-lg font-medium text-white">
+                      Бесплатно
+                    </label>
+                  </div>
+                  {!beatData.is_free && (
+                    <>
+                      <h3 className="text-lg font-medium text-white mb-4">Цены по тарифам</h3>
+                      <div className="grid grid-cols-1 gap-4">
+                        {tariffs.map((tariff) => (
+                          <div key={tariff.name} className="flex items-center space-x-4">
+                            <label className="flex-1 text-sm font-medium text-neutral-300">
+                              {tariff.display_name}
+                              {tariff.description && (
+                                <span className="block text-xs text-neutral-500 mt-1">
+                                  {tariff.description}
+                                </span>
+                              )}
+                            </label>
+                            <input
+                              type="number"
+                              placeholder="Цена"
+                              value={beatData.pricings[tariff.name] || ''}
+                              onChange={(e) => handlePricingChange(tariff.name, e.target.value)}
+                              className="w-32 h-12 p-3 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
+                              min="0"
+                              step="0.01"
+                            />
+                            <span className="text-neutral-400">₽</span>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+
                 <div className='text-center'>
                   <button
                     type="submit"
@@ -274,7 +373,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                     {loading ? 'Отправка на модерацию...' : 'Отправить на модерацию'}
                   </button>
                 </div>
-                
+
               </form>
 
               <div className="mt-4 text-center">

@@ -32,7 +32,25 @@ class SupportBot:
             print("Telegram bot not configured - skipping beat moderation notification")
             return
 
-        message = MessageTemplates.beat_moderation_request(beat_data, user_info)
+        # Получаем цены бита
+        pricings = []
+        try:
+            from ..database.database import new_async_session
+            from ..models.beat_bricing import BeatPricingModel
+            from sqlalchemy import select
+            from sqlalchemy.orm import joinedload
+
+            async with new_async_session() as session:
+                result = await session.execute(
+                    select(BeatPricingModel)
+                    .options(joinedload(BeatPricingModel.tariff))
+                    .where(BeatPricingModel.beat_id == beat_data['id'])
+                )
+                pricings = result.scalars().all()
+        except Exception as e:
+            print(f"Error fetching pricings for beat {beat_data['id']}: {e}")
+
+        message = MessageTemplates.beat_moderation_request(beat_data, user_info, pricings)
 
         
         keyboard = [

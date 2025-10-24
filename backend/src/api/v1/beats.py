@@ -285,27 +285,46 @@ async def get_beat(
 async def stream_beat(
     session : SessionDep,
     beat_id: int,
+    current_user_id: Annotated[int, Depends(get_current_user_id)],
     format: str = Query("mp3", regex="^(mp3|wav)$"),
 ):
     result = await session.execute(select(BeatModel).where(BeatModel.id == beat_id))
     beat = result.scalar_one_or_none()
-    
+
     if not beat:
         raise HTTPException(404, "Бит не найден")
-    
+
     file_path = beat.mp3_path if format == "mp3" else beat.wav_path
-    
+
     if not file_path or not os.path.exists(file_path):
         raise HTTPException(404, "Аудиофайл не найден")
-    
+
+    # Инкрементируем счетчик скачиваний автора, если скачивает не автор
+    if current_user_id != beat.author_id:
+        from src.models.users import UsersModel
+        author_stmt = select(UsersModel).where(UsersModel.id == beat.author_id)
+        author_result = await session.execute(author_stmt)
+        author = author_result.scalar_one_or_none()
+
+        if author:
+            author.download_count += 1
+            await session.commit()
+
     from fastapi.responses import FileResponse
-    
+
     media_type = "audio/mpeg" if format == "mp3" else "audio/wav"
-    return FileResponse(
+    response = FileResponse(
         path=file_path,
         media_type=media_type,
         filename=f"{beat.name}.{format}"
     )
+
+    # Add CORS headers for direct file access
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+
+    return response
 
 
 @router.delete("/{beat_id}", summary= "Удалить файл по id")

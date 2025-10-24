@@ -10,6 +10,7 @@ class StatusType(enum.Enum):
     MODERATED = "moderated"
     AVAILABLE = "available"
     DENIED = "denied"
+    SOLD = "sold"
 
 
 class BeatModel(Base):

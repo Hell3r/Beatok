@@ -180,15 +180,46 @@ const BeatsPage: React.FC = () => {
     }
   };
 
-  const handleDownload = (beat: Beat) => {
-    const downloadSource = getAudioSource(beat);
-    const fileExtension = beat.wav_path ? 'wav' : 'mp3';
+  const handleDownload = async (beat: Beat) => {
+    const baseUrl = 'http://localhost:8000'
+    const beatFolder = `beats/${beat.id}`;
+
+    const wavUrl = `${baseUrl}/audio_storage/${beatFolder}/audio.wav`;
+    const mp3Url = `${baseUrl}/audio_storage/${beatFolder}/audio.mp3`;
+
+    const wavAvailable = await checkAudioFile(wavUrl);
+    const mp3Available = await checkAudioFile(mp3Url);
+
+    let downloadSource: string | null = null;
+    let fileExtension: string = '';
+
+    if (wavAvailable) {
+      downloadSource = wavUrl;
+      fileExtension = 'wav';
+    } else if (mp3Available) {
+      downloadSource = mp3Url;
+      fileExtension = 'mp3';
+    }
 
     if (downloadSource) {
-      const link = document.createElement('a');
-      link.href = downloadSource;
-      link.download = `${beat.name}.${fileExtension}`;
-      link.click();
+      try {
+        const response = await fetch(downloadSource);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${beat.name}.${fileExtension}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Download failed:', error);
+        alert('Ошибка при скачивании файла');
+      }
     } else {
       alert('Файл для скачивания не доступен');
     }

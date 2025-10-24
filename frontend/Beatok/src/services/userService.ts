@@ -25,7 +25,21 @@ export const userService = {
   },
 
   async updateUserProfile(userId: number, data: any) {
-    const response = await api.put(`/v1/users/${userId}`, data);
+    const formattedData = { ...data };
+
+    if (formattedData.birthday) {
+      if (formattedData.birthday instanceof Date) {
+        formattedData.birthday = formattedData.birthday.toISOString().split('T')[0];
+      } else if (typeof formattedData.birthday === 'string') {
+        if (formattedData.birthday.includes('T')) {
+          formattedData.birthday = formattedData.birthday.split('T')[0];
+        }
+      }
+    }
+
+    console.log('Sending formatted data:', formattedData);
+
+    const response = await api.put(`/v1/users/${userId}`, formattedData);
     return response.data;
   },
 
@@ -45,6 +59,11 @@ export const userService = {
 
   async getAllBeatmakers(): Promise<Beatmaker[]> {
     const response = await api.get('/beats/beatmakers');
+    return response.data;
+  },
+
+  async getUserStats(userId: number) {
+    const response = await api.get(`/v1/users/${userId}/stats`);
     return response.data;
   },
 };

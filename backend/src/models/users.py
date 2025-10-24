@@ -1,12 +1,12 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.database.database import Base
-from sqlalchemy import Date, Boolean, String, DECIMAL
-from datetime import date
+from sqlalchemy import Date, Boolean, String, DECIMAL, DateTime, Integer
+from datetime import date, datetime
 from typing import List, Optional
 
 class UsersModel(Base):
     __tablename__ = "users"
-    
+
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     username: Mapped[str] = mapped_column()
     date_of_reg: Mapped[date] = mapped_column(Date, default=date.today)
@@ -16,7 +16,10 @@ class UsersModel(Base):
     role: Mapped[str] = mapped_column(default = "common")
     balance: Mapped[float] = mapped_column(DECIMAL(10, 2), default=0.0)
     is_active: Mapped[bool] = mapped_column(Boolean, default=False)
-    avatar_path: Mapped[Optional[str]] = mapped_column(String(500), default = "static/default_avatar.jpg" )
+    avatar_path: Mapped[Optional[str]] = mapped_column(String(500), default = "static/default_avatar.png" )
+    last_login: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    download_count: Mapped[int] = mapped_column(Integer, default=0)
+    description: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
     
     
     requests: Mapped[List["RequestsModel"]] = relationship("RequestsModel", back_populates="user")

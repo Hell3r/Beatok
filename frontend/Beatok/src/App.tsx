@@ -33,6 +33,7 @@ const App: React.FC = () => {
 
             <Route path="/admin" element={<AdminSwaggerPage />} />
             <Route path="/profile" element={<PageLayout><ProfilePage /></PageLayout>} />
+            <Route path="/profile/:id" element={<PageLayout><ProfilePage /></PageLayout>} />
             <Route path="/beats" element={<PageLayout><BeatsPage /></PageLayout>} />
             <Route path="/about" element={<PageLayout><AboutPage /></PageLayout>} />
             <Route path="/beatmakers" element={<PageLayout><BeatmakersPage /></PageLayout>} />

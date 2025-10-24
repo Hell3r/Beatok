@@ -7,6 +7,9 @@ export interface User {
   avatar_path?: string;
   balance?: number;
   role: string;
+  date_of_reg?: string;
+  last_login?: string;
+  description?: string;
 }
 
 export interface LoginFormData {
@@ -32,6 +35,7 @@ export interface AuthResponse {
     role?: string;
     birthday?: string;
     avatar_path?: string;
+    balance?: number;
   };
   user?: User;
 }

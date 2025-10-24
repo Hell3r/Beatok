@@ -5,10 +5,22 @@ import { getAvatarUrl } from '../utils/getAvatarURL';
 const BeatmakersPage: React.FC = () => {
     const [beatmakers, setBeatmakers] = useState<Beatmaker[]>([]);
     const [loading, setLoading] = useState(true);
+    const [avatarKey, setAvatarKey] = useState(0);
 
-    useEffect(() => {
-        loadBeatmakers();
-      }, []);
+  useEffect(() => {
+    loadBeatmakers();
+  }, []);
+
+  useEffect(() => {
+    const handleUserUpdate = () => {
+      setAvatarKey(prev => prev + 1);
+    };
+
+    window.addEventListener('userUpdated', handleUserUpdate);
+    return () => {
+      window.removeEventListener('userUpdated', handleUserUpdate);
+    };
+  }, []);
 
     const loadBeatmakers = async () => {
         try {
@@ -61,12 +73,12 @@ const BeatmakersPage: React.FC = () => {
                         {beatmakers.map((beatmaker) => (
                             <div
                                 key={beatmaker.id}
-                                className="bg-neutral-800 rounded-lg p-6 hover:bg-neutral-700 transition-colors duration-200 cursor-pointer group"
+                                className="bg-neutral-800 rounded-lg p-6 hover:bg-neutral-700 transition-all duration-300 cursor-pointer group hover:shadow-2xl hover:shadow-red-500/20"
                                 onClick={() => window.location.href = `/profile/${beatmaker.id}`}
                             >
                                 <div className="flex items-center space-x-4">
                                     <img
-                                        src={getAvatarUrl(beatmaker.id, beatmaker.avatar_path)}
+                                        src={`${getAvatarUrl(beatmaker.id, beatmaker.avatar_path)}?t=${avatarKey}`}
                                         alt={beatmaker.username}
                                         className="w-16 h-16 rounded-full object-cover group-hover:scale-110 transition-transform duration-200"
                                         onError={(e) => {
@@ -74,8 +86,8 @@ const BeatmakersPage: React.FC = () => {
                                         }}
                                     />
                                     <div className="flex-1 min-w-0">
-                                        <h3 className="text-white font-semibold truncate">{beatmaker.username}</h3>
-                                        <p className="text-neutral-400 text-sm">
+                                        <h3 className="text-white font-semibold truncate group-hover:text-red-400 transition-colors duration-300">{beatmaker.username}</h3>
+                                        <p className="text-neutral-400 text-sm group-hover:text-neutral-300 transition-colors duration-300">
                                             {beatmaker.beat_count} бит{beatmaker.beat_count !== 1 ? 'ов' : ''}
                                         </p>
                                     </div>
