@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query, Depends
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query, Depends, Request
 from typing import Optional, List
 from typing_extensions import Annotated
 from sqlalchemy import select, func
@@ -192,6 +192,7 @@ async def get_top_beatmakers(
             UsersModel.avatar_path
         )
         .join(UsersModel, BeatModel.author_id == UsersModel.id)
+        .where(BeatModel.status == StatusType.AVAILABLE)
         .group_by(BeatModel.author_id, UsersModel.username, UsersModel.avatar_path)
         .order_by(func.count(BeatModel.id).desc())
         .limit(limit)
@@ -280,10 +281,9 @@ async def get_beat(
 
 
 
-
 @router.get("/{beat_id}/stream", summary="Стриминг файла")
 async def stream_beat(
-    session : SessionDep,
+    session: SessionDep,
     beat_id: int,
     current_user_id: Annotated[int, Depends(get_current_user_id)],
     format: str = Query("mp3", regex="^(mp3|wav)$"),
@@ -299,16 +299,24 @@ async def stream_beat(
     if not file_path or not os.path.exists(file_path):
         raise HTTPException(404, "Аудиофайл не найден")
 
-    # Инкрементируем счетчик скачиваний автора, если скачивает не автор
+    # ОБНОВЛЯЕМ СЧЕТЧИК СКАЧИВАНИЙ
     if current_user_id != beat.author_id:
         from src.models.users import UsersModel
-        author_stmt = select(UsersModel).where(UsersModel.id == beat.author_id)
-        author_result = await session.execute(author_stmt)
+        
+        author_result = await session.execute(
+            select(UsersModel).where(UsersModel.id == beat.author_id)
+        )
         author = author_result.scalar_one_or_none()
-
+        
+        print(f"🔍 Author found: {author is not None}")
+        print(f"🔍 Current download_count: {author.download_count if author else 'No author'}")
+    
         if author:
-            author.download_count += 1
+            old_count = author.download_count
+            author.download_count = 1 if author.download_count is None else author.download_count + 1
             await session.commit()
+            await session.refresh(author)  # Обновляем чтобы увидеть изменения
+            print(f"🔍 Download count updated: {old_count} -> {author.download_count}")
 
     from fastapi.responses import FileResponse
 
@@ -486,3 +494,37 @@ async def generate_identical_beats(
         raise HTTPException(status_code=500, detail=f"Ошибка при создании битов: {str(e)}")
     
     
+
+@router.post("/{beat_id}/increment-download", summary="Увеличить счетчик скачиваний")
+async def increment_download_count(
+    beat_id: int,
+    session: SessionDep,
+    current_user_id: Annotated[int, Depends(get_current_user_id)],
+):
+    from src.models.users import UsersModel
+    from src.models.beats import BeatModel
+    
+    result = await session.execute(select(BeatModel).where(BeatModel.id == beat_id))
+    beat = result.scalar_one_or_none()
+
+    if not beat:
+        raise HTTPException(404, "Бит не найден")
+
+    if current_user_id != beat.author_id:
+        author_result = await session.execute(
+            select(UsersModel).where(UsersModel.id == beat.author_id)
+        )
+        author = author_result.scalar_one_or_none()
+        
+        if author:
+            old_count = author.download_count or 0
+            author.download_count = old_count + 1
+            await session.commit()
+            
+            return {
+                "success": True,
+                "message": "Счетчик скачиваний увеличен",
+                "new_count": author.download_count
+            }
+    
+    return {"success": True, "message": "Автор не может увеличить свой счетчик"}

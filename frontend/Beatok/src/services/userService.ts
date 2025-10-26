@@ -24,24 +24,40 @@ export const userService = {
     return response.data;
   },
 
-  async updateUserProfile(userId: number, data: any) {
-    const formattedData = { ...data };
+async updateUserProfile(data: any) {
+  const token = localStorage.getItem('access_token');
+  
+  const formattedData = { ...data };
 
-    if (formattedData.birthday) {
-      if (formattedData.birthday instanceof Date) {
-        formattedData.birthday = formattedData.birthday.toISOString().split('T')[0];
-      } else if (typeof formattedData.birthday === 'string') {
-        if (formattedData.birthday.includes('T')) {
-          formattedData.birthday = formattedData.birthday.split('T')[0];
-        }
+
+  if (formattedData.birthday) {
+    if (formattedData.birthday instanceof Date) {
+      formattedData.birthday = formattedData.birthday.toISOString().split('T')[0];
+    } else if (typeof formattedData.birthday === 'string') {
+      if (formattedData.birthday.includes('T')) {
+        formattedData.birthday = formattedData.birthday.split('T')[0];
       }
     }
+  }
 
-    console.log('Sending formatted data:', formattedData);
+  console.log('Sending update data:', formattedData);
 
-    const response = await api.put(`/v1/users/${userId}`, formattedData);
-    return response.data;
-  },
+  const response = await fetch(`http://localhost:8000/v1/users/me`, {
+    method: 'PATCH',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(formattedData)
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.detail || 'Failed to update profile');
+  }
+
+  return await response.json();
+},
 
   async uploadAvatar(userId: number, formData: FormData) {
     const response = await api.post(`/v1/users/${userId}/avatar`, formData, {

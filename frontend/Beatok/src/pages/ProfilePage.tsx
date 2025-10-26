@@ -258,39 +258,87 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  const handleSave = async () => {
+const handleSave = async () => {
   try {
     setSaving(true);
-
     if (!user) return;
 
-    const updateData: any = {
-      username: formData.username,
-      email: formData.email,
-      description: formData.description,
-    };
+    // Подготавливаем данные для отправки
+    const updateData: any = {};
 
+    if (formData.username !== user.username) {
+      updateData.username = formData.username;
+    }
+    if (formData.email !== user.email) {
+      updateData.email = formData.email;
+    }
+    if (formData.description !== (user.description || '')) {
+      updateData.description = formData.description;
+    }
+
+    // Обрабатываем дату рождения
     if (formData.birthday) {
       updateData.birthday = formData.birthday;
-    } else {
+    } else if (user.birthday && !formData.birthday) {
       updateData.birthday = null;
     }
 
-    console.log('Saving data:', updateData);
+    console.log('🔄 Saving data:', updateData);
 
-    await userService.updateUserProfile(user.id, updateData);
+    // Если нет изменений
+    if (Object.keys(updateData).length === 0) {
+      setEditing(false);
+      return;
+    }
 
-    updateUserInStorage({
-      username: formData.username,
-      email: formData.email,
-      birthday: formData.birthday ? new Date(formData.birthday) : null,
-      description: formData.description,
+    // Вызов API
+    const updatedUser = await userService.updateUserProfile(updateData);
+    
+    console.log('✅ Backend response:', updatedUser);
+    console.log('✅ Birthday from backend:', updatedUser.birthday);
+
+    // 🔥 ИСПРАВЛЕНИЕ: Правильно обрабатываем birthday
+    let newBirthday = null;
+    if (updatedUser.birthday) {
+      // Если бэкенд вернул дату
+      newBirthday = new Date(updatedUser.birthday);
+    } else if (updateData.birthday === null) {
+      // Если мы явно установили null
+      newBirthday = null;
+    } else {
+      // Иначе оставляем старую дату
+      newBirthday = user.birthday;
+    }
+
+    console.log('🎯 Final birthday value:', newBirthday);
+
+    const updatedUserData = {
+      ...user,
+      username: updatedUser.username || user.username,
+      email: updatedUser.email || user.email,
+      birthday: newBirthday, // 🔥 Используем обработанную дату
+      description: updatedUser.description || user.description
+    };
+
+    console.log('🔄 Setting user state:', updatedUserData);
+
+    setUser(updatedUserData);
+    updateUserInStorage(updatedUserData);
+    
+    // Обновляем formData
+    setFormData({
+      username: updatedUserData.username,
+      email: updatedUserData.email,
+      birthday: updatedUserData.birthday ? updatedUserData.birthday.toISOString().split('T')[0] : '',
+      description: updatedUserData.description || '',
     });
 
     setEditing(false);
-  } catch (error) {
+    alert('Данные успешно обновлены!');
+    
+  } catch (error: any) {
     console.error('Failed to update user:', error);
-    alert('Ошибка при сохранении данных');
+    alert(error.message || 'Ошибка при сохранении данных');
   } finally {
     setSaving(false);
   }
@@ -345,11 +393,32 @@ const ProfilePage: React.FC = () => {
     setRejectionModalOpen(true);
   };
 
-  const formatDate = (date: Date | null) => {
-    if (!date) return 'Не указана';
-    if (!(date instanceof Date)) return 'Не указана';
-    return date.toLocaleDateString('ru-RU');
-  };
+const formatDate = (date: any) => {
+  console.log('🔍 formatDate received:', date, 'type:', typeof date);
+  
+  if (!date) {
+    console.log('❌ No date provided');
+    return 'Не указана';
+  }
+  
+  try {
+    // Пробуем просто создать Date из любого значения
+    const dateObj = new Date(date);
+    console.log('🔍 Created Date object:', dateObj);
+    
+    if (isNaN(dateObj.getTime())) {
+      console.log('❌ Invalid date');
+      return 'Не указана';
+    }
+    
+    const formatted = dateObj.toLocaleDateString('ru-RU');
+    console.log('✅ Formatted date:', formatted);
+    return formatted;
+  } catch (error) {
+    console.log('❌ Error formatting date:', error);
+    return 'Не указана';
+  }
+};
 
   return (
     <>
@@ -604,17 +673,7 @@ const ProfilePage: React.FC = () => {
                             <label className="block text-neutral-400 text-sm font-medium mb-2">
                               Email
                             </label>
-                            {editing ? (
-                              <input
-                                type="email"
-                                name="email"
-                                value={formData.email}
-                                onChange={handleInputChange}
-                                className="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-red-500"
-                              />
-                            ) : (
                               <div className="text-white text-lg">{user.email}</div>
-                            )}
                           </div>
                           <hr className='text-neutral-600' />
                           <div>

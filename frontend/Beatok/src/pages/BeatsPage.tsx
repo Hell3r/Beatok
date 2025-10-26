@@ -181,6 +181,18 @@ const BeatsPage: React.FC = () => {
   };
 
   const handleDownload = async (beat: Beat) => {
+    const token = localStorage.getItem("access_token")
+    try {
+        await fetch(`http://localhost:8000/beats/${beat.id}/increment-download`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+    } catch (error) {
+        console.log('Не удалось увеличить счетчик скачиваний, но продолжаем скачивание:', error);
+    }
     const baseUrl = 'http://localhost:8000'
     const beatFolder = `beats/${beat.id}`;
 
