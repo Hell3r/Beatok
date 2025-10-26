@@ -33,6 +33,7 @@ class UserResponse(BaseModel):
     id: int
     email: str
     username: str
+    birthday: date
     balance: float
     is_active: bool
     avatar_path: Optional[str] = None

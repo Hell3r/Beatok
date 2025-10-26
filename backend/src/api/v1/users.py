@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, status, Depends, Response, Path, F
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy import select, delete, and_ 
+from sqlalchemy import select, delete, and_, func
 from src.models.users import UsersModel
 from src.database.deps import SessionDep
 from typing import Optional
@@ -44,7 +44,7 @@ MAX_FILE_SIZE = 5 * 1024 * 1024
 
 
 
-@router.post("/login", tags=["Пользователи"], summary="Авторизация")
+@router.post("/login", tags=["Верификация Email и авторизация"], summary="Авторизация")
 async def login_user(
     session: SessionDep,
     form_data: OAuth2PasswordRequestForm = Depends()
@@ -97,7 +97,7 @@ async def login_user(
             detail="Произошла ошибка при входе в систему"
         )
 
-@router.post("/logout", tags=["Пользователи"], summary=["Выход"])
+@router.post("/logout", tags=["Верификация Email и авторизация"], summary=["Выход"])
 async def logout_user(
     session: SessionDep,
     response: Response,
@@ -225,12 +225,12 @@ async def update_user_profile(
         print(f"Error updating user: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Ошибка при обновлении профиля: {str(e)}"
-        )
+            detail=f"Ошибка при обновлении профиля: {str(e)}")
+        
 
     
 
-@router.post("/{user_id}/avatar", tags = ["Пользователи"], summary="Загрузить аватарку пользователя")
+@router.post("/{user_id}/avatar", tags = ["Аватарки"], summary="Загрузить аватарку пользователя")
 async def upload_avatar(
     user_id: int,
     file: UploadFile = File(...),
@@ -288,7 +288,7 @@ async def upload_avatar(
         
         
         
-@router.get("/{user_id}/avatar", tags = ["Пользователи"], summary="Получить аватарку пользователя")
+@router.get("/{user_id}/avatar", tags = ["Аватарки"], summary="Получить аватарку пользователя")
 async def get_user_avatar(
     user_id: int,
     session: SessionDep

@@ -14,14 +14,14 @@ const PopularBeats: React.FC = () => {
     try {
       setLoading(true);
       const data = await beatService.getBeats(0, 6);
-      setBeats(data);
+      const availableBeats = data.filter(beat => beat.status === 'available');
+      setBeats(availableBeats);
     } catch (error) {
       console.error('Error loading popular beats:', error);
     } finally {
       setLoading(false);
     }
   };
-
 
 
   if (loading) {
