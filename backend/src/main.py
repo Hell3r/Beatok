@@ -12,6 +12,8 @@ import os, asyncio
 from src.telegram_bot import support_bot, TelegramConfig
 from src.telegram_bot.main import run_telegram_bot
 from src.database.deps import SessionDep
+from src.services.RedisService import redis_service
+from src.core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -49,15 +51,33 @@ def ensure_default_avatar_exists():
     default_avatar_path = "static/default_avatar.png"
     if not os.path.exists(default_avatar_path):
         create_default_avatar()
+        
+        
+async def initialize_redis():
+    try:
+        success = await redis_service.connect()
+        if success:
+            logger.info("✅ Redis successfully connected and cache enabled")
+            
+            test_result = await redis_service.set("health_check", {"status": "ok", "app": "Beatok"}, 60)
+            if test_result:
+                logger.info("✅ Redis cache test passed")
+            else:
+                logger.warning("⚠️ Redis cache test failed")
+        else:
+            logger.warning("⚠️ Redis connection failed - running without cache")
+    except Exception as e:
+        logger.warning(f"⚠️ Redis initialization error: {e} - running without cache")
 
 @app.on_event("startup")
 async def startup_event():
+    await initialize_redis()
+     
     ensure_default_avatar_exists()
 
     global telegram_bot_started
     if TelegramConfig.is_configured() and not telegram_bot_started:
         await support_bot.send_welcome_messages()
-        # Start bot in background task with error handling
         asyncio.create_task(run_telegram_bot_with_error_handling())
         telegram_bot_started = True
         print("Telegram bot started")
@@ -95,5 +115,6 @@ def custom_swagger():
 
 @app.on_event("shutdown") 
 async def shutdown_event():
+    await redis_service.disconnect()
     task_manager.shutdown()
     logger.info(" Application shutdown")

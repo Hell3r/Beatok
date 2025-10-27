@@ -2,6 +2,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, MessageHandler, filters, ContextTypes
 from .config import TelegramConfig
 from .messages import MessageTemplates
+from src.services.RedisService import redis_service
 from ..database.deps import SessionDep
 from ..models.beats import BeatModel, StatusType
 from sqlalchemy import select
@@ -59,6 +60,8 @@ class TelegramBotHandlers:
 
                 beat.status = StatusType.AVAILABLE
                 await session.commit()
+                await redis_service.delete_pattern("*beats*")
+                
 
                 await query.edit_message_text(
                     f"✅ Бит '{beat.name}' (ID: {beat.id}) одобрен и опубликован."
