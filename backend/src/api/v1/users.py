@@ -12,6 +12,7 @@ import os
 import uuid
 from datetime import date
 from src.models.email_verification import EmailVerificationModel
+from src.services.RedisService import redis_service
 from src.schemas.users import DeleteUserRequest, UsersSchema, UserResponse, UserCreate, TokenResponse, UserUpdate, VerifyEmailRequest, MessageResponse, ResendVerificationRequest
 from src.services.EmailService import email_service
 from src.services.AuthService import (  
@@ -390,6 +391,7 @@ async def patch_current_user(
         
         await session.commit()
         await session.refresh(current_user)
+        await redis_service.delete_pattern("*beats:*")
         
         return current_user
         

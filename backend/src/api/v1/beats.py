@@ -15,6 +15,8 @@ from src.schemas.beats import BeatResponse, BeatListResponse
 from src.services.AuthService import get_current_user
 from src.dependencies.auth import get_current_user_id
 from src.telegram_bot.bot import support_bot
+from src.core.cache import cached
+from src.services.RedisService import redis_service
 from pathlib import Path
 
 router = APIRouter(prefix="/beats", tags=["Аудио файлы"])
@@ -49,7 +51,7 @@ async def create_beat(
         tempo=tempo,
         key=key,
         promotion_status=promotion_status,
-        status=StatusType.MODERATED,  # Все новые биты отправляются на модерацию
+        status=StatusType.MODERATED,
         mp3_path=None,
         wav_path=None,
         size=0,
@@ -99,7 +101,7 @@ async def create_beat(
             beat.size = total_size
         
         await session.commit()
-
+        
         result = await session.execute(
             select(BeatModel)
             .where(BeatModel.id == beat.id)
@@ -135,7 +137,13 @@ async def create_beat(
         asyncio.create_task(
             support_bot.send_beat_moderation_notification(beat_data, user_info, str(audio_path) if audio_path else None)
         )
-
+        
+        print("🔄 Начинаем очистку кеша...")
+        success = await redis_service.delete_pattern("*beats:*")
+        if success:
+            print("✅ Кеш успешно очищен")
+        else:
+            print("❌ Не удалось очистить кеш")
         return BeatResponse.model_validate(beat_with_relations)
         
     except Exception as e:
@@ -149,6 +157,7 @@ async def create_beat(
 
 
 @router.get("/", response_model=List[BeatResponse], summary = "Получить все биты")
+@cached(ttl=300)
 async def get_beats(
     session: SessionDep,
     skip: int = 0,
@@ -177,6 +186,7 @@ async def get_beats(
 
 
 @router.get("/top-beatmakers", summary="Получить топ битмейкеров по количеству битов")
+@cached(ttl=600)
 async def get_top_beatmakers(
     session: SessionDep,
     limit: int = 10
@@ -212,6 +222,7 @@ async def get_top_beatmakers(
 
 
 @router.get("/beatmakers", summary="Получить всех битмейкеров (пользователей с хотя бы одним битом)")
+@cached(ttl=600)
 async def get_all_beatmakers(
     session: SessionDep
 ):
