@@ -7,6 +7,9 @@ class Settings:
     REDIS_DB: int = int(os.getenv("REDIS_DB", 0))
     REDIS_MAX_CONNECTIONS: int = int(os.getenv("REDIS_MAX_CONNECTIONS", 10))
     
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_STRICT: bool = False 
+    
 
     CACHE_TTL: int = 3600 
     CACHE_ENABLED: bool = True

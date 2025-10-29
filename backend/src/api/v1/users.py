@@ -1,5 +1,5 @@
 from typing_extensions import List
-from fastapi import APIRouter, HTTPException, status, Depends, Response, Path, Form, File, UploadFile, BackgroundTasks
+from fastapi import APIRouter, HTTPException, status, Depends, Response, Path, Form, File, UploadFile, BackgroundTasks, Request
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.security import OAuth2PasswordRequestForm
@@ -12,6 +12,7 @@ import os
 import uuid
 from datetime import date
 from src.models.email_verification import EmailVerificationModel
+from src.services.rate_limiter import check_rate_limit
 from src.services.RedisService import redis_service
 from src.schemas.users import DeleteUserRequest, UsersSchema, UserResponse, UserCreate, TokenResponse, UserUpdate, VerifyEmailRequest, MessageResponse, ResendVerificationRequest
 from src.services.EmailService import email_service
@@ -47,10 +48,11 @@ MAX_FILE_SIZE = 5 * 1024 * 1024
 
 @router.post("/login", tags=["Верификация Email и авторизация"], summary="Авторизация")
 async def login_user(
+    request: Request,
     session: SessionDep,
     form_data: OAuth2PasswordRequestForm = Depends()
 ):
-
+    await check_rate_limit(request, "auth_login")
     try:
         user = await authenticate_user(form_data.username, form_data.password, session)
         if not user:

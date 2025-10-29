@@ -18,6 +18,8 @@ from src.telegram_bot.bot import support_bot
 from src.core.cache import cached
 from src.services.RedisService import redis_service
 from pathlib import Path
+from src.services.rate_limiter import check_rate_limit
+
 
 router = APIRouter(prefix="/beats", tags=["Аудио файлы"])
 
@@ -26,6 +28,7 @@ AUDIO_STORAGE.mkdir(parents=True, exist_ok=True)
 
 @router.post("/create", response_model=BeatResponse, summary = "Добавить файл")
 async def create_beat(
+    request: Request,
     session: SessionDep,
     current_user_id: Annotated[int, Depends(get_current_user_id)],
     name: str = Form(...),
@@ -37,6 +40,7 @@ async def create_beat(
     mp3_file: UploadFile = File(None),
     wav_file: UploadFile = File(None),
 ):
+    await check_rate_limit(request, "beat_create", current_user_id)
     
     if mp3_file and mp3_file.filename and not mp3_file.filename.lower().endswith('.mp3'):
         raise HTTPException(400, "MP3 файл должен иметь расширение .mp3")
@@ -310,7 +314,6 @@ async def stream_beat(
     if not file_path or not os.path.exists(file_path):
         raise HTTPException(404, "Аудиофайл не найден")
 
-    # ОБНОВЛЯЕМ СЧЕТЧИК СКАЧИВАНИЙ
     if current_user_id != beat.author_id:
         from src.models.users import UsersModel
         
@@ -338,7 +341,6 @@ async def stream_beat(
         filename=f"{beat.name}.{format}"
     )
 
-    # Add CORS headers for direct file access
     response.headers["Access-Control-Allow-Origin"] = "*"
     response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = "*"
@@ -372,6 +374,7 @@ async def delete_beat(
 
 @router.post("/generate-identical/", summary="Создание 100 одинаковых битов")
 async def generate_identical_beats(
+    request: Request,
     session: SessionDep,
     current_user_id: Annotated[int, Depends(get_current_user_id)],
     name: str = Form("Default Beat Name"),
@@ -381,6 +384,9 @@ async def generate_identical_beats(
     mp3_file: UploadFile = File(None),
     wav_file: UploadFile = File(None),
 ):
+    
+    await check_rate_limit(request, "beat_create", current_user_id)
+    
     try:
         if not mp3_file and not wav_file:
             raise HTTPException(status_code=400, detail="Необходимо загрузить хотя бы один файл (MP3 или WAV)")

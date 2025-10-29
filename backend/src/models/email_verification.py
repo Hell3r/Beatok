@@ -11,9 +11,9 @@ class EmailVerificationModel(Base):
     email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
     token: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
     verification_type: Mapped[str] = mapped_column(String(20), default="registration")
-    is_used: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_used: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    expires_at: Mapped[datetime] = mapped_column(DateTime)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, index=True)
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
