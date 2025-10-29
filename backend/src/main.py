@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException
 from src.api import main_router
 import logging
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,6 +14,7 @@ from src.telegram_bot.main import run_telegram_bot
 from src.database.deps import SessionDep
 from src.services.RedisService import redis_service
 from src.core.config import settings
+from src.services.rate_limiter import check_rate_limit
 
 logger = logging.getLogger(__name__)
 
@@ -68,6 +69,25 @@ async def initialize_redis():
             logger.warning("⚠️ Redis connection failed - running without cache")
     except Exception as e:
         logger.warning(f"⚠️ Redis initialization error: {e} - running without cache")
+        
+        
+@app.middleware("http")
+async def global_rate_limit_middleware(request: Request, call_next):
+    if request.url.path.startswith(("/static/", "/audio_storage/", "/docs", "/redoc")):
+        return await call_next(request)
+    
+    try:
+        await check_rate_limit(request, "api_global")
+    except HTTPException:
+        raise
+    except Exception:
+        pass 
+    
+    response = await call_next(request)
+    return response        
+
+
+
 
 @app.on_event("startup")
 async def startup_event():
