@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
+import { useSpring, animated } from '@react-spring/web';
 import { userService } from '../services/userService';
 import { beatService } from '../services/beatService';
 import { getAvatarUrl } from '../utils/getAvatarURL';
 import AuthModal from '../components/AuthModal';
 import BeatTable from '../components/UI/beats/BeatTable';
-import BeatList from '../components/UI/beats/BeatList';
 import RejectionReasonModal from '../components/RejectionReasonModal';
-import type { User } from '../types/auth';
+import { useNotificationContext } from '../components/NotificationProvider';
+import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import type { Beat } from '../types/Beat';
-import Filter from '../components/UI/beats/Filter';
 
 interface UserProfile {
   id: number;
@@ -26,6 +26,7 @@ interface UserProfile {
 }
 
 const ProfilePage: React.FC = () => {
+  const { showSuccess, showError } = useNotificationContext();
   const { id } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const isOwnProfile = !id;
@@ -39,11 +40,7 @@ const ProfilePage: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [avatarUpdateKey, setAvatarUpdateKey] = useState(0);
-  const [activeTab, setActiveTab] = useState<'info' | 'balance' | 'mybeats' | 'stats'>(
-    isOwnProfile ? 'info' : 'mybeats'
-  );
+  const [activeTab, setActiveTab] = useState<'info' | 'balance' | 'mybeats' | 'stats' | 'favorites'>('info');
 
   const [formData, setFormData] = useState({
     username: '',
@@ -54,8 +51,7 @@ const ProfilePage: React.FC = () => {
 
   const [myBeats, setMyBeats] = useState<Beat[]>([]);
   const [beatsLoading, setBeatsLoading] = useState(false);
-  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
-  const [filters, setFilters] = useState({
+  const [filters] = useState({
     name: '',
     author: '',
     genre: '',
@@ -73,6 +69,21 @@ const ProfilePage: React.FC = () => {
     download_count: number;
   } | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
+
+  const [favoriteBeats, setFavoriteBeats] = useState<Beat[]>([]);
+  const [favoriteBeatsLoading, setFavoriteBeatsLoading] = useState(false);
+
+const leftPanelSpring = useSpring({
+  opacity: activeTab === 'mybeats' ? 0 : 1,
+  width: activeTab === 'mybeats' ? '0%' : '33%',
+  scale: activeTab === 'mybeats' ? 0.9 : 1,
+  config: { tension: 300, friction: 30 }
+});
+
+const rightPanelSpring = useSpring({
+  width: activeTab === 'mybeats' ? '100%' : '67%',
+  config: { tension: 300, friction: 30 }
+});
 
   const getCurrentUser = (): UserProfile | null => {
     try {
@@ -118,18 +129,31 @@ const ProfilePage: React.FC = () => {
     }
   };
 
+  const { playBeat } = useAudioPlayer();
+
   const handlePlayBeat = (beat: Beat) => {
-    console.log('Play beat:', beat);
+    playBeat(beat);
   };
 
   const handleDownloadBeat = (beat: Beat) => {
     console.log('Download beat:', beat);
   };
 
+  const handleDeleteBeat = async (beat: Beat) => {
+    try {
+      await beatService.deleteBeat(beat.id);
+      showSuccess('Бит успешно удален');
+      loadMyBeats();
+    } catch (error: any) {
+      console.error('Failed to delete beat:', error);
+      showError(error.message || 'Ошибка при удалении бита');
+    }
+  };
+
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['info', 'balance', 'mybeats', 'stats'].includes(tab)) {
-      setActiveTab(tab as 'info' | 'balance' | 'mybeats' | 'stats');
+    if (tab && ['info', 'balance', 'mybeats', 'stats', 'favorites'].includes(tab)) {
+      setActiveTab(tab as 'info' | 'balance' | 'mybeats' | 'stats' | 'favorites');
     } else {
       setActiveTab(isOwnProfile ? 'info' : 'mybeats');
     }
@@ -150,6 +174,12 @@ const ProfilePage: React.FC = () => {
       loadUserStats();
     }
   }, [user, activeTab, userStats]);
+
+  useEffect(() => {
+    if (user && activeTab === 'favorites' && favoriteBeats.length === 0) {
+      loadFavoriteBeats();
+    }
+  }, [user, activeTab, favoriteBeats.length]);
 
   const loadMyBeats = async () => {
     if (!user) return;
@@ -177,6 +207,20 @@ const ProfilePage: React.FC = () => {
       console.error('Failed to load user stats:', error);
     } finally {
       setStatsLoading(false);
+    }
+  };
+
+  const loadFavoriteBeats = async () => {
+    if (!user) return;
+
+    try {
+      setFavoriteBeatsLoading(true);
+      const beats = await beatService.getFavoriteBeats(user.id);
+      setFavoriteBeats(beats);
+    } catch (error) {
+      console.error('Failed to load favorite beats:', error);
+    } finally {
+      setFavoriteBeatsLoading(false);
     }
   };
 
@@ -258,91 +302,82 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-const handleSave = async () => {
-  try {
-    setSaving(true);
-    if (!user) return;
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      if (!user) return;
 
-    // Подготавливаем данные для отправки
-    const updateData: any = {};
+      const updateData: any = {};
 
-    if (formData.username !== user.username) {
-      updateData.username = formData.username;
-    }
-    if (formData.email !== user.email) {
-      updateData.email = formData.email;
-    }
-    if (formData.description !== (user.description || '')) {
-      updateData.description = formData.description;
-    }
+      if (formData.username !== user.username) {
+        updateData.username = formData.username;
+      }
+      if (formData.email !== user.email) {
+        updateData.email = formData.email;
+      }
+      if (formData.description !== (user.description || '')) {
+        updateData.description = formData.description;
+      }
 
-    // Обрабатываем дату рождения
-    if (formData.birthday) {
-      updateData.birthday = formData.birthday;
-    } else if (user.birthday && !formData.birthday) {
-      updateData.birthday = null;
-    }
+      if (formData.birthday) {
+        updateData.birthday = formData.birthday;
+      } else if (user.birthday && !formData.birthday) {
+        updateData.birthday = null;
+      }
 
-    console.log('🔄 Saving data:', updateData);
+      console.log('🔄 Saving data:', updateData);
 
-    // Если нет изменений
-    if (Object.keys(updateData).length === 0) {
+      if (Object.keys(updateData).length === 0) {
+        setEditing(false);
+        return;
+      }
+
+      const updatedUser = await userService.updateUserProfile(updateData);
+      
+      console.log('✅ Backend response:', updatedUser);
+      console.log('✅ Birthday from backend:', updatedUser.birthday);
+
+      let newBirthday = null;
+      if (updatedUser.birthday) {
+        newBirthday = new Date(updatedUser.birthday);
+      } else if (updateData.birthday === null) {
+        newBirthday = null;
+      } else {
+        newBirthday = user.birthday;
+      }
+
+      console.log('🎯 Final birthday value:', newBirthday);
+
+      const updatedUserData = {
+        ...user,
+        username: updatedUser.username || user.username,
+        email: updatedUser.email || user.email,
+        birthday: newBirthday,
+        description: updatedUser.description || user.description
+      };
+
+      console.log('🔄 Setting user state:', updatedUserData);
+
+      setUser(updatedUserData);
+      updateUserInStorage(updatedUserData);
+
+      setFormData({
+        username: updatedUserData.username,
+        email: updatedUserData.email,
+        birthday: updatedUserData.birthday ? updatedUserData.birthday.toISOString().split('T')[0] : '',
+        description: updatedUserData.description || '',
+      });
+
       setEditing(false);
-      return;
+      showSuccess('Данные успешно обновлены!');
+      
+    } catch (error: any) {
+      console.error('Failed to update user:', error);
+      showError(error.message || 'Ошибка при сохранении данных');
+    } finally {
+      setSaving(false);
     }
-
-    // Вызов API
-    const updatedUser = await userService.updateUserProfile(updateData);
-    
-    console.log('✅ Backend response:', updatedUser);
-    console.log('✅ Birthday from backend:', updatedUser.birthday);
-
-    // 🔥 ИСПРАВЛЕНИЕ: Правильно обрабатываем birthday
-    let newBirthday = null;
-    if (updatedUser.birthday) {
-      // Если бэкенд вернул дату
-      newBirthday = new Date(updatedUser.birthday);
-    } else if (updateData.birthday === null) {
-      // Если мы явно установили null
-      newBirthday = null;
-    } else {
-      // Иначе оставляем старую дату
-      newBirthday = user.birthday;
-    }
-
-    console.log('🎯 Final birthday value:', newBirthday);
-
-    const updatedUserData = {
-      ...user,
-      username: updatedUser.username || user.username,
-      email: updatedUser.email || user.email,
-      birthday: newBirthday, // 🔥 Используем обработанную дату
-      description: updatedUser.description || user.description
-    };
-
-    console.log('🔄 Setting user state:', updatedUserData);
-
-    setUser(updatedUserData);
-    updateUserInStorage(updatedUserData);
-    
-    // Обновляем formData
-    setFormData({
-      username: updatedUserData.username,
-      email: updatedUserData.email,
-      birthday: updatedUserData.birthday ? updatedUserData.birthday.toISOString().split('T')[0] : '',
-      description: updatedUserData.description || '',
-    });
-
-    setEditing(false);
-    alert('Данные успешно обновлены!');
-    
-  } catch (error: any) {
-    console.error('Failed to update user:', error);
-    alert(error.message || 'Ошибка при сохранении данных');
-  } finally {
-    setSaving(false);
-  }
-};
+  };
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -353,12 +388,12 @@ const handleSave = async () => {
 
       const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
       if (!allowedTypes.includes(file.type)) {
-        alert('Разрешены только файлы JPG, PNG и GIF');
+        showError('Разрешены только файлы JPG, PNG и GIF');
         return;
       }
 
       if (file.size > 5 * 1024 * 1024) {
-        alert('Размер файла не должен превышать 5MB');
+        showError('Размер файла не должен превышать 5MB');
         return;
       }
 
@@ -367,11 +402,10 @@ const handleSave = async () => {
 
       const response = await userService.uploadAvatar(user.id, avatarFormData);
       updateUserInStorage({ avatar_path: response.avatar_path });
-      setAvatarUpdateKey(prev => prev + 1);
 
     } catch (error) {
       console.error('Failed to upload avatar:', error);
-      alert('Ошибка при загрузке аватарки');
+      showError('Ошибка при загрузке аватарки');
     } finally {
       setUploading(false);
       if (fileInputRef.current) {
@@ -393,32 +427,31 @@ const handleSave = async () => {
     setRejectionModalOpen(true);
   };
 
-const formatDate = (date: any) => {
-  console.log('🔍 formatDate received:', date, 'type:', typeof date);
-  
-  if (!date) {
-    console.log('❌ No date provided');
-    return 'Не указана';
-  }
-  
-  try {
-    // Пробуем просто создать Date из любого значения
-    const dateObj = new Date(date);
-    console.log('🔍 Created Date object:', dateObj);
+  const formatDate = (date: any) => {
+    console.log('🔍 formatDate received:', date, 'type:', typeof date);
     
-    if (isNaN(dateObj.getTime())) {
-      console.log('❌ Invalid date');
+    if (!date) {
+      console.log('❌ No date provided');
       return 'Не указана';
     }
     
-    const formatted = dateObj.toLocaleDateString('ru-RU');
-    console.log('✅ Formatted date:', formatted);
-    return formatted;
-  } catch (error) {
-    console.log('❌ Error formatting date:', error);
-    return 'Не указана';
-  }
-};
+    try {
+      const dateObj = new Date(date);
+      console.log('🔍 Created Date object:', dateObj);
+      
+      if (isNaN(dateObj.getTime())) {
+        console.log('❌ Invalid date');
+        return 'Не указана';
+      }
+      
+      const formatted = dateObj.toLocaleDateString('ru-RU');
+      console.log('✅ Formatted date:', formatted);
+      return formatted;
+    } catch (error) {
+      console.log('❌ Error formatting date:', error);
+      return 'Не указана';
+    }
+  };
 
   return (
     <>
@@ -458,7 +491,7 @@ const formatDate = (date: any) => {
 
         return (
           <div className="min-h-screen overflow-y-auto">
-            <div className="container mx-auto px-4 max-w-6xl">
+            <div className="container mx-30 px-4 max-w-6xl">
               <div className="mb-8 text-center select-none">
                 <h1 className="text-3xl font-bold text-white mx-auto flex items-center justify-center gap-3">
                   {isOwnProfile ? (
@@ -479,8 +512,11 @@ const formatDate = (date: any) => {
                 </h1>
               </div>
 
-              <div className={`grid gap-8 min-h-125 ${activeTab === 'mybeats' ? 'grid-cols-1' : 'grid-cols-1 lg:grid-cols-3'}`}>
-                <div className={`bg-neutral-900 rounded-lg p-6 border border-neutral-700 min-h-125 ${activeTab === 'mybeats' ? 'hidden' : ''} transition-all duration-700 ease-in-out`}>
+              <div className="flex gap-8 min-h-125">
+                <animated.div
+                  style={leftPanelSpring}
+                  className="bg-neutral-900 rounded-lg p-6 border border-neutral-700 min-h-125 overflow-hidden flex-shrink-0"
+                >
                   <div className="flex flex-col items-center mb-6">
                     <div className="relative group select-none">
                       <img
@@ -539,7 +575,7 @@ const formatDate = (date: any) => {
                         </button>
                       )}
                     </div>
-                    
+
                     {isOwnProfile && editing ? (
                       <textarea
                         name="description"
@@ -555,275 +591,310 @@ const formatDate = (date: any) => {
                       </div>
                     )}
                   </div>
-                </div>
+                </animated.div>
 
-                <div className={`${activeTab === 'mybeats' ? '' : 'lg:col-span-2'} transition-all duration-700 ease-in-out`}>
-                  <div className="bg-neutral-900 rounded-lg p-6 border border-neutral-700 min-h-125">
-
-                    <div className="bg-neutral-800 rounded-lg p-4 border border-neutral-700 mb-6">
-                      <div className="flex space-x-4 justify-center">
-                        {isOwnProfile && (
-                          <button
-                            onClick={() => {
-                              setActiveTab('info');
-                              setSearchParams({ tab: 'info' });
-                            }}
-                            className={`px-4 py-2 rounded-lg transition-colors cursor-pointer select-none ${
-                              activeTab === 'info'
-                                ? 'bg-red-600 text-white'
-                                : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
-                            }`}
-                          >
-                            Основная информация
-                          </button>
-                        )}
-                        {isOwnProfile && (
-                          <button
-                            onClick={() => {
-                              setActiveTab('balance');
-                              setSearchParams({ tab: 'balance' });
-                            }}
-                            className={`px-4 py-2 rounded-lg transition-colors cursor-pointer select-none ${
-                              activeTab === 'balance'
-                                ? 'bg-red-600 text-white'
-                                : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
-                            }`}
-                          >
-                            Баланс
-                          </button>
-                        )}
+                <animated.div
+                  style={rightPanelSpring}
+                  className="bg-neutral-900 rounded-lg p-6 border border-neutral-700 min-h-125 flex-shrink-0"
+                >
+                  <div className="bg-neutral-800 rounded-lg p-4 border border-neutral-700 mb-6">
+                    <div className="flex space-x-4 justify-center">
+                      {isOwnProfile && (
                         <button
                           onClick={() => {
-                            setActiveTab('mybeats');
-                            setSearchParams({ tab: 'mybeats' });
+                            setActiveTab('info');
+                            setSearchParams({ tab: 'info' });
                           }}
                           className={`px-4 py-2 rounded-lg transition-colors cursor-pointer select-none ${
-                            activeTab === 'mybeats'
+                            activeTab === 'info'
                               ? 'bg-red-600 text-white'
                               : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
                           }`}
                         >
-                          {isOwnProfile ? 'Мои биты' : 'Биты'}
+                          Информация
                         </button>
+                      )}
+                      {isOwnProfile && (
                         <button
                           onClick={() => {
-                            setActiveTab('stats');
-                            setSearchParams({ tab: 'stats' });
+                            setActiveTab('balance');
+                            setSearchParams({ tab: 'balance' });
                           }}
                           className={`px-4 py-2 rounded-lg transition-colors cursor-pointer select-none ${
-                            activeTab === 'stats'
+                            activeTab === 'balance'
                               ? 'bg-red-600 text-white'
                               : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
                           }`}
                         >
-                          Статистика
+                          Баланс
                         </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          setActiveTab('mybeats');
+                          setSearchParams({ tab: 'mybeats' });
+                        }}
+                        className={`px-4 py-2 rounded-lg transition-colors cursor-pointer select-none ${
+                          activeTab === 'mybeats'
+                            ? 'bg-red-600 text-white'
+                            : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                        }`}
+                      >
+                        {isOwnProfile ? 'Мои биты' : 'Биты'}
+                      </button>
+                      <button
+                        onClick={() => {
+                          setActiveTab('stats');
+                          setSearchParams({ tab: 'stats' });
+                        }}
+                        className={`px-4 py-2 rounded-lg transition-colors cursor-pointer select-none ${
+                          activeTab === 'stats'
+                            ? 'bg-red-600 text-white'
+                              : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                        }`}
+                      >
+                        Статистика
+                      </button>
+                      {isOwnProfile && (
+                        <button
+                          onClick={() => {
+                            setActiveTab('favorites');
+                            setSearchParams({ tab: 'favorites' });
+                          }}
+                          className={`px-4 py-2 rounded-lg transition-colors cursor-pointer select-none ${
+                            activeTab === 'favorites'
+                              ? 'bg-red-600 text-white'
+                              : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                          }`}
+                        >
+                          Избранное
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {activeTab === 'info' && isOwnProfile && (
+                    <div>
+                      <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-semibold text-white">Основная информация</h2>
+                        {!editing ? (
+                          <button
+                            onClick={handleEdit}
+                            className="bg-red-600 select-none cursor-pointer hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+                          >
+                            Редактировать
+                          </button>
+                        ) : (
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={handleCancel}
+                              className="bg-neutral-700 hover:bg-neutral-600 select-none cursor-pointer text-white px-4 py-2 rounded-lg transition-colors"
+                            >
+                              Отмена
+                            </button>
+                            <button
+                              onClick={handleSave}
+                              disabled={saving}
+                              className="bg-green-600 select-none cursor-pointer hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+                            >
+                              {saving ? 'Сохранение...' : 'Сохранить'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <div>
+                          <label className="block text-neutral-400 text-sm font-medium mb-2">
+                            Имя пользователя
+                          </label>
+                          {editing ? (
+                            <input
+                              type="text"
+                              name="username"
+                              value={formData.username}
+                              onChange={handleInputChange}
+                              className="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-red-500"
+                            />
+                          ) : (
+                            <div className="text-white text-lg">{user.username}</div>
+                          )}
+                        </div>
+                        <hr className='text-neutral-600' />
+                        <div>
+                          <label className="block text-neutral-400 text-sm font-medium mb-2">
+                            Email
+                          </label>
+                            <div className="text-white text-lg">{user.email}</div>
+                        </div>
+                        <hr className='text-neutral-600' />
+                        <div>
+                          <label className="block text-neutral-400 text-sm font-medium mb-2">
+                            Дата рождения
+                          </label>
+                          {editing ? (
+                            <input
+                              type="date"
+                              name="birthday"
+                              value={formData.birthday}
+                              onChange={handleInputChange}
+                              className="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-red-500"
+                            />
+                          ) : (
+                            <div className="text-white text-lg">{formatDate(user.birthday)}</div>
+                          )}
+                        </div>
+                        <hr className='text-neutral-600' />
+                        <div>
+                          <label className="block text-neutral-400 text-sm font-medium mb-2">
+                            Статус
+                          </label>
+                          <div className="text-green-500 text-lg">Активен</div>
+                        </div>
                       </div>
                     </div>
+                  )}
 
-                    {activeTab === 'info' && isOwnProfile && (
-                      <div>
-                        <div className="flex justify-between items-center mb-6">
-                          <h2 className="text-xl font-semibold text-white">Основная информация</h2>
-                          {!editing ? (
+                  {activeTab === 'balance' && isOwnProfile && (
+                    <div>
+                      <h2 className="text-xl font-semibold text-white mb-2">Баланс</h2>
+                      <div className="space-y-6">
+                        <div className="bg-neutral-750 rounded-lg p-4">
+                          <div className="flex justify-between items-center mb-4">
+                            <span className="text-neutral-400">Текущий баланс:</span>
+                            <span className="text-white text-2xl font-bold">{user.balance.toFixed(2)} ₽</span>
+                          </div>
+                          <div className="flex space-x-4">
                             <button
-                              onClick={handleEdit}
-                              className="bg-red-600 select-none cursor-pointer hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+                              onClick={() => showError('Функция пополнения баланса будет реализована позже')}
+                              className="flex-1 bg-white hover:bg-gray-300 text-red-600 px-4 py-2 select-none cursor-pointer rounded-lg transition-colors"
                             >
-                              Редактировать
+                              Пополнить
                             </button>
-                          ) : (
-                            <div className="flex space-x-2">
-                              <button
-                                onClick={handleCancel}
-                                className="bg-neutral-700 hover:bg-neutral-600 select-none cursor-pointer text-white px-4 py-2 rounded-lg transition-colors"
-                              >
-                                Отмена
-                              </button>
-                              <button
-                                onClick={handleSave}
-                                disabled={saving}
-                                className="bg-green-600 select-none cursor-pointer hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
-                              >
-                                {saving ? 'Сохранение...' : 'Сохранить'}
-                              </button>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="space-y-2">
-                          <div>
-                            <label className="block text-neutral-400 text-sm font-medium mb-2">
-                              Имя пользователя
-                            </label>
-                            {editing ? (
-                              <input
-                                type="text"
-                                name="username"
-                                value={formData.username}
-                                onChange={handleInputChange}
-                                className="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-red-500"
-                              />
-                            ) : (
-                              <div className="text-white text-lg">{user.username}</div>
-                            )}
-                          </div>
-                          <hr className='text-neutral-600' />
-                          <div>
-                            <label className="block text-neutral-400 text-sm font-medium mb-2">
-                              Email
-                            </label>
-                              <div className="text-white text-lg">{user.email}</div>
-                          </div>
-                          <hr className='text-neutral-600' />
-                          <div>
-                            <label className="block text-neutral-400 text-sm font-medium mb-2">
-                              Дата рождения
-                            </label>
-                            {editing ? (
-                              <input
-                                type="date"
-                                name="birthday"
-                                value={formData.birthday}
-                                onChange={handleInputChange}
-                                className="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-red-500"
-                              />
-                            ) : (
-                              <div className="text-white text-lg">{formatDate(user.birthday)}</div>
-                            )}
-                          </div>
-                          <hr className='text-neutral-600' />
-                          <div>
-                            <label className="block text-neutral-400 text-sm font-medium mb-2">
-                              Статус
-                            </label>
-                            <div className="text-green-500 text-lg">Активен</div>
+                            <button
+                              onClick={() => showError('Функция вывода средств будет реализована позже')}
+                              className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 select-none cursor-pointer rounded-lg transition-colors"
+                            >
+                              Вывести
+                            </button>
                           </div>
                         </div>
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                    {activeTab === 'balance' && isOwnProfile && (
-                      <div>
-                        <h2 className="text-xl font-semibold text-white mb-2">Баланс</h2>
+                  {activeTab === 'mybeats' && (
+                    <div>
+                      <div className="flex justify-between items-center mb-6">
+                        <h2 className="text-xl font-semibold text-white">
+                          {isOwnProfile ? 'Мои биты' : `Биты ${user.username}`}
+                        </h2>
+                        {!isOwnProfile && (
+                          <div className="text-sm text-neutral-400">
+                            {myBeats.length} бит{myBeats.length !== 1 ? 'ов' : ''}
+                          </div>
+                        )}
+                      </div>
+
+                      {beatsLoading ? (
+                        <div className="flex justify-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                        </div>
+                      ) : myBeats.length === 0 ? (
+                        <div className="text-center py-8">
+                          <p className="text-neutral-400">
+                            {isOwnProfile ? 'У вас пока нет загруженных битов' : 'У пользователя нет битов'}
+                          </p>
+                        </div>
+                      ) : (
+                        <BeatTable 
+                          beats={myBeats} 
+                          filters={filters} 
+                          isProfileView={isOwnProfile}
+                          hideAuthorColumn={true}
+                          onShowRejectionReason={isOwnProfile ? handleShowRejectionReason : undefined}
+                          onPlay={!isOwnProfile ? handlePlayBeat : undefined}
+                          onDownload={!isOwnProfile ? handleDownloadBeat : undefined}
+                          onDeleteBeat={isOwnProfile ? handleDeleteBeat : undefined}
+                        />
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'stats' && (
+                    <div>
+                      <h2 className="text-xl font-semibold text-white">Статистика</h2>
+
+                      {statsLoading ? (
+                        <div className="flex justify-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                        </div>
+                      ) : (
                         <div className="space-y-6">
                           <div className="bg-neutral-750 rounded-lg p-4">
-                            <div className="flex justify-between items-center mb-4">
-                              <span className="text-neutral-400">Текущий баланс:</span>
-                              <span className="text-white text-2xl font-bold">{user.balance.toFixed(2)} ₽</span>
-                            </div>
-                            <div className="flex space-x-4">
-                              <button
-                                onClick={() => alert('Функция пополнения баланса будет реализована позже')}
-                                className="flex-1 bg-white hover:bg-gray-300 text-red-600 px-4 py-2 select-none cursor-pointer rounded-lg transition-colors"
-                              >
-                                Пополнить
-                              </button>
-                              <button
-                                onClick={() => alert('Функция вывода средств будет реализована позже')}
-                                className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 select-none cursor-pointer rounded-lg transition-colors"
-                              >
-                                Вывести
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {activeTab === 'mybeats' && (
-                      <div>
-                        <div className="flex justify-between items-center mb-6">
-                          <h2 className="text-xl font-semibold text-white">
-                            {isOwnProfile ? 'Мои биты' : `Биты ${user.username}`}
-                          </h2>
-                          {!isOwnProfile && (
-                            <div className="text-sm text-neutral-400">
-                              {myBeats.length} бит{myBeats.length !== 1 ? 'ов' : ''}
-                            </div>
-                          )}
-                        </div>
-
-                        {beatsLoading ? (
-                          <div className="flex justify-center py-8">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
-                          </div>
-                        ) : myBeats.length === 0 ? (
-                          <div className="text-center py-8">
-                            <p className="text-neutral-400">
-                              {isOwnProfile ? 'У вас пока нет загруженных битов' : 'У пользователя нет битов'}
-                            </p>
-                          </div>
-                        ) : viewMode === 'table' ? (
-                          <BeatTable 
-                            beats={myBeats} 
-                            filters={filters} 
-                            isProfileView={isOwnProfile}
-                            hideAuthorColumn={true}
-                            onShowRejectionReason={isOwnProfile ? handleShowRejectionReason : undefined}
-                            onPlay={!isOwnProfile ? handlePlayBeat : undefined}
-                            onDownload={!isOwnProfile ? handleDownloadBeat : undefined}
-                          />
-                        ) : (
-                          <BeatList 
-                            beats={myBeats} 
-                            filters={filters} 
-                            isProfileView={isOwnProfile}
-                            onPlay={!isOwnProfile ? handlePlayBeat : undefined}
-                            onDownload={!isOwnProfile ? handleDownloadBeat : undefined}
-                          />
-                        )}
-                      </div>
-                    )}
-
-                    {activeTab === 'stats' && (
-                      <div>
-                        <h2 className="text-xl font-semibold text-white">Статистика</h2>
-
-                        {statsLoading ? (
-                          <div className="flex justify-center py-8">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
-                          </div>
-                        ) : (
-                          <div className="space-y-6">
-                            <div className="bg-neutral-750 rounded-lg p-4">
-                              <div className="space-y-3">
-                                <div className="flex justify-between items-center">
-                                  <span className="text-neutral-400">Загружено битов:</span>
-                                  <span className="text-white font-semibold">{userStats?.beats_count || myBeats.length}</span>
-                                </div>
-                                <hr className='text-neutral-600' />
-                                <div className="flex justify-between items-center">
-                                  <span className="text-neutral-400">Скачано битов:</span>
-                                  <span className="text-white font-semibold">{userStats?.download_count || user.download_count || 0}</span>
-                                </div>
-                                <hr className='text-neutral-600' />
-                                <div className="flex justify-between items-center">
-                                  <span className="text-neutral-400">Продано битов:</span>
-                                  <span className="text-white font-semibold">{userStats?.sold_count || 0}</span>
-                                </div>
+                            <div className="space-y-3">
+                              <div className="flex justify-between items-center">
+                                <span className="text-neutral-400">Загружено битов:</span>
+                                <span className="text-white font-semibold">{userStats?.beats_count || myBeats.length}</span>
                               </div>
-                            </div>
-
-                            <div className="bg-neutral-750 rounded-lg p-4">
-                              <h3 className="text-neutral-400 text-sm font-medium mb-3">Активность</h3>
-                              <div className="space-y-3">
-                                <div className="flex justify-between items-center">
-                                  <span className="text-neutral-400">Последний вход:</span>
-                                  <span className="text-white font-semibold">{formatDate(user.last_login)}</span>
-                                </div>
-                                <div className="flex justify-between items-center">
-                                  <span className="text-neutral-400">Регистрация:</span>
-                                  <span className="text-white font-semibold">{formatDate(user.date_of_reg)}</span>
-                                </div>
+                              <hr className='text-neutral-600' />
+                              <div className="flex justify-between items-center">
+                                <span className="text-neutral-400">Скачано битов:</span>
+                                <span className="text-white font-semibold">{userStats?.download_count || user.download_count || 0}</span>
+                              </div>
+                              <hr className='text-neutral-600' />
+                              <div className="flex justify-between items-center">
+                                <span className="text-neutral-400">Продано битов:</span>
+                                <span className="text-white font-semibold">{userStats?.sold_count || 0}</span>
                               </div>
                             </div>
                           </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
+
+                          <div className="bg-neutral-750 rounded-lg p-4">
+                            <h3 className="text-neutral-400 text-sm font-medium mb-3">Активность</h3>
+                            <div className="space-y-3">
+                              <div className="flex justify-between items-center">
+                                <span className="text-neutral-400">Последний вход:</span>
+                                <span className="text-white font-semibold">{formatDate(user.last_login)}</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-neutral-400">Регистрация:</span>
+                                <span className="text-white font-semibold">{formatDate(user.date_of_reg)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'favorites' && isOwnProfile && (
+                    <div>
+                      <h2 className="text-xl font-semibold text-white">Избранное</h2>
+
+                      {favoriteBeatsLoading ? (
+                        <div className="flex justify-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                        </div>
+                      ) : favoriteBeats.length === 0 ? (
+                        <div className="text-center py-8">
+                          <p className="text-neutral-400">
+                            У вас пока нет избранных битов
+                          </p>
+                        </div>
+                      ) : (
+                        <BeatTable
+                          beats={favoriteBeats}
+                          filters={filters}
+                          isProfileView={false}
+                          hideAuthorColumn={false}
+                          onPlay={handlePlayBeat}
+                          onDownload={handleDownloadBeat}
+                        />
+                      )}
+                    </div>
+                  )}
+                </animated.div>
               </div>
             </div>
           </div>

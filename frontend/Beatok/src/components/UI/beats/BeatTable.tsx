@@ -5,6 +5,9 @@ import { truncateText } from '../../../utils/truncateText';
 import { formatDuration } from '../../../utils/formatDuration';
 import { getAvatarUrl } from '../../../utils/getAvatarURL';
 import type { Filters } from './Filter';
+import ContextMenu from '../ContextMenu';
+import DeleteBeatModal from '../../DeleteBeatModal';
+import BeatPurchaseModal from '../../BeatPurchaseModal';
 
 interface BeatTableProps {
   beats: Beat[];
@@ -17,6 +20,9 @@ interface BeatTableProps {
   isProfileView?: boolean;
   hideAuthorColumn?: boolean;
   onShowRejectionReason?: (beat: Beat) => void;
+  onDeleteBeat?: (beat: Beat) => void;
+  onToggleFavorite?: (beat: Beat) => void;
+  favoriteBeats?: Beat[];
 }
 
 const BeatTable: React.FC<BeatTableProps> = ({
@@ -30,11 +36,19 @@ const BeatTable: React.FC<BeatTableProps> = ({
   isProfileView = false,
   hideAuthorColumn = false,
   onShowRejectionReason,
+  onDeleteBeat,
+  onToggleFavorite,
+  favoriteBeats = [],
 }) => {
   const navigate = useNavigate();
   const [sortField, setSortField] = useState<keyof Beat>('created_at');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
   const [expandedBeatId, setExpandedBeatId] = useState<number | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; beat: Beat } | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [beatToDelete, setBeatToDelete] = useState<Beat | null>(null);
+  const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
+  const [beatToPurchase, setBeatToPurchase] = useState<Beat | null>(null);
 
   const isFree = (beat: Beat): boolean => {
     if (!beat.pricings || beat.pricings.length === 0) return true;
@@ -98,7 +112,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
       year: 'numeric'
     });
   };
-  
+
   const filteredBeats = useMemo(() => {
     return beats.filter((beat) => {
       if (!isProfileView && beat.status !== 'available') {
@@ -127,14 +141,14 @@ const BeatTable: React.FC<BeatTableProps> = ({
 
       if (!isProfileView && !filters.freeOnly) {
         const beatMinPrice = getBeatMinPrice(beat);
-        
+
         if (filters.minPrice) {
           const minPrice = parseFloat(filters.minPrice);
           if (beatMinPrice === null || beatMinPrice < minPrice) {
             return false;
           }
         }
-        
+
         if (filters.maxPrice) {
           const maxPrice = parseFloat(filters.maxPrice);
           if (beatMinPrice === null || beatMinPrice > maxPrice) {
@@ -179,25 +193,78 @@ const BeatTable: React.FC<BeatTableProps> = ({
     return sortDirection === 'asc' ? <span>↑</span> : <span>↓</span>;
   };
 
+  const handleContextMenu = (e: React.MouseEvent, beat: Beat) => {
+    if (!isProfileView) return;
+
+    e.preventDefault();
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      beat,
+    });
+  };
+
+  const handleDeleteClick = () => {
+    if (contextMenu) {
+      setBeatToDelete(contextMenu.beat);
+      setDeleteModalOpen(true);
+      setContextMenu(null);
+    }
+  };
+
+  const handleDeleteConfirm = () => {
+    if (beatToDelete) {
+      onDeleteBeat?.(beatToDelete);
+      setDeleteModalOpen(false);
+      setBeatToDelete(null);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteModalOpen(false);
+    setBeatToDelete(null);
+  };
+
   const renderActions = (beat: Beat) => {
     if (isProfileView) {
       return (
         <td className="p-4 text-center">
-          <span
-            className={`px-3 py-2 rounded text-sm font-medium cursor-pointer ${
-              beat.status === 'available'
-                ? 'bg-green-600 text-white'
-                : beat.status === 'moderated'
-                ? 'bg-neutral-950 text-white'
-                : beat.status === 'denied'
-                ? 'bg-red-600 text-white hover:bg-red-700'
-                : 'bg-red-600 text-white'
-            }`}
-            onClick={() => beat.status === 'denied' && beat.rejection_reason && onShowRejectionReason?.(beat)}
-            title={beat.status === 'denied' && beat.rejection_reason ? 'Нажмите для просмотра причины' : ''}
-          >
-            {beat.status === 'available' ? 'Доступен' : beat.status === 'moderated' ? 'На модерации' : 'Отклонён'}
-          </span>
+          <div className="flex flex-col items-center space-y-2">
+            <span
+              className={`px-3 py-2 rounded text-sm font-medium cursor-pointer ${
+                beat.status === 'available'
+                  ? 'bg-green-600 text-white'
+                  : beat.status === 'moderated'
+                  ? 'bg-neutral-950 text-white'
+                  : beat.status === 'denied'
+                  ? 'bg-red-600 text-white hover:bg-red-700'
+                  : 'bg-red-600 text-white'
+              }`}
+              onClick={() => beat.status === 'denied' && beat.rejection_reason && onShowRejectionReason?.(beat)}
+              title={beat.status === 'denied' && beat.rejection_reason ? 'Нажмите для просмотра причины' : ''}
+            >
+              {beat.status === 'available' ? 'Доступен' : beat.status === 'moderated' ? 'На модерации' : 'Отклонён'}
+            </span>
+            {onPlay && (
+              <button
+                onClick={() => onPlay(beat)}
+                className={`${
+                  currentPlayingBeat?.id === beat.id && isPlaying
+                    ? 'bg-red-600 hover:bg-red-700'
+                    : 'bg-red-600 hover:bg-red-700'
+                } text-white p-2 rounded-full transition-colors cursor-pointer`}
+                title={currentPlayingBeat?.id === beat.id && isPlaying ? "Пауза" : "Воспроизвести"}
+              >
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                  {currentPlayingBeat?.id === beat.id && isPlaying ? (
+                    <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
+                  ) : (
+                    <path d="M8 5v14l11-7z"/>
+                  )}
+                </svg>
+              </button>
+            )}
+          </div>
         </td>
       );
     } else {
@@ -229,12 +296,16 @@ const BeatTable: React.FC<BeatTableProps> = ({
                 title="Скачать"
               >
                 Скачать
-                <div className="absolute -top-1 -right-3 bg-red-600 text-white text-xs font-bold px-1 py-0.5 rounded">
+                <div className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold px-1 py-0.5 rounded">
                   Бесплатно
                 </div>
               </button>
             ) : (
               <button
+                onClick={() => {
+                  setBeatToPurchase(beat);
+                  setPurchaseModalOpen(true);
+                }}
                 className="bg-red-500 hover:bg-red-700 text-white font-bold px-6 py-2 rounded-full transition-colors cursor-pointer"
                 style={{ minWidth: '120px' }}
                 title="Купить"
@@ -242,6 +313,17 @@ const BeatTable: React.FC<BeatTableProps> = ({
                 от {Math.min(...beat.pricings!.filter(p => p.price !== null && p.is_available).map(p => p.price!))} ₽
               </button>
             )}
+            <button
+              onClick={() => onToggleFavorite?.(beat)}
+              className={`p-2 rounded-full transition-colors cursor-pointer ${
+                favoriteBeats.some(fav => fav.id === beat.id) ? 'text-red-500' : 'text-white hover:bg-neutral-700'
+              }`}
+              title={favoriteBeats.some(fav => fav.id === beat.id) ? 'Убрать из избранного' : 'Добавить в избранное'}
+            >
+              <svg className="w-6 h-5" fill={favoriteBeats.some(fav => fav.id === beat.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+              </svg>
+            </button>
           </div>
         </td>
       );
@@ -290,184 +372,209 @@ const BeatTable: React.FC<BeatTableProps> = ({
   }
 
   return (
-    <div className="bg-neutral-900 rounded-lg overflow-hidden border border-neutral-700">
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="bg-neutral-900">
-              <th
-                className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
-                onClick={() => handleSort('name')}
-              >
-                <div className="flex items-center justify-center space-x-2">
-                  <span>Название бита</span>
-                  <SortIcon field="name" />
-                </div>
-              </th>
-              {!isProfileView && !hideAuthorColumn && (
+    <>
+      <div className="bg-neutral-900 rounded-lg overflow-hidden border border-neutral-700">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-neutral-900">
                 <th
                   className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
-                  onClick={() => handleSort('owner')}
+                  onClick={() => handleSort('name')}
                 >
                   <div className="flex items-center justify-center space-x-2">
-                    <span>Автор</span>
-                    <SortIcon field="owner" />
+                    <span>Название бита</span>
+                    <SortIcon field="name" />
                   </div>
                 </th>
-              )}
-              <th
-                className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
-                onClick={() => handleSort('genre')}
-              >
-                <div className="flex items-center justify-center space-x-2">
-                  <span>Жанр</span>
-                  <SortIcon field="genre" />
-                </div>
-              </th>
-              <th
-                className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
-                onClick={() => handleSort('tempo')}
-              >
-                <div className="flex items-center justify-center space-x-2">
-                  <span>Темп</span>
-                  <SortIcon field="tempo" />
-                </div>
-              </th>
-              <th
-                className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
-                onClick={() => handleSort('key')}
-              >
-                <div className="flex items-center justify-center space-x-2">
-                  <span>Тон</span>
-                  <SortIcon field="key" />
-                </div>
-              </th>
-              <th
-                className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
-                onClick={() => handleSort('duration')}
-              >
-                <div className="flex items-center justify-center space-x-2">
-                  <span>Длина</span>
-                  <SortIcon field="duration" />
-                </div>
-              </th>
-              <th
-                className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors hidden md:table-cell"
-                onClick={() => handleSort('size')}
-              >
-                <div className="flex items-center justify-center space-x-2">
-                  <span>Размер</span>
-                  <SortIcon field="size" />
-                </div>
-              </th>
-              <th
-                className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors hidden md:table-cell"
-                onClick={() => handleSort('created_at')}
-              >
-                <div className="flex items-center justify-center space-x-2">
-                  <span>Дата создания</span>
-                  <SortIcon field="created_at" />
-                </div>
-              </th>
-              <th className="p-4 text-center text-white font-semibold">
-                {isProfileView ? 'Статус' : 'Действия'}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {sortedBeats.map((beat) => (
-              <tr
-                key={beat.id}
-                className="border-b border-neutral-800 hover:bg-neutral-800 transition-all duration-300 group"
-                onDoubleClick={() => setExpandedBeatId(expandedBeatId === beat.id ? null : beat.id)}
-              >
-                <td className="p-4 text-center">
-                  <div
-                    className="text-white font-medium group-hover:text-red-400 transition-colors cursor-help mx-auto"
-                    title={beat.name}
-                  >
-                    {truncateText(beat.name, 30)}
-                  </div>
-                  <div className="flex items-center justify-center space-x-1 mt-1">
-                    {beat.promotion_status !== 'standard' && (
-                      <span className={`text-xs px-1 rounded ${
-                        beat.promotion_status === 'featured'
-                          ? 'bg-red-600 text-white'
-                          : 'bg-yellow-600 text-black'
-                      }`}>
-                        {beat.promotion_status}
-                      </span>
-                    )}
-                    {beat.wav_path && (
-                      <span className="text-xs bg-blue-600 text-white px-1 rounded" title="Доступен WAV (высокое качество)">
-                        WAV
-                      </span>
-                    )}
-                    {!beat.wav_path && beat.mp3_path && (
-                      <span className="text-xs bg-green-600 text-white px-1 rounded" title="MP3">
-                        MP3
-                      </span>
-                    )}
-                  </div>
-                </td>
                 {!isProfileView && !hideAuthorColumn && (
-                  <td className="p-4 text-neutral-300 text-center">
+                  <th
+                    className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
+                    onClick={() => handleSort('owner')}
+                  >
                     <div className="flex items-center justify-center space-x-2">
-                      <img
-                        src={getAuthorAvatar(beat)}
-                        alt="Аватар автора"
-                        className="w-6 h-6 rounded-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
-                        }}
-                      />
-                      <span
-                        className="cursor-pointer hover:text-red-400 transition-colors"
-                        onClick={() => handleAuthorClick(beat)}
-                        title={`Перейти к профилю ${getAuthorName(beat)}`}
-                      >
-                        {truncateText(getAuthorName(beat), 15)}
-                      </span>
+                      <span>Автор</span>
+                      <SortIcon field="owner" />
+                    </div>
+                  </th>
+                )}
+                <th
+                  className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
+                  onClick={() => handleSort('genre')}
+                >
+                  <div className="flex items-center justify-center space-x-2">
+                    <span>Жанр</span>
+                    <SortIcon field="genre" />
+                  </div>
+                </th>
+                <th
+                  className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
+                  onClick={() => handleSort('tempo')}
+                >
+                  <div className="flex items-center justify-center space-x-2">
+                    <span>Темп</span>
+                    <SortIcon field="tempo" />
+                  </div>
+                </th>
+                <th
+                  className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
+                  onClick={() => handleSort('key')}
+                >
+                  <div className="flex items-center justify-center space-x-2">
+                    <span>Тон</span>
+                    <SortIcon field="key" />
+                  </div>
+                </th>
+                <th
+                  className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
+                  onClick={() => handleSort('duration')}
+                >
+                  <div className="flex items-center justify-center space-x-2">
+                    <span>Длина</span>
+                    <SortIcon field="duration" />
+                  </div>
+                </th>
+                <th
+                  className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors hidden md:table-cell"
+                  onClick={() => handleSort('size')}
+                >
+                  <div className="flex items-center justify-center space-x-2">
+                    <span>Размер</span>
+                    <SortIcon field="size" />
+                  </div>
+                </th>
+                <th
+                  className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors hidden md:table-cell"
+                  onClick={() => handleSort('created_at')}
+                >
+                  <div className="flex items-center justify-center space-x-2">
+                    <span>Дата создания</span>
+                    <SortIcon field="created_at" />
+                  </div>
+                </th>
+                <th className="p-4 text-center text-white font-semibold">
+                  {isProfileView ? 'Статус' : 'Действия'}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedBeats.map((beat) => (
+                <tr
+                  key={beat.id}
+                  className="border-b border-neutral-800 hover:bg-neutral-800 transition-all duration-300 group"
+                  onDoubleClick={() => setExpandedBeatId(expandedBeatId === beat.id ? null : beat.id)}
+                  onContextMenu={(e) => handleContextMenu(e, beat)}
+                >
+                  <td className="p-4 text-center">
+                    <div
+                      className="text-white font-medium group-hover:text-red-400 transition-colors cursor-help mx-auto"
+                      title={beat.name}
+                    >
+                      {truncateText(beat.name, 30)}
+                    </div>
+                    <div className="flex items-center justify-center space-x-1 mt-1">
+                      {beat.promotion_status !== 'standard' && (
+                        <span className={`text-xs px-1 rounded ${
+                          beat.promotion_status === 'featured'
+                            ? 'bg-red-600 text-white'
+                            : 'bg-yellow-600 text-black'
+                        }`}>
+                          {beat.promotion_status}
+                        </span>
+                      )}
+                      {beat.wav_path && (
+                        <span className="text-xs bg-blue-600 text-white px-1 rounded" title="Доступен WAV (высокое качество)">
+                          WAV
+                        </span>
+                      )}
+                      {!beat.wav_path && beat.mp3_path && (
+                        <span className="text-xs bg-green-600 text-white px-1 rounded" title="MP3">
+                          MP3
+                        </span>
+                      )}
                     </div>
                   </td>
-                )}
-                <td className="p-4 text-center">
-                  <span className="bg-neutral-700 text-neutral-300 px-3 py-2 rounded text-sm min-w-[80px] inline-block">
-                    {beat.genre}
-                  </span>
-                </td>
-                <td className="p-4 text-neutral-300 font-mono text-center">
-                  {beat.tempo} BPM
-                </td>
-                <td className="p-4 text-neutral-300 font-mono text-center">
-                  {beat.key}
-                </td>
-                <td className="p-4 text-neutral-300 text-center">
-                  {formatDuration(beat.duration)}
-                </td>
-                <td className="p-4 text-neutral-300 text-sm hidden md:table-cell text-center">
-                  {formatFileSize(beat.size)}
-                </td>
-                <td className="p-4 text-neutral-400 text-sm hidden md:table-cell text-center">
-                  {formatDate(beat.created_at)}
-                </td>
-                {renderActions(beat)}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  {!isProfileView && !hideAuthorColumn && (
+                    <td className="p-4 text-neutral-300 text-center">
+                      <div className="flex items-center justify-center space-x-2">
+                        <img
+                          src={getAuthorAvatar(beat)}
+                          alt="Аватар автора"
+                          className="w-6 h-6 rounded-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
+                          }}
+                        />
+                        <span
+                          className="cursor-pointer hover:text-red-400 transition-colors"
+                          onClick={() => handleAuthorClick(beat)}
+                          title={`Перейти к профилю ${getAuthorName(beat)}`}
+                        >
+                          {truncateText(getAuthorName(beat), 15)}
+                        </span>
+                      </div>
+                    </td>
+                  )}
+                  <td className="p-4 text-center">
+                    <span className="bg-neutral-700 text-neutral-300 px-3 py-2 rounded text-sm min-w-[80px] inline-block">
+                      {beat.genre}
+                    </span>
+                  </td>
+                  <td className="p-4 text-neutral-300 font-mono text-center">
+                    {beat.tempo} BPM
+                  </td>
+                  <td className="p-4 text-neutral-300 font-mono text-center">
+                    {beat.key}
+                  </td>
+                  <td className="p-4 text-neutral-300 text-center">
+                    {formatDuration(beat.duration)}
+                  </td>
+                  <td className="p-4 text-neutral-300 text-sm hidden md:table-cell text-center">
+                    {formatFileSize(beat.size)}
+                  </td>
+                  <td className="p-4 text-neutral-400 text-sm hidden md:table-cell text-center">
+                    {formatDate(beat.created_at)}
+                  </td>
+                  {renderActions(beat)}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {filteredBeats.length === 0 && !loading && (
+          <div className="text-center py-12 text-neutral-500">
+            <svg className="w-12 h-12 mx-auto mb-4 text-neutral-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+            </svg>
+            <p className="text-lg">Биты не найдены</p>
+            <p className="text-sm">Попробуйте изменить параметры поиска</p>
+          </div>
+        )}
       </div>
 
-      {filteredBeats.length === 0 && !loading && (
-        <div className="text-center py-12 text-neutral-500">
-          <svg className="w-12 h-12 mx-auto mb-4 text-neutral-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
-          </svg>
-          <p className="text-lg">Биты не найдены</p>
-          <p className="text-sm">Попробуйте изменить параметры поиска</p>
-        </div>
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          onDelete={handleDeleteClick}
+          onClose={() => setContextMenu(null)}
+        />
       )}
-    </div>
+
+      <DeleteBeatModal
+        isOpen={deleteModalOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        beatName={beatToDelete?.name || ''}
+      />
+
+      <BeatPurchaseModal
+        isOpen={purchaseModalOpen}
+        onClose={() => setPurchaseModalOpen(false)}
+        beat={beatToPurchase}
+      />
+    </>
   );
 };
 

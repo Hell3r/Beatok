@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { beatService, type Tariff, type BeatPricingCreate } from '../services/beatService';
+import { useTransition, animated } from '@react-spring/web';
+import { beatService, type Tariff } from '../services/beatService';
+import { useNotificationContext } from './NotificationProvider';
+import { useModal } from '../hooks/useModal';
 
 interface AddBeatModalProps {
   isOpen: boolean;
@@ -16,6 +19,8 @@ const genres = [
 ];
 
 const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
+  const { showSuccess } = useNotificationContext();
+  const { openModal, closeModal } = useModal();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [tariffs, setTariffs] = useState<Tariff[]>([]);
@@ -33,9 +38,12 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     if (isOpen) {
+      openModal();
       loadTariffs();
+    } else {
+      closeModal();
     }
-  }, [isOpen]);
+  }, [isOpen, openModal, closeModal]);
 
   const loadTariffs = async () => {
     try {
@@ -46,7 +54,19 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  if (!isOpen) return null;
+  const modalTransition = useTransition(isOpen, {
+    from: { opacity: 0, transform: 'scale(0.8) translateY(-20px)' },
+    enter: { opacity: 1, transform: 'scale(1) translateY(0px)' },
+    leave: { opacity: 0, transform: 'scale(0.8) translateY(-20px)' },
+    config: { tension: 300, friction: 30 }
+  });
+
+  const overlayTransition = useTransition(isOpen, {
+    from: { opacity: 0 },
+    enter: { opacity: 1 },
+    leave: { opacity: 0 },
+    config: { duration: 200 }
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -154,7 +174,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
       });
 
       onClose();
-      alert('Бит успешно отправлен на модерацию!');
+      showSuccess('Бит успешно отправлен на модерацию!');
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Произошла ошибка при добавлении бита');
@@ -191,199 +211,212 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <>
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/30 backdrop-blur-md z-40"
-          onClick={onClose}
-        />
+      {overlayTransition((style, item) =>
+        item && (
+          <animated.div
+            style={style}
+            className="fixed inset-0 bg-black/30 backdrop-blur-md z-40"
+            onClick={onClose}
+          />
+        )
       )}
 
-      {isOpen && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
-          <div className="relative bg-neutral-900 rounded-lg w-full max-w-4xl max-h-[95vh] border border-neutral-800 shadow-2xl">
-            <button
-              onClick={onClose}
-              className="absolute select-none -top-3 -right-2 cursor-pointer bg-neutral-800 hover:bg-neutral-700 text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200 z-10 shadow-lg"
-              aria-label="Закрыть"
-            >
-              ×
-            </button>
-
-            <div className="p-6 border-b border-neutral-800 text-center" >
-              <h2 className="text-xl select-none font-bold text-white">
-                Добавить бит
-              </h2>
-            </div>
-
-            <div className="p-4">
-              {error && (
-                <div className="mb-4 p-3 bg-red-900/80 border border-red-700 rounded text-red-200 text-sm">
-                  {error}
-                </div>
-              )}
-
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium select-none text-neutral-300 mb-2">
-                        Название бита *
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Введите название бита"
-                        value={beatData.name}
-                        onChange={(e) => setBeatData({...beatData, name: e.target.value})}
-                        className="w-full h-12 p-3 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm select-none font-medium text-neutral-300 mb-2">
-                        MP3 файл
-                      </label>
-                      <input
-                        type="file"
-                        accept=".mp3"
-                        onChange={(e) => handleFileChange(e, 'mp3')}
-                        className="w-full h-12 p-1 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer select-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm select-none font-medium text-neutral-300 mb-2">
-                        WAV файл
-                      </label>
-                      <input
-                        type="file"
-                        accept=".wav"
-                        onChange={(e) => handleFileChange(e, 'wav')}
-                        className="w-full h-12 p-1 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer select-none"
-                      />
-                    </div>
+      {modalTransition((style, item) =>
+        item && (
+          <animated.div
+            style={style}
+            className="fixed inset-0 flex items-center justify-center z-50 p-4"
+          >
+            <div className="bg-neutral-900 rounded-lg w-full max-w-4xl max-h-[95vh] border border-neutral-800 shadow-2xl">
+              <div className="p-6 border-b border-neutral-800">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h2 className="text-xl font-bold text-white">
+                      Добавить бит
+                    </h2>
                   </div>
-
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block select-none text-sm font-medium text-neutral-300 mb-2">
-                        Жанр *
-                      </label>
-                      <select
-                        value={beatData.genre}
-                        onChange={(e) => setBeatData({...beatData, genre: e.target.value})}
-                        className="w-full h-12 p-3 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors cursor-pointer"
-                        required
-                      >
-                        <option value="">Выберите жанр</option>
-                        {genres.map((genre) => (
-                          <option key={genre} value={genre}>
-                            {genre}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block select-none text-sm font-medium text-neutral-300 mb-2">
-                        Темп (BPM) *
-                      </label>
-                      <input
-                        type="number"
-                        placeholder="Например: 140"
-                        value={beatData.tempo}
-                        onChange={(e) => setBeatData({...beatData, tempo: e.target.value})}
-                        className="w-full h-12 p-3 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
-                        required
-                        min="1"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block select-none text-sm font-medium text-neutral-300 mb-2">
-                        Тональность *
-                      </label>
-                      <select
-                        value={beatData.key}
-                        onChange={(e) => setBeatData({...beatData, key: e.target.value})}
-                        className="w-full h-12 p-3 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors cursor-pointer"
-                        required
-                      >
-                        <option value="">Выберите тональность</option>
-                        {musicalKeys.map((key) => (
-                          <option key={key} value={key}>
-                            {key}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t border-neutral-700 pt-4">
-                  <div className="flex items-center mb-4">
-                    <input
-                      type="checkbox"
-                      id="is_free"
-                      checked={beatData.is_free}
-                      onChange={(e) => setBeatData({ ...beatData, is_free: e.target.checked })}
-                      className="mr-2"
-                    />
-                    <label htmlFor="is_free" className="text-lg font-medium text-white">
-                      Бесплатно
-                    </label>
-                  </div>
-                  {!beatData.is_free && (
-                    <>
-                      <h3 className="text-lg font-medium text-white mb-4">Цены по тарифам</h3>
-                      <div className="grid grid-cols-1 gap-4">
-                        {tariffs.map((tariff) => (
-                          <div key={tariff.name} className="flex items-center space-x-4">
-                            <label className="flex-1 text-sm font-medium text-neutral-300">
-                              {tariff.display_name}
-                              {tariff.description && (
-                                <span className="block text-xs text-neutral-500 mt-1">
-                                  {tariff.description}
-                                </span>
-                              )}
-                            </label>
-                            <input
-                              type="number"
-                              placeholder="Цена"
-                              value={beatData.pricings[tariff.name] || ''}
-                              onChange={(e) => handlePricingChange(tariff.name, e.target.value)}
-                              className="w-32 h-12 p-3 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
-                              min="0"
-                              step="0.01"
-                            />
-                            <span className="text-neutral-400">₽</span>
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                <div className='text-center'>
                   <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full select-none cursor-pointer max-w-100 mx-auto bg-red-600 hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={onClose}
+                    className="text-neutral-400 cursor-pointer hover:text-white transition-colors"
+                    aria-label="Закрыть"
                   >
-                    {loading ? 'Отправка на модерацию...' : 'Отправить на модерацию'}
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                   </button>
                 </div>
+              </div>
 
-              </form>
+              <div className="p-4">
+                {error && (
+                  <div className="mb-4 p-3 bg-red-900/80 border border-red-700 rounded text-red-200 text-sm">
+                    {error}
+                  </div>
+                )}
 
-              <div className="mt-4 text-center">
-                <p className="text-neutral-400 select-none text-sm">
-                  * - обязательные поля
-                </p>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium select-none text-neutral-300 mb-2">
+                          Название бита *
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Введите название бита"
+                          value={beatData.name}
+                          onChange={(e) => setBeatData({...beatData, name: e.target.value})}
+                          className="w-full h-12 p-3 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
+                          required
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm select-none font-medium text-neutral-300 mb-2">
+                          MP3 файл
+                        </label>
+                        <input
+                          type="file"
+                          accept=".mp3"
+                          onChange={(e) => handleFileChange(e, 'mp3')}
+                          className="w-full h-12 p-1 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer select-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm select-none font-medium text-neutral-300 mb-2">
+                          WAV файл
+                        </label>
+                        <input
+                          type="file"
+                          accept=".wav"
+                          onChange={(e) => handleFileChange(e, 'wav')}
+                          className="w-full h-12 p-1 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer select-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block select-none text-sm font-medium text-neutral-300 mb-2">
+                          Жанр *
+                        </label>
+                        <select
+                          value={beatData.genre}
+                          onChange={(e) => setBeatData({...beatData, genre: e.target.value})}
+                          className="w-full h-12 p-3 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors cursor-pointer"
+                          required
+                        >
+                          <option value="">Выберите жанр</option>
+                          {genres.map((genre) => (
+                            <option key={genre} value={genre}>
+                              {genre}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block select-none text-sm font-medium text-neutral-300 mb-2">
+                          Темп (BPM) *
+                        </label>
+                        <input
+                          type="number"
+                          placeholder="Например: 140"
+                          value={beatData.tempo}
+                          onChange={(e) => setBeatData({...beatData, tempo: e.target.value})}
+                          className="w-full h-12 p-3 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
+                          required
+                          min="1"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block select-none text-sm font-medium text-neutral-300 mb-2">
+                          Тональность *
+                        </label>
+                        <select
+                          value={beatData.key}
+                          onChange={(e) => setBeatData({...beatData, key: e.target.value})}
+                          className="w-full h-12 p-3 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors cursor-pointer"
+                          required
+                        >
+                          <option value="">Выберите тональность</option>
+                          {musicalKeys.map((key) => (
+                            <option key={key} value={key}>
+                              {key}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-neutral-700 pt-4">
+                    <div className="flex items-center mb-4">
+                      <input
+                        type="checkbox"
+                        id="is_free"
+                        checked={beatData.is_free}
+                        onChange={(e) => setBeatData({ ...beatData, is_free: e.target.checked })}
+                        className="mr-2"
+                      />
+                      <label htmlFor="is_free" className="text-lg font-medium text-white">
+                        Бесплатно
+                      </label>
+                    </div>
+                    {!beatData.is_free && (
+                      <>
+                        <h3 className="text-lg font-medium text-white mb-4">Цены по тарифам</h3>
+                        <div className="grid grid-cols-1 gap-4">
+                          {tariffs.map((tariff) => (
+                            <div key={tariff.name} className="flex items-center space-x-4">
+                              <label className="flex-1 text-sm font-medium text-neutral-300">
+                                {tariff.display_name}
+                                {tariff.description && (
+                                  <span className="block text-xs text-neutral-500 mt-1">
+                                    {tariff.description}
+                                  </span>
+                                )}
+                              </label>
+                              <input
+                                type="number"
+                                placeholder="Цена"
+                                value={beatData.pricings[tariff.name] || ''}
+                                onChange={(e) => handlePricingChange(tariff.name, e.target.value)}
+                                className="w-32 h-12 p-3 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
+                                min="0"
+                                step="0.01"
+                              />
+                              <span className="text-neutral-400">₽</span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  <div className='text-center'>
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full select-none cursor-pointer max-w-100 mx-auto bg-red-600 hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? 'Отправка на модерацию...' : 'Отправить на модерацию'}
+                    </button>
+                  </div>
+
+                </form>
+
+                <div className="mt-4 text-center">
+                  <p className="text-neutral-400 select-none text-sm">
+                    * - обязательные поля
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          </animated.div>
+        )
       )}
     </>
   );
