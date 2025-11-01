@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { requestService } from '../services/requestService';
+import { useNotificationContext } from '../components/NotificationProvider';
 
 const SupportPage: React.FC = () => {
+    const { showError } = useNotificationContext();
     const [formData, setFormData] = useState({
         problemType: '',
         description: ''
@@ -54,7 +56,7 @@ const SupportPage: React.FC = () => {
         } catch (error: any) {
             console.error('Failed to create support request:', error);
             if (error.response?.status !== 401) {
-                alert('Произошла ошибка при отправке. Попробуйте еще раз.');
+                showError('Произошла ошибка при отправке. Попробуйте еще раз.');
             }
         } finally {
             setIsSubmitting(false);

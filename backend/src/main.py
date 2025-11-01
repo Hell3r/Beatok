@@ -4,7 +4,7 @@ import logging
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from src.scripts.create_default_avatar import create_default_avatar
 from dotenv import load_dotenv
 from src.tasks.background import task_manager
@@ -15,6 +15,7 @@ from src.database.deps import SessionDep
 from src.services.RedisService import redis_service
 from src.core.config import settings
 from src.services.rate_limiter import check_rate_limit
+from starlette.responses import Response
 
 logger = logging.getLogger(__name__)
 
@@ -118,6 +119,18 @@ async def run_telegram_bot_with_error_handling():
 
 app.mount("/audio_storage", StaticFiles(directory="audio_storage", html=False), name="audio_storage")
 app.mount("/static", StaticFiles(directory="static", html=False), name="static")
+
+@app.get("/audio_storage/{path:path}")
+async def serve_audio_file(path: str):
+    file_path = os.path.join("audio_storage", path)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    response = FileResponse(file_path)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, HEAD, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
 
 @app.get("/docs", include_in_schema=False)
 def custom_swagger():

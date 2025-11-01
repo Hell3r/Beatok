@@ -1,16 +1,40 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const CallToAction: React.FC = () => {
+    const [scale, setScale] = useState(1.5);
+    const imgRef = useRef<HTMLImageElement>(null);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if (!imgRef.current) return;
+            const rect = imgRef.current.getBoundingClientRect();
+
+            if (rect.top < window.innerHeight && rect.bottom > 0) {
+                const progress = (window.innerHeight - rect.top) / window.innerHeight;
+                const newScale = Math.max(1, 1.5 - progress * 0.5);
+                setScale(newScale);
+            } else {
+                setScale(1.5);
+            }
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
   return (
-    <div 
-      style={{
-        backgroundImage: 'url("http://localhost:8000/static/images/first-beat-bg.jpg")',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
-      }}
-      className="w-full p-8 text-center overflow-hidden min-h-[400px] flex items-center justify-center relative"
-    >
+    <div className="w-full p-8 text-center overflow-hidden min-h-[400px] flex items-center justify-center relative">
+      <img
+        ref={imgRef}
+        src="http://localhost:8000/static/images/first-beat-bg.jpg"
+        alt="First Beat Background"
+        className="absolute inset-0 w-full h-full object-cover"
+        style={{
+          transform: `scale(${scale})`,
+          transformOrigin: 'center center',
+          transition: 'transform 0.1s ease-out'
+        }}
+      />
       <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-black/70"></div>
 
       <div className="relative z-10 max-w-4xl">

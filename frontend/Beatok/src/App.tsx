@@ -1,6 +1,10 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
+import { NotificationProvider } from './components/NotificationProvider';
+import { AudioPlayerProvider } from './contexts/AudioPlayerContext';
+import { ModalProvider } from './contexts/ModalProvider';
+import AudioPlayer from './components/AudioPlayer';
 import './index.css';
 import BeatsPage from './pages/BeatsPage';
 import ProfilePage from './pages/ProfilePage';
@@ -23,29 +27,37 @@ const App: React.FC = () => {
   const isUserAuthenticated = !!localStorage.getItem('access_token');
 
   return (
-    <Router>
-      <div className="min-h-screen bg-[#0f0f0f] text-[#e5e5e5]">
-        <Header isAuthenticated={isUserAuthenticated} />
-        
-        <main>
-          <Routes>
-            <Route path="/" element={<HomePage />} />
+    <ModalProvider>
+      <AudioPlayerProvider>
+        <NotificationProvider>
+          <div className="min-h-screen bg-[#0f0f0f] text-[#e5e5e5]">
+            <Router>
+              <Header isAuthenticated={isUserAuthenticated} />
 
-            <Route path="/admin" element={<AdminSwaggerPage />} />
-            <Route path="/profile" element={<PageLayout><ProfilePage /></PageLayout>} />
-            <Route path="/profile/:id" element={<PageLayout><ProfilePage /></PageLayout>} />
-            <Route path="/beats" element={<PageLayout><BeatsPage /></PageLayout>} />
-            <Route path="/about" element={<PageLayout><AboutPage /></PageLayout>} />
-            <Route path="/beatmakers" element={<PageLayout><BeatmakersPage /></PageLayout>} />
-            <Route path="/chart" element={<PageLayout><ChartPage /></PageLayout>} />
-            <Route path="/forum" element={<PageLayout><ForumPage /></PageLayout>} />
-            <Route path="/support" element={<PageLayout><SupportPage /></PageLayout>} />
+              <main>
+                <Routes>
+                  <Route path="/" element={<HomePage />} />
 
-            <Route path="*" element={<PageLayout><Error404 /></PageLayout>} />
-          </Routes>
-        </main>
-      </div>
-    </Router>
+                  <Route path="/admin" element={<AdminSwaggerPage />} />
+                  <Route path="/profile" element={<PageLayout><ProfilePage /></PageLayout>} />
+                  <Route path="/profile/:id" element={<PageLayout><ProfilePage /></PageLayout>} />
+                  <Route path="/beats" element={<PageLayout><BeatsPage /></PageLayout>} />
+                  <Route path="/about" element={<PageLayout><AboutPage /></PageLayout>} />
+                  <Route path="/beatmakers" element={<PageLayout><BeatmakersPage /></PageLayout>} />
+                  <Route path="/chart" element={<PageLayout><ChartPage /></PageLayout>} />
+                  <Route path="/forum" element={<PageLayout><ForumPage /></PageLayout>} />
+                  <Route path="/support" element={<PageLayout><SupportPage /></PageLayout>} />
+
+                  <Route path="*" element={<PageLayout><Error404 /></PageLayout>} />
+                </Routes>
+              </main>
+            </Router>
+
+            <AudioPlayer />
+          </div>
+        </NotificationProvider>
+      </AudioPlayerProvider>
+    </ModalProvider>
   );
 };
 

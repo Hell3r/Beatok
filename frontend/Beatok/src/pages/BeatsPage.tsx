@@ -1,16 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import BeatTable from '../components/UI/beats/BeatTable';
 import ViewToggle from '../components/UI/beats/ViewToggle';
-import AudioPlayer from '../components/AudioPlayer';
+import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import { beatService } from '../services/beatService';
 import type { Beat } from '../types/Beat';
 import BeatList from '../components/UI/beats/BeatList';
 import Filter, { type Filters } from '../components/UI/beats/Filter';
+import { useTransition, animated } from '@react-spring/web';
 
 type ViewMode = 'table' | 'grid';
 
 const BeatsPage: React.FC = () => {
-  const [beats, setBeats] = useState<Beat[]>([]);
+  const [beats, setBeatsLocal] = useState<Beat[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [filters, setFilters] = useState<Filters>({
@@ -23,45 +24,16 @@ const BeatsPage: React.FC = () => {
     maxPrice: '',
     freeOnly: false
   });
+  const [favoriteBeats, setFavoriteBeats] = useState<Beat[]>([]);
 
-  const [currentBeat, setCurrentBeat] = useState<Beat | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [volume, setVolume] = useState(0.7);
+  const { playBeat, currentBeat, isPlaying, setBeats } = useAudioPlayer();
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  useEffect(() => {
-    audioRef.current = new Audio();
-    audioRef.current.volume = volume;
-
-    const updateTime = () => setCurrentTime(audioRef.current?.currentTime || 0);
-    const updateDuration = () => setDuration(audioRef.current?.duration || 0);
-    const handleEnded = () => {
-      setIsPlaying(false);
-      setCurrentTime(0);
-    };
-    const handleError = (e: Event) => {
-      console.error('Audio error:', e);
-      setIsPlaying(false);
-    };
-
-    audioRef.current.addEventListener('timeupdate', updateTime);
-    audioRef.current.addEventListener('loadedmetadata', updateDuration);
-    audioRef.current.addEventListener('ended', handleEnded);
-    audioRef.current.addEventListener('error', handleError);
-
-    return () => {
-      if (audioRef.current) {
-        audioRef.current.removeEventListener('timeupdate', updateTime);
-        audioRef.current.removeEventListener('loadedmetadata', updateDuration);
-        audioRef.current.removeEventListener('ended', handleEnded);
-        audioRef.current.removeEventListener('error', handleError);
-        audioRef.current.pause();
-      }
-    };
-  }, []);
+  const transitions = useTransition(viewMode, {
+    from: { opacity: 0 },
+    enter: { opacity: 1 },
+    leave: { opacity: 0 },
+    config: { duration: 300 },
+  });
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -70,6 +42,7 @@ const BeatsPage: React.FC = () => {
       setFilters(prev => ({ ...prev, freeOnly: true }));
     }
     loadBeats();
+    loadFavoriteBeats();
   }, []);
 
   const loadBeats = async () => {
@@ -77,6 +50,7 @@ const BeatsPage: React.FC = () => {
       setLoading(true);
       const data = await beatService.getBeats();
       console.log('Loaded beats:', data);
+      setBeatsLocal(data);
       setBeats(data);
     } catch (error) {
       console.error('Error loading beats:', error);
@@ -85,99 +59,36 @@ const BeatsPage: React.FC = () => {
     }
   };
 
-  const getAudioSource = (beat: Beat): string | null => {
-    const baseUrl = 'http://localhost:8000'
-    const beatFolder = `beats/${beat.id}`;
-
-    const wavUrl = `${baseUrl}/audio_storage/${beatFolder}/audio.wav`;
-    const mp3Url = `${baseUrl}/audio_storage/${beatFolder}/audio.mp3`;
-
-    console.log('Trying WAV URL:', wavUrl);
-    console.log('Trying MP3 URL:', mp3Url);
-
-    return wavUrl;
-  };
-
-  const checkAudioFile = async (url: string): Promise<boolean> => {
+  const loadFavoriteBeats = async () => {
     try {
-      const response = await fetch(url, { method: 'HEAD' });
-      return response.ok;
-    } catch {
-      console.log('File not available:', url);
-      return false;
+      const token = localStorage.getItem('access_token');
+      if (!token) return;
+      const data = await beatService.getFavoriteBeats(parseInt(JSON.parse(atob(token.split('.')[1])).sub));
+      setFavoriteBeats(data);
+    } catch (error) {
+      console.error('Error loading favorite beats:', error);
     }
   };
 
-  const handlePlay = async (beat: Beat) => {
-    console.log('Play clicked for beat:', beat);
-
-    const baseUrl = 'http://localhost:8000'
-    const beatFolder = `beats/${beat.id}`;
-
-    const wavUrl = `${baseUrl}/audio_storage/${beatFolder}/audio.wav`;
-    const mp3Url = `${baseUrl}/audio_storage/${beatFolder}/audio.mp3`;
-
-    const wavAvailable = await checkAudioFile(wavUrl);
-    const mp3Available = await checkAudioFile(mp3Url);
-
-    console.log('File availability:', {
-      wav: wavAvailable,
-      mp3: mp3Available
-    });
-
-    let audioSource: string | null = null;
-
-    if (wavAvailable) {
-      audioSource = wavUrl;
-    } else if (mp3Available) {
-      audioSource = mp3Url;
-    }
-
-    if (!audioSource) {
-      console.error('No audio files available for beat:', beat.id);
-      return;
-    }
-
-    console.log('Using audio source:', audioSource);
-
-    if (!audioRef.current) {
-      console.error('Audio ref is not initialized');
-      return;
-    }
-
+  const handleToggleFavorite = async (beat: Beat) => {
     try {
-      if (currentBeat?.id !== beat.id) {
-        console.log('Loading new audio source:', audioSource);
-        audioRef.current.src = audioSource;
-        setCurrentBeat(beat);
-        setCurrentTime(0);
-
-        setIsPlaying(true);
-
-        const playPromise = audioRef.current.play();
-        if (playPromise !== undefined) {
-          await playPromise;
-          console.log('Audio started playing');
-        }
+      const isFavorite = favoriteBeats.some(fav => fav.id === beat.id);
+      if (isFavorite) {
+        await beatService.removeFromFavorites(beat.id);
+        setFavoriteBeats(prev => prev.filter(fav => fav.id !== beat.id));
       } else {
-        const newPlayingState = !isPlaying;
-        setIsPlaying(newPlayingState);
-
-        if (newPlayingState) {
-          const playPromise = audioRef.current.play();
-          if (playPromise !== undefined) {
-            await playPromise;
-            console.log('Audio resumed');
-          }
-        } else {
-          audioRef.current.pause();
-          console.log('Audio paused');
-        }
+        await beatService.toggleFavorite(beat.id);
+        setFavoriteBeats(prev => [...prev, beat]);
       }
     } catch (error) {
-      console.error('Error playing audio:', error);
-      setIsPlaying(false);
+      console.error('Error toggling favorite:', error);
     }
+  };
+
+
+
+  const handlePlay = async (beat: Beat) => {
+    playBeat(beat);
   };
 
   const handleDownload = async (beat: Beat) => {
@@ -198,6 +109,16 @@ const BeatsPage: React.FC = () => {
 
     const wavUrl = `${baseUrl}/audio_storage/${beatFolder}/audio.wav`;
     const mp3Url = `${baseUrl}/audio_storage/${beatFolder}/audio.mp3`;
+
+    const checkAudioFile = async (url: string): Promise<boolean> => {
+      try {
+        const response = await fetch(url, { method: 'HEAD' });
+        return response.ok;
+      } catch {
+        console.log('File not available:', url);
+        return false;
+      }
+    };
 
     const wavAvailable = await checkAudioFile(wavUrl);
     const mp3Available = await checkAudioFile(mp3Url);
@@ -237,38 +158,7 @@ const BeatsPage: React.FC = () => {
     }
   };
 
-  const handlePlayPause = async () => {
-    if (!audioRef.current || !currentBeat) return;
 
-    try {
-      if (isPlaying) {
-        audioRef.current.pause();
-        setIsPlaying(false);
-      } else {
-        const playPromise = audioRef.current.play();
-        if (playPromise !== undefined) {
-          await playPromise;
-          setIsPlaying(true);
-        }
-      }
-    } catch (error) {
-      console.error('Error in play/pause:', error);
-    }
-  };
-
-  const handleSeek = (time: number) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = time;
-      setCurrentTime(time);
-    }
-  };
-
-  const handleVolumeChange = (newVolume: number) => {
-    setVolume(newVolume);
-    if (audioRef.current) {
-      audioRef.current.volume = newVolume;
-    }
-  };
 
   return (
     <div className="min-h-screen">
@@ -301,43 +191,42 @@ const BeatsPage: React.FC = () => {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto"></div>
                 <p className="text-neutral-400 mt-4">Загрузка битов...</p>
               </div>
-            ) : viewMode === 'table' ? (
-              <BeatTable
-                beats={beats}
-                loading={loading}
-                currentPlayingBeat={currentBeat}
-                isPlaying={isPlaying}
-                onPlay={handlePlay}
-                onDownload={handleDownload}
-                filters={filters}
-              />
             ) : (
-              <BeatList
-                beats={beats}
-                loading={loading}
-                currentPlayingBeat={currentBeat}
-                isPlaying={isPlaying}
-                onPlay={handlePlay}
-                onDownload={handleDownload}
-                filters={filters}
-              />
+              transitions((style, item) => (
+                <animated.div style={style}>
+                  {item === 'table' ? (
+                    <BeatTable
+                      beats={beats}
+                      loading={loading}
+                      currentPlayingBeat={currentBeat}
+                      isPlaying={isPlaying}
+                      onPlay={handlePlay}
+                      onDownload={handleDownload}
+                      filters={filters}
+                      onToggleFavorite={handleToggleFavorite}
+                      favoriteBeats={favoriteBeats}
+                    />
+                  ) : (
+                    <BeatList
+                      beats={beats}
+                      loading={loading}
+                      currentPlayingBeat={currentBeat}
+                      isPlaying={isPlaying}
+                      onPlay={handlePlay}
+                      onDownload={handleDownload}
+                      filters={filters}
+                      onToggleFavorite={handleToggleFavorite}
+                      favoriteBeats={favoriteBeats}
+                    />
+                  )}
+                </animated.div>
+              ))
             )}
           </div>
         </div>
       </div>
 
-      <AudioPlayer
-        currentBeat={currentBeat}
-        isPlaying={isPlaying}
-        currentTime={currentTime}
-        duration={duration}
-        volume={volume}
-        onPlayPause={handlePlayPause}
-        onSeek={handleSeek}
-        onVolumeChange={handleVolumeChange}
-      />
 
-      <audio ref={audioRef} preload="metadata" />
     </div>
   );
 };

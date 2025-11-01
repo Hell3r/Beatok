@@ -89,6 +89,79 @@ class BeatService {
       body: JSON.stringify(pricing),
     });
   }
+
+  async getFavoriteBeats(userId: number): Promise<Beat[]> {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      throw new Error('Не авторизован');
+    }
+
+    return this.fetchApi(`/users/${userId}/favorites`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  }
+
+  async deleteBeat(beatId: number): Promise<void> {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      throw new Error('Не авторизован');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/beats/${beatId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Ошибка при удалении бита' }));
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+  }
+
+  async toggleFavorite(beatId: number): Promise<void> {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      throw new Error('Не авторизован');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/beats/${beatId}/favorite`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Ошибка при добавлении в избранное' }));
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+  }
+
+  async removeFromFavorites(beatId: number): Promise<void> {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      throw new Error('Не авторизован');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/beats/${beatId}/favorite`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Ошибка при удалении из избранного' }));
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+  }
 }
 
 export const beatService = new BeatService();

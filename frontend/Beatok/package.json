@@ -10,11 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@react-spring/web": "^10.0.3",
     "@tailwindcss/vite": "^4.1.13",
     "axios": "^1.12.2",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-router-dom": "^7.9.3",
+    "react-spring": "^10.0.3",
     "swagger-ui-react": "^5.29.4",
     "tailwindcss": "^4.1.13"
   },
