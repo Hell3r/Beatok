@@ -5,7 +5,6 @@ from datetime import datetime
 from decimal import Decimal
 from src.models.promo import PromoCodeModel, UserPromoCodeModel
 
-
 logger = logging.getLogger(__name__)
 
 class PromoCodeService:
@@ -28,7 +27,6 @@ class PromoCodeService:
         if not promo:
             return {"success": False, "message": "Промокод не найден или недействителен"}
 
-
         if promo.used_count >= promo.max_uses:
             return {"success": False, "message": "Промокод уже использован максимальное количество раз"}
         
@@ -40,7 +38,7 @@ class PromoCodeService:
                     or_(
                         UserPromoCodeModel.status == 'active',
                         UserPromoCodeModel.status == 'applied'
-                        )
+                    )
                 )
             )
         )
@@ -60,12 +58,9 @@ class PromoCodeService:
         if active_count >= promo.max_uses_per_user:
             return {"success": False, "message": "Вы уже активировали этот промокод максимальное количество раз"}
         
-
         if promo.allowed_user_ids and user_id not in promo.allowed_user_ids:
             return {"success": False, "message": "Промокод недоступен для вашего аккаунта"}
         
-        
-
         user_promo = UserPromoCodeModel(
             user_id=user_id,
             promo_code_id=promo.id,
@@ -90,8 +85,6 @@ class PromoCodeService:
         }
     
     async def get_user_active_promos(self, user_id: int):
-        from src.models.promo import UserPromoCodeModel
-    
         result = await self.session.execute(
             select(UserPromoCodeModel)
             .options(selectinload(UserPromoCodeModel.promo_code))
@@ -106,108 +99,87 @@ class PromoCodeService:
         )
         return result.scalars().all()
     
-    async def apply_promo_code(self, user_id: int, purchase_amount: float = 0) -> dict:
+    async def get_applicable_promo_for_deposit(self, user_id: int, deposit_amount: float = 0) -> UserPromoCodeModel:
+        """Получить активный промокод, который можно применить для пополнения"""
+        active_promos = await self.get_user_active_promos(user_id)
+        
+        for user_promo in active_promos:
+            promo = user_promo.promo_code
+            
+            # Проверяем минимальную сумму для процентных промокодов
+            if promo.promo_type == 'percent' and deposit_amount < promo.min_purchase_amount:
+                continue
+                
+            # Для балансовых промокодов минимальная сумма не важна
+            return user_promo
+        
+        return None
+    
+    async def apply_promo_for_deposit(self, user_id: int, deposit_amount: float = 0) -> dict:
+        """Применить активный промокод при пополнении баланса"""
         from src.models.users import UsersModel
-        from sqlalchemy.orm import selectinload
-
-
-        result = await self.session.execute(
-            select(UserPromoCodeModel)
-            .options(selectinload(UserPromoCodeModel.promo_code))  
-            .join(PromoCodeModel)
-            .where(
-                and_(
-                    UserPromoCodeModel.user_id == user_id,
-                    UserPromoCodeModel.status == 'active',
-                    UserPromoCodeModel.expires_at >= datetime.utcnow()
-                )
-            )
-            .order_by(UserPromoCodeModel.activated_at.asc())
-        )
-        user_promo = result.scalar_one_or_none()
-
+        
+        # Ищем активный промокод для применения
+        user_promo = await self.get_applicable_promo_for_deposit(user_id, deposit_amount)
+        
         if not user_promo:
-            return {"success": False, "message": "Нет активных промокодов"}
-
-        promo = user_promo.promo_code 
-
- 
+            return {
+                "success": True,
+                "message": "Активных промокодов для применения нет",
+                "bonus_amount": 0,
+                "promo_applied": False,
+                "promo_code": None
+            }
+        
+        promo = user_promo.promo_code
+        
+        # Получаем пользователя
         user_result = await self.session.execute(
             select(UsersModel).where(UsersModel.id == user_id)
         )
         user = user_result.scalar_one_or_none()
-
+        
         if not user:
             return {"success": False, "message": "Пользователь не найден"}
-
+        
         try:
             bonus_amount = 0
-
+            
+            # Рассчитываем бонус в зависимости от типа промокода
             if promo.promo_type == 'balance':
                 bonus_amount = promo.value
+                bonus_message = f"Бонус {bonus_amount:.2f} руб. по промокоду {promo.code}"
             elif promo.promo_type == 'percent':
-                if purchase_amount < promo.min_purchase_amount:
-                    return {
-                        "success": False,
-                        "message": f"Минимальная сумма для применения: {promo.min_purchase_amount} руб."
-                    }
-                bonus_amount = (purchase_amount * promo.value) / 100
-
-
+                bonus_amount = (deposit_amount * promo.value) / 100
+                bonus_message = f"Бонус {bonus_amount:.2f} руб. ({promo.value}%) по промокоду {promo.code}"
+            else:
+                return {"success": False, "message": "Неизвестный тип промокода"}
+            
+            # Начисляем бонус на баланс
             user.balance += Decimal(str(bonus_amount))
-
-
+            
+            # Помечаем промокод как примененный
             user_promo.status = 'applied'
             user_promo.applied_at = datetime.utcnow()
-
-   
+            
+            # Обновляем статистику промокода
             promo.total_discount_amount += bonus_amount
             promo.total_purchases += 1
-
+            
             await self.session.commit()
-
-            logger.info(f"PROMO_APPLIED: User {user_id} got {bonus_amount} RUB from {promo.code}")
-
+            
+            logger.info(f"PROMO_APPLIED_FOR_DEPOSIT: User {user_id} got {bonus_amount} RUB from {promo.code}")
+            
             return {
                 "success": True,
-                "message": f"Баланс пополнен на {bonus_amount:.2f} руб." if promo.promo_type == 'balance' else f"Баланс пополнен на {bonus_amount:.2f} руб. ({promo.value}%)",
+                "message": bonus_message,
                 "bonus_amount": bonus_amount,
-                "final_amount": float(user.balance),
-                "promo_code": promo.code
+                "promo_applied": True,
+                "promo_code": promo.code,
+                "new_balance": float(user.balance)
             }
-
+            
         except Exception as e:
             await self.session.rollback()
             logger.error(f"PROMO_APPLY_ERROR: {str(e)}")
             return {"success": False, "message": "Ошибка при применении промокода"}
-    
-    async def create_promo_code(self, promo_data) -> PromoCodeModel:
-        from src.models.promo import PromoCodeModel
-        
-
-        existing_result = await self.session.execute(
-            select(PromoCodeModel).where(PromoCodeModel.code == promo_data.code)
-        )
-        if existing_result.scalar_one_or_none():
-            raise ValueError("Промокод с таким кодом уже существует")
-        
-
-        promo = PromoCodeModel(
-            code=promo_data.code.upper().strip(),
-            description=promo_data.description,
-            promo_type=promo_data.promo_type,  # Уже строка
-            value=promo_data.value,
-            max_uses=promo_data.max_uses,
-            max_uses_per_user=promo_data.max_uses_per_user,
-            valid_from=datetime.utcnow(),
-            valid_until=promo_data.valid_until,
-            min_purchase_amount=promo_data.min_purchase_amount,
-            allowed_user_ids=promo_data.allowed_user_ids or []
-        )
-        
-        self.session.add(promo)
-        await self.session.commit()
-        await self.session.refresh(promo)
-        
-        logger.info(f"PROMO_CREATED: Admin created promo code {promo.code}")
-        return promo

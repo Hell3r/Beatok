@@ -27,6 +27,8 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
+logging.getLogger('httpx').setLevel(logging.WARNING)
+
 app = FastAPI(
     title = "Beatok API",
     version = "1.0.0",
@@ -131,6 +133,8 @@ async def serve_audio_file(path: str):
     response.headers["Access-Control-Allow-Methods"] = "GET, HEAD, OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = "*"
     return response
+
+
 
 @app.get("/docs", include_in_schema=False)
 def custom_swagger():
