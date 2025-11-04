@@ -12,6 +12,7 @@ from src.models.requests import RequestsModel
 from src.models.withdrawal import WithdrawalModel
 from src.models.payment import PaymentModel
 from src.models.balance import UserBalanceModel
+from src.models.favorite import FavoriteModel
 from src.services.EmailService import email_service
 from src.dependencies.services import PaymentFacadeServiceDep
 from src.services.PaymentFacade import PaymentFacadeService
