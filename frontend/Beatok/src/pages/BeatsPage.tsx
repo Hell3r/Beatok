@@ -13,7 +13,15 @@ type ViewMode = 'table' | 'grid';
 const BeatsPage: React.FC = () => {
   const [beats, setBeatsLocal] = useState<Beat[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<ViewMode>('table');
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    const saved = localStorage.getItem('beatsViewMode');
+    return (saved as ViewMode) || 'table';
+  });
+
+  const handleViewModeChange = (newViewMode: ViewMode) => {
+    setViewMode(newViewMode);
+    localStorage.setItem('beatsViewMode', newViewMode);
+  };
   const [filters, setFilters] = useState<Filters>({
     name: '',
     author: '',
@@ -63,7 +71,7 @@ const BeatsPage: React.FC = () => {
     try {
       const token = localStorage.getItem('access_token');
       if (!token) return;
-      const data = await beatService.getFavoriteBeats(parseInt(JSON.parse(atob(token.split('.')[1])).sub));
+      const data = await beatService.getFavoriteBeats();
       setFavoriteBeats(data);
     } catch (error) {
       console.error('Error loading favorite beats:', error);
@@ -71,6 +79,13 @@ const BeatsPage: React.FC = () => {
   };
 
   const handleToggleFavorite = async (beat: Beat) => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      // Если не авторизован, открываем модальное окно авторизации
+      const event = new CustomEvent('openAuthModal');
+      window.dispatchEvent(event);
+      return;
+    }
     try {
       const isFavorite = favoriteBeats.some(fav => fav.id === beat.id);
       if (isFavorite) {
@@ -177,7 +192,7 @@ const BeatsPage: React.FC = () => {
             )}
           </div>
 
-          <ViewToggle currentView={viewMode} onViewChange={setViewMode} />
+          <ViewToggle currentView={viewMode} onViewChange={handleViewModeChange} />
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6">

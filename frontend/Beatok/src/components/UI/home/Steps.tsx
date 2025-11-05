@@ -3,7 +3,7 @@ import React from 'react';
 const Steps: React.FC = () => {
   return (
     <div>
-      <div className="container mx-auto px-4 py-16">
+      <div className="container mx-auto px-4 pt-16">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-white mb-4">🚀 Твой путь в мире битмейкинга</h2>
           <p className="text-gray-300 text-lg max-w-2xl mx-auto">

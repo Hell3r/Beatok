@@ -6,6 +6,7 @@ import CallToAction from '../components/UI/home/CallToAction';
 import Steps from '../components/UI/home/Steps';
 import HorizontalLine from '../components/UI/home/HorizontalLine';
 import InverseHorizontalLine from '../components/UI/home/InverseHorizontalLine';
+import Footer from '../components/UI/Footer';
 
 const HomePage: React.FC = () => {
     const [scale, setScale] = useState(1.5);
@@ -83,6 +84,8 @@ const HomePage: React.FC = () => {
 
 
             </div>
+
+            <Footer />
         </div>
     );
 };

@@ -9,7 +9,7 @@ const PopularBeats: React.FC = () => {
   const [beats, setBeats] = useState<Beat[]>([]);
   const [loading, setLoading] = useState(true);
   const [favoriteBeats, setFavoriteBeats] = useState<Beat[]>([]);
-  const { setBeats: setGlobalBeats, currentBeat, isPlaying, playBeat } = useAudioPlayer();
+  const { setBeats: setGlobalBeats, currentBeat, isPlaying, playBeat, toggleFavorite } = useAudioPlayer();
 
   const handlePlay = (beat: Beat) => {
     playBeat(beat);
@@ -19,11 +19,14 @@ const PopularBeats: React.FC = () => {
     console.log('Download beat:', beat.id);
   };
 
-  const { toggleFavorite } = useAudioPlayer();
-
   const handleToggleFavorite = async (beat: Beat) => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      const event = new CustomEvent('openAuthModal');
+      window.dispatchEvent(event);
+      return;
+    }
     await toggleFavorite(beat);
-    // Refresh favorite beats after toggle
     loadFavoriteBeats();
   };
 
@@ -61,7 +64,7 @@ const PopularBeats: React.FC = () => {
     try {
       const token = localStorage.getItem('access_token');
       if (!token) return;
-      const data = await beatService.getFavoriteBeats(parseInt(JSON.parse(atob(token.split('.')[1])).sub));
+      const data = await beatService.getFavoriteBeats();
       setFavoriteBeats(data);
     } catch (error) {
       console.error('Error loading favorite beats:', error);

@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
+import Footer from './components/UI/Footer';
 import { NotificationProvider } from './components/NotificationProvider';
 import { AudioPlayerProvider } from './contexts/AudioPlayerContext';
 import { ModalProvider } from './contexts/ModalProvider';
 import AudioPlayer from './components/AudioPlayer';
+import AuthModal from './components/AuthModal';
 import './index.css';
 import BeatsPage from './pages/BeatsPage';
 import ProfilePage from './pages/ProfilePage';
@@ -22,7 +24,28 @@ const PageLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </div>
 );
 
+const PageLayoutWithFooter: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div className="container mx-auto px-4 pt-8">
+    {children}
+    <Footer />
+  </div>
+);
+
 const App: React.FC = () => {
+  const [authModalOpen, setAuthModalOpen] = React.useState(false);
+
+  useEffect(() => {
+    const handleOpenAuthModal = () => {
+      setAuthModalOpen(true);
+    };
+
+    window.addEventListener('openAuthModal', handleOpenAuthModal);
+
+    return () => {
+      window.removeEventListener('openAuthModal', handleOpenAuthModal);
+    };
+  }, []);
+
   const isUserAuthenticated = !!localStorage.getItem('access_token');
 
   return (
@@ -38,20 +61,21 @@ const App: React.FC = () => {
                   <Route path="/" element={<HomePage />} />
 
                   <Route path="/admin" element={<AdminSwaggerPage />} />
-                  <Route path="/profile" element={<PageLayout><ProfilePage /></PageLayout>} />
-                  <Route path="/profile/:id" element={<PageLayout><ProfilePage /></PageLayout>} />
-                  <Route path="/beats" element={<PageLayout><BeatsPage /></PageLayout>} />
-                  <Route path="/about" element={<PageLayout><AboutPage /></PageLayout>} />
-                  <Route path="/beatmakers" element={<PageLayout><BeatmakersPage /></PageLayout>} />
+                  <Route path="/profile" element={isUserAuthenticated ? <PageLayoutWithFooter><ProfilePage /></PageLayoutWithFooter> : <PageLayout><ProfilePage /></PageLayout>} />
+                  <Route path="/profile/:id" element={isUserAuthenticated ? <PageLayoutWithFooter><ProfilePage /></PageLayoutWithFooter> : <PageLayout><ProfilePage /></PageLayout>} />
+                  <Route path="/beats" element={<PageLayoutWithFooter><BeatsPage /></PageLayoutWithFooter>} />
+                  <Route path="/about" element={<PageLayoutWithFooter><AboutPage /></PageLayoutWithFooter>} />
+                  <Route path="/beatmakers" element={<PageLayoutWithFooter><BeatmakersPage /></PageLayoutWithFooter>} />
                   <Route path="/forum" element={<PageLayout><ForumPage /></PageLayout>} />
-                  <Route path="/support" element={<PageLayout><SupportPage /></PageLayout>} />
+                  <Route path="/support" element={<PageLayoutWithFooter><SupportPage /></PageLayoutWithFooter>} />
 
-                  <Route path="*" element={<PageLayout><Error404 /></PageLayout>} />
+                  <Route path="*" element={<PageLayoutWithFooter><Error404 /></PageLayoutWithFooter>} />
                 </Routes>
               </main>
             </Router>
 
             <AudioPlayer />
+            <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
           </div>
         </NotificationProvider>
       </AudioPlayerProvider>

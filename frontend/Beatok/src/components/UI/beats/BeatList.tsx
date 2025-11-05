@@ -260,7 +260,16 @@ const BeatList: React.FC<BeatListProps> = ({
                   </button>
 
                   <button
-                    onClick={() => onToggleFavorite?.(beat)}
+                    onClick={() => {
+                      const token = localStorage.getItem('access_token');
+                      if (!token) {
+                        // Если не авторизован, открываем модальное окно авторизации
+                        const event = new CustomEvent('openAuthModal');
+                        window.dispatchEvent(event);
+                        return;
+                      }
+                      onToggleFavorite?.(beat);
+                    }}
                     className={`p-3 rounded-full transition-colors cursor-pointer ${
                       favoriteBeats.some(fav => fav.id === beat.id) ? 'text-red-500' : 'text-white hover:bg-neutral-700'
                     }`}

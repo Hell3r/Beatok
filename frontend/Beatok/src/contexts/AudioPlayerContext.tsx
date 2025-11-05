@@ -166,7 +166,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
       try {
         const token = localStorage.getItem('access_token');
         if (!token) return;
-        const data = await beatService.getFavoriteBeats(parseInt(JSON.parse(atob(token.split('.')[1])).sub));
+        const data = await beatService.getFavoriteBeats();
         setFavoriteBeats(data);
       } catch (error) {
         console.error('Error loading favorite beats:', error);

@@ -257,26 +257,23 @@ const AudioPlayer: React.FC = () => {
                 </div>
               </div>
               <button
-                onClick={() => currentBeat && toggleFavorite(currentBeat)}
-                className={`p-2 ml-2 rounded-full transition-all duration-200 cursor-pointer ${
-                  favoriteBeats.some(fav => fav.id === currentBeat?.id)
-                    ? 'bg-red-500 text-white hover:bg-red-600'
-                    : 'text-neutral-400 hover:bg-neutral-600 hover:text-white'
+                onClick={() => {
+                  const token = localStorage.getItem('access_token');
+                  if (!token) {
+                    // Если не авторизован, открываем модальное окно авторизации
+                    const event = new CustomEvent('openAuthModal');
+                    window.dispatchEvent(event);
+                    return;
+                  }
+                  if (currentBeat) toggleFavorite(currentBeat);
+                }}
+                className={`p-2 ml-2 rounded-full transition-colors cursor-pointer ${
+                  favoriteBeats.some(fav => fav.id === currentBeat?.id) ? 'text-red-500' : 'text-white hover:bg-neutral-700'
                 }`}
                 title={favoriteBeats.some(fav => fav.id === currentBeat?.id) ? 'Убрать из избранного' : 'Добавить в избранное'}
               >
-                <svg
-                  className="w-6 h-6"
-                  fill={favoriteBeats.some(fav => fav.id === currentBeat?.id) ? 'currentColor' : 'none'}
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                  />
+                <svg className="w-6 h-5" fill={favoriteBeats.some(fav => fav.id === currentBeat?.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
                 </svg>
               </button>
             </div>

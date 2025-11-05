@@ -8,6 +8,7 @@ import type { Filters } from './Filter';
 import ContextMenu from '../ContextMenu';
 import DeleteBeatModal from '../../DeleteBeatModal';
 import BeatPurchaseModal from '../../BeatPurchaseModal';
+import BeatPromotionModal from '../../BeatPromotionModal';
 
 interface BeatTableProps {
   beats: Beat[];
@@ -49,6 +50,8 @@ const BeatTable: React.FC<BeatTableProps> = ({
   const [beatToDelete, setBeatToDelete] = useState<Beat | null>(null);
   const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
   const [beatToPurchase, setBeatToPurchase] = useState<Beat | null>(null);
+  const [promotionModalOpen, setPromotionModalOpen] = useState(false);
+  const [beatToPromote, setBeatToPromote] = useState<Beat | null>(null);
 
   const isFree = (beat: Beat): boolean => {
     if (!beat.pricings || beat.pricings.length === 0) return true;
@@ -225,13 +228,28 @@ const BeatTable: React.FC<BeatTableProps> = ({
     setBeatToDelete(null);
   };
 
+  const handlePromoteClick = () => {
+    if (contextMenu) {
+      setBeatToPromote(contextMenu.beat);
+      setPromotionModalOpen(true);
+      setContextMenu(null);
+    }
+  };
+
+  const handlePromoteConfirm = async (beatId: number) => {
+    // TODO: Implement promotion logic
+    console.log('Promoting beat:', beatId);
+    setPromotionModalOpen(false);
+    setBeatToPromote(null);
+  };
+
   const renderActions = (beat: Beat) => {
     if (isProfileView) {
       return (
         <td className="p-4 text-center">
           <div className="flex flex-col items-center space-y-2">
             <span
-              className={`px-3 py-2 rounded text-sm font-medium cursor-pointer ${
+              className={`px-3 py-2 rounded text-sm font-medium select-none ${
                 beat.status === 'available'
                   ? 'bg-green-600 text-white'
                   : beat.status === 'moderated'
@@ -314,7 +332,16 @@ const BeatTable: React.FC<BeatTableProps> = ({
               </button>
             )}
             <button
-              onClick={() => onToggleFavorite?.(beat)}
+              onClick={() => {
+                const token = localStorage.getItem('access_token');
+                if (!token) {
+                  // Если не авторизован, открываем модальное окно авторизации
+                  const event = new CustomEvent('openAuthModal');
+                  window.dispatchEvent(event);
+                  return;
+                }
+                onToggleFavorite?.(beat);
+              }}
               className={`p-2 rounded-full transition-colors cursor-pointer ${
                 favoriteBeats.some(fav => fav.id === beat.id) ? 'text-red-500' : 'text-white hover:bg-neutral-700'
               }`}
@@ -474,12 +501,12 @@ const BeatTable: React.FC<BeatTableProps> = ({
                     </div>
                     <div className="flex items-center justify-center space-x-1 mt-1">
                       {beat.promotion_status !== 'standard' && (
-                        <span className={`text-xs px-1 rounded ${
+                        <span className={`text-xs px-1 rounded select-none ${
                           beat.promotion_status === 'featured'
                             ? 'bg-red-600 text-white'
-                            : 'bg-yellow-600 text-black'
+                            : 'bg-yellow-500 text-black'
                         }`}>
-                          {beat.promotion_status}
+                          Продвигается
                         </span>
                       )}
                       {beat.wav_path && (
@@ -558,6 +585,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
           x={contextMenu.x}
           y={contextMenu.y}
           onDelete={handleDeleteClick}
+          onPromote={handlePromoteClick}
           onClose={() => setContextMenu(null)}
         />
       )}
@@ -573,6 +601,13 @@ const BeatTable: React.FC<BeatTableProps> = ({
         isOpen={purchaseModalOpen}
         onClose={() => setPurchaseModalOpen(false)}
         beat={beatToPurchase}
+      />
+
+      <BeatPromotionModal
+        isOpen={promotionModalOpen}
+        onClose={() => setPromotionModalOpen(false)}
+        beat={beatToPromote}
+        onPromote={handlePromoteConfirm}
       />
     </>
   );

@@ -74,14 +74,14 @@ const ProfilePage: React.FC = () => {
   const [favoriteBeatsLoading, setFavoriteBeatsLoading] = useState(false);
 
 const leftPanelSpring = useSpring({
-  opacity: activeTab === 'mybeats' ? 0 : 1,
-  width: activeTab === 'mybeats' ? '0%' : '33%',
-  scale: activeTab === 'mybeats' ? 0.9 : 1,
+  opacity: (activeTab === 'mybeats' || activeTab === 'favorites') ? 0 : 1,
+  width: (activeTab === 'mybeats' || activeTab === 'favorites') ? '0%' : '33%',
+  scale: (activeTab === 'mybeats' || activeTab === 'favorites') ? 0.9 : 1,
   config: { tension: 300, friction: 30 }
 });
 
 const rightPanelSpring = useSpring({
-  width: activeTab === 'mybeats' ? '100%' : '67%',
+  width: (activeTab === 'mybeats' || activeTab === 'favorites') ? '100%' : '67%',
   config: { tension: 300, friction: 30 }
 });
 
@@ -135,8 +135,71 @@ const rightPanelSpring = useSpring({
     playBeat(beat);
   };
 
-  const handleDownloadBeat = (beat: Beat) => {
-    console.log('Download beat:', beat);
+  const handleDownloadBeat = async (beat: Beat) => {
+    const token = localStorage.getItem("access_token")
+    try {
+        await fetch(`http://localhost:8000/beats/${beat.id}/increment-download`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+    } catch (error) {
+        console.log('Не удалось увеличить счетчик скачиваний, но продолжаем скачивание:', error);
+    }
+    const baseUrl = 'http://localhost:8000'
+    const beatFolder = `beats/${beat.id}`;
+
+    const wavUrl = `${baseUrl}/audio_storage/${beatFolder}/audio.wav`;
+    const mp3Url = `${baseUrl}/audio_storage/${beatFolder}/audio.mp3`;
+
+    const checkAudioFile = async (url: string): Promise<boolean> => {
+      try {
+        const response = await fetch(url, { method: 'HEAD' });
+        return response.ok;
+      } catch {
+        console.log('File not available:', url);
+        return false;
+      }
+    };
+
+    const wavAvailable = await checkAudioFile(wavUrl);
+    const mp3Available = await checkAudioFile(mp3Url);
+
+    let downloadSource: string | null = null;
+    let fileExtension: string = '';
+
+    if (wavAvailable) {
+      downloadSource = wavUrl;
+      fileExtension = 'wav';
+    } else if (mp3Available) {
+      downloadSource = mp3Url;
+      fileExtension = 'mp3';
+    }
+
+    if (downloadSource) {
+      try {
+        const response = await fetch(downloadSource);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${beat.name}.${fileExtension}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Download failed:', error);
+        alert('Ошибка при скачивании файла');
+      }
+    } else {
+      alert('Файл для скачивания не доступен');
+    }
   };
 
   const handleDeleteBeat = async (beat: Beat) => {
@@ -181,6 +244,12 @@ const rightPanelSpring = useSpring({
     }
   }, [user, activeTab, favoriteBeats.length]);
 
+  useEffect(() => {
+    if (user && activeTab === 'mybeats' && !isOwnProfile && favoriteBeats.length === 0) {
+      loadFavoriteBeats();
+    }
+  }, [user, activeTab, isOwnProfile, favoriteBeats.length]);
+
   const loadMyBeats = async () => {
     if (!user) return;
 
@@ -215,7 +284,7 @@ const rightPanelSpring = useSpring({
 
     try {
       setFavoriteBeatsLoading(true);
-      const beats = await beatService.getFavoriteBeats(user.id);
+      const beats = await beatService.getFavoriteBeats();
       setFavoriteBeats(beats);
     } catch (error) {
       console.error('Failed to load favorite beats:', error);
@@ -425,6 +494,31 @@ const rightPanelSpring = useSpring({
   const handleShowRejectionReason = (beat: Beat) => {
     setSelectedBeat(beat);
     setRejectionModalOpen(true);
+  };
+
+  const handleToggleFavorite = async (beat: Beat) => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      // Если не авторизован, открываем модальное окно авторизации
+      const event = new CustomEvent('openAuthModal');
+      window.dispatchEvent(event);
+      return;
+    }
+    try {
+      const isFavorite = favoriteBeats.some(fav => fav.id === beat.id);
+      if (isFavorite) {
+        await beatService.removeFromFavorites(beat.id);
+        setFavoriteBeats(prev => prev.filter(fav => fav.id !== beat.id));
+        showSuccess('Бит удален из избранного');
+      } else {
+        await beatService.toggleFavorite(beat.id);
+        setFavoriteBeats(prev => [...prev, beat]);
+        showSuccess('Бит добавлен в избранное');
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      showError('Ошибка при изменении избранного');
+    }
   };
 
   const formatDate = (date: any) => {
@@ -807,15 +901,17 @@ const rightPanelSpring = useSpring({
                           </p>
                         </div>
                       ) : (
-                        <BeatTable 
-                          beats={myBeats} 
-                          filters={filters} 
+                        <BeatTable
+                          beats={myBeats}
+                          filters={filters}
                           isProfileView={isOwnProfile}
                           hideAuthorColumn={true}
                           onShowRejectionReason={isOwnProfile ? handleShowRejectionReason : undefined}
                           onPlay={!isOwnProfile ? handlePlayBeat : undefined}
                           onDownload={!isOwnProfile ? handleDownloadBeat : undefined}
                           onDeleteBeat={isOwnProfile ? handleDeleteBeat : undefined}
+                          onToggleFavorite={!isOwnProfile ? handleToggleFavorite : undefined}
+                          favoriteBeats={!isOwnProfile ? favoriteBeats : undefined}
                         />
                       )}
                     </div>
@@ -870,7 +966,7 @@ const rightPanelSpring = useSpring({
 
                   {activeTab === 'favorites' && isOwnProfile && (
                     <div>
-                      <h2 className="text-xl font-semibold text-white">Избранное</h2>
+                      <h2 className="text-xl font-semibold text-white mb-6">Избранное</h2>
 
                       {favoriteBeatsLoading ? (
                         <div className="flex justify-center py-8">
@@ -890,6 +986,8 @@ const rightPanelSpring = useSpring({
                           hideAuthorColumn={false}
                           onPlay={handlePlayBeat}
                           onDownload={handleDownloadBeat}
+                          onToggleFavorite={handleToggleFavorite}
+                          favoriteBeats={favoriteBeats}
                         />
                       )}
                     </div>
