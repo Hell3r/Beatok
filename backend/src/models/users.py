@@ -22,9 +22,17 @@ class UsersModel(Base):
     description: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
 
 
+    
+
+   
+    withdrawals = relationship("WithdrawalModel", back_populates="user", lazy="selectin")
+    payments = relationship("PaymentModel", back_populates="user", lazy="selectin")
+    active_promos = relationship("UserPromoCodeModel", back_populates="user", lazy="selectin")
+    balance_operations = relationship("UserBalanceModel", back_populates="user", lazy="selectin")
     requests: Mapped[List["RequestsModel"]] = relationship("RequestsModel", back_populates="user")
     beats: Mapped[List["BeatModel"]] = relationship("BeatModel", back_populates="owner")
     active_promos: Mapped[List["UserPromoCodeModel"]] = relationship("UserPromoCodeModel", back_populates="user")
+    favorites: Mapped[List["FavoriteModel"]] = relationship("FavoriteModel", back_populates="user")
 
     def __repr__(self) -> str:
         return f"User(id={self.id}, username='{self.username}', email='{self.email}')"
