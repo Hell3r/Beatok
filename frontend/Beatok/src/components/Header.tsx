@@ -65,12 +65,11 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
   const navItems: NavItem[] = [
     { href: '/', label: 'ГЛАВНАЯ' },
     { href: '/beats', label: 'БИТЫ' },
-    { href: '/chart', label: 'ЧАРТ' },
     { href: '/beats?free=true', label: 'БЕСПЛАТНЫЕ' },
     { href: '/forum', label: 'ФОРУМ' },
     { href: '/beatmakers', label: 'БИТМЕЙКЕРЫ' },
     { href: '/about', label: 'О НАС' },
-    { href: '/support', label: 'ТЕХ. ПОДДЕРЖКА'},]
+    { href: '/support', label: 'FAQ'},]
     
 
 
