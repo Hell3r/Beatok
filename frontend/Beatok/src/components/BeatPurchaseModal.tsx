@@ -49,13 +49,6 @@ const BeatPurchaseModal: React.FC<BeatPurchaseModalProps> = ({ isOpen, onClose, 
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-  };
 
   const availablePricings = beat.pricings?.filter(p => p.is_available && p.price !== null) || [];
 
@@ -116,10 +109,6 @@ const BeatPurchaseModal: React.FC<BeatPurchaseModalProps> = ({ isOpen, onClose, 
                   </div>
                 </div>
 
-                <div className="mb-6">
-                  <div className="text-sm text-neutral-400 mb-1">Размер файла</div>
-                  <div className="text-white font-medium">{formatFileSize(beat.size)}</div>
-                </div>
 
                 <div className="border-t border-neutral-700 pt-6">
                   <h3 className="text-xl font-bold text-white mb-4">Выберите тариф</h3>

@@ -90,17 +90,19 @@ class BeatService {
     });
   }
 
-  async getFavoriteBeats(userId: number): Promise<Beat[]> {
+  async getFavoriteBeats(): Promise<Beat[]> {
     const token = localStorage.getItem('access_token');
     if (!token) {
       throw new Error('Не авторизован');
     }
 
-    return this.fetchApi(`/users/${userId}/favorites`, {
+    const response = await this.fetchApi(`/v1/favorite`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
     });
+
+    return response;
   }
 
   async deleteBeat(beatId: number): Promise<void> {
@@ -129,7 +131,7 @@ class BeatService {
       throw new Error('Не авторизован');
     }
 
-    const response = await fetch(`${API_BASE_URL}/beats/${beatId}/favorite`, {
+    const response = await fetch(`${API_BASE_URL}/v1/favorite/${beatId}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -149,7 +151,7 @@ class BeatService {
       throw new Error('Не авторизован');
     }
 
-    const response = await fetch(`${API_BASE_URL}/beats/${beatId}/favorite`, {
+    const response = await fetch(`${API_BASE_URL}/v1/favorite/${beatId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -161,6 +163,11 @@ class BeatService {
       const errorData = await response.json().catch(() => ({ message: 'Ошибка при удалении из избранного' }));
       throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
     }
+  }
+
+  async getPromotedBeats(): Promise<Beat[]> {
+    const response = await this.fetchApi('/beats?promotion_status=promoted&limit=3');
+    return response;
   }
 }
 

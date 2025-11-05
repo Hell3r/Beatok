@@ -73,7 +73,7 @@ const SupportPage: React.FC = () => {
 
     if (isSubmitted) {
         return (
-            <div className="max-w-4xl mx-auto px-4 py-8 select-none">
+            <div className="max-w-4xl mx-auto px-4 select-none">
                 <div className="bg-neutral-900 rounded-xl p-6 border border-neutral-800 shadow-lg">
                     <div className="flex justify-center">
                         <h2 className="text-white text-xl font-semibold mb-3">Сообщение отправлено!</h2>
@@ -95,7 +95,7 @@ const SupportPage: React.FC = () => {
     }
 
     return (
-        <div className="max-w-4xl mx-auto px-4  select-none">
+        <div className="max-w-4xl mx-auto px-4 select-none">
             <section className="mb-8">
                 <div className='flex justify-center'>
                     <h2 className="text-white text-2xl font-semibold mb-6">Свяжитесь с нами</h2>
@@ -161,21 +161,7 @@ const SupportPage: React.FC = () => {
                 </div>
             </section>
 
-            <section className="pt-8 border-t border-neutral-800">
-                <div className='flex justify-center'>
-                    <h2 className="text-white text-xl font-semibold mb-6">Другие способы связи</h2>
-                </div>
-                <div className="grid md:grid-cols-2 gap-6">
-                    <div className="bg-neutral-900 rounded-xl p-6 border border-neutral-800 shadow-lg">
-                        <h3 className="text-white font-semibold mb-3">Электронная почта</h3>
-                        <p className="text-neutral-400">beatok_service@mail.ru</p>
-                    </div>
-                    <div className="bg-neutral-900 rounded-xl p-6 border border-neutral-800 shadow-lg">
-                        <h3 className="text-white font-semibold mb-3">Время ответа</h3>
-                        <p className="text-neutral-400">Обычно мы отвечаем в течение 24 часов в рабочие дни</p>
-                    </div>
-                </div>
-            </section>
+
         </div>
     );
 };

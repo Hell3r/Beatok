@@ -166,7 +166,8 @@ async def get_beats(
     session: SessionDep,
     skip: int = 0,
     limit: int = 100,
-    author_id: Optional[int] = None
+    author_id: Optional[int] = None,
+    promotion_status: Optional[str] = None
 ):
     from sqlalchemy.orm import selectinload
 
@@ -177,6 +178,9 @@ async def get_beats(
 
     if author_id is not None:
         query = query.where(BeatModel.author_id == author_id)
+
+    if promotion_status is not None:
+        query = query.where(BeatModel.promotion_status == promotion_status)
 
     result = await session.execute(
         query
@@ -512,6 +516,47 @@ async def generate_identical_beats(
     
     
 
+@router.post("/{beat_id}/favorite", summary="Добавить/удалить бит из избранного")
+async def toggle_favorite(
+    beat_id: int,
+    session: SessionDep,
+    current_user_id: Annotated[int, Depends(get_current_user_id)],
+):
+    from src.models.favorite import FavoriteModel
+    from src.models.beats import BeatModel
+
+    # Проверяем, существует ли бит
+    result = await session.execute(select(BeatModel).where(BeatModel.id == beat_id))
+    beat = result.scalar_one_or_none()
+
+    if not beat:
+        raise HTTPException(404, "Бит не найден")
+
+    # Проверяем, есть ли уже в избранном
+    favorite_result = await session.execute(
+        select(FavoriteModel).where(
+            FavoriteModel.user_id == current_user_id,
+            FavoriteModel.beat_id == beat_id
+        )
+    )
+    existing_favorite = favorite_result.scalar_one_or_none()
+
+    if existing_favorite:
+        # Удаляем из избранного
+        await session.delete(existing_favorite)
+        await session.commit()
+        return {"message": "Бит удален из избранного", "action": "removed"}
+    else:
+        # Добавляем в избранное
+        favorite = FavoriteModel(
+            user_id=current_user_id,
+            beat_id=beat_id
+        )
+        session.add(favorite)
+        await session.commit()
+        return {"message": "Бит добавлен в избранное", "action": "added"}
+
+
 @router.post("/{beat_id}/increment-download", summary="Увеличить счетчик скачиваний")
 async def increment_download_count(
     beat_id: int,
@@ -520,7 +565,7 @@ async def increment_download_count(
 ):
     from src.models.users import UsersModel
     from src.models.beats import BeatModel
-    
+
     result = await session.execute(select(BeatModel).where(BeatModel.id == beat_id))
     beat = result.scalar_one_or_none()
 
@@ -532,16 +577,16 @@ async def increment_download_count(
             select(UsersModel).where(UsersModel.id == beat.author_id)
         )
         author = author_result.scalar_one_or_none()
-        
+
         if author:
             old_count = author.download_count or 0
             author.download_count = old_count + 1
             await session.commit()
-            
+
             return {
                 "success": True,
                 "message": "Счетчик скачиваний увеличен",
                 "new_count": author.download_count
             }
-    
+
     return {"success": True, "message": "Автор не может увеличить свой счетчик"}
