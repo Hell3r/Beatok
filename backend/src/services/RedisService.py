@@ -84,10 +84,8 @@ class RedisService:
     
     def _json_serializer(self, obj):
         if hasattr(obj, 'dict'):
-            # ✅ Для SQLModel объектов используем .dict()
             return obj.dict()
         elif hasattr(obj, 'isoformat'):
-            # ✅ Для datetime объектов
             return obj.isoformat()
         raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
 
@@ -105,7 +103,6 @@ class RedisService:
             return False
     
     async def delete_pattern(self, pattern: str) -> bool:
-        """Delete keys by pattern"""
         if not await self.is_connected():
             print("❌ Redis не подключен для удаления паттерна")
             return False
