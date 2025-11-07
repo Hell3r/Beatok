@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import AuthModal from './AuthModal';
 import AddBeatModal from './AddBeatModal';
 import AvatarDropdown from './AvatarDropdown';
+import SubscriptionModal from './SubscriptionModal';
 import type { User } from '../types/auth';
 import { getAvatarUrl } from '../utils/getAvatarURL';
+import { FaHome, FaMusic, FaUser, FaQuestionCircle } from 'react-icons/fa';
 
 interface HeaderProps {
   isAuthenticated?: boolean;
@@ -20,6 +22,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [addBeatModalOpen, setAddBeatModalOpen] = useState(false);
   const [avatarDropdownOpen, setAvatarDropdownOpen] = useState(false);
+  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [avatarKey, setAvatarKey] = useState(0);
 
@@ -78,40 +81,18 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
     window.location.href = '/';
   };
 
-  const handleAuthClick = () => {
-    if (currentUser) {
-      handleLogout();
-    } else {
-      setAuthModalOpen(true);
-    }
+  const getCurrentPath = () => {
+    return window.location.pathname;
   };
 
-  const handleLogout = async () => {
-    try {
-      const token = localStorage.getItem('access_token');
-      
-      if (token) {
-        await fetch('http://localhost:8000/api/v1/users/logout', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      localStorage.removeItem('access_token');
-      localStorage.removeItem('user_info');
-      setCurrentUser(null);
-      window.location.reload();
-    }
 
-  };
+
+
 
   return (
     <>
-      <header className="bg-neutral-950 border-b select-none border-neutral-700 sticky top-0 z-50 backdrop-blur-sm bg-opacity-90">
+      {/* Desktop Header */}
+      <header className="hidden md:block bg-neutral-950 border-b select-none border-neutral-700 sticky top-0 z-50 backdrop-blur-sm bg-opacity-90">
         <nav className="container mx-auto px-4 py-2 flex justify-between items-center">
           <div className="flex items-center space-x-10">
             <a
@@ -124,20 +105,26 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
               <span className="text-red-600">OK</span>
             </a>
 
-            <div className="hidden md:flex space-x-6">
-              {navItems.map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className="text-gray-300 hover:text-white transition-colors duration-200 font-medium focus:outline-none"
-                >
-                  {item.label}
-                </a>
-              ))}
+            <div className="flex space-x-6">
+              {navItems.map((item) => {
+                const isActive = item.href === '/' ? getCurrentPath() === '/' :
+                  item.href === '/beats' ? getCurrentPath() === '/beats' && !window.location.search.includes('free=true') :
+                  item.href === '/beats?free=true' ? window.location.search.includes('free=true') :
+                  getCurrentPath() === item.href;
+                return (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    className={`${isActive ? 'text-white' : 'text-gray-300'} hover:text-white transition-colors duration-200 font-medium focus:outline-none`}
+                  >
+                    {item.label}
+                  </a>
+                );
+              })}
               {currentUser && currentUser.role === 'admin' && (
                 <a
                   href="/admin"
-                  className="text-gray-300 hover:text-white transition-colors duration-200 font-medium focus:outline-none"
+                  className={`${getCurrentPath() === '/admin' ? 'text-white' : 'text-gray-300'} hover:text-white transition-colors duration-200 font-medium focus:outline-none`}
                 >
                   АДМИН ПАНЕЛЬ
                 </a>
@@ -190,20 +177,55 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
 
           </div>
         </nav>
-        <div className="md:hidden bg-gray-800 border-t border-gray-700">
-          <div className="container mx-auto px-4 py-2 flex flex-col space-y-2">
-            {navItems.map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className="text-gray-300 hover:text-white transition-colors duration-200 font-medium py-2 px-2 focus:outline-nones"
-              >
-                {item.label}
-              </a>
-            ))}
+        <div className="gold-shimmer py-1 select-none">
+          <div className="container mx-auto px-4 flex justify-center items-center">
+            <p className="text-black font-medium text-sm mr-4">
+              Загружай до 5 битов в день, продавай без комиссии и отключи рекламу с подпиской всего за 200 р./мес!
+            </p>
+            <button
+              onClick={() => setSubscriptionModalOpen(true)}
+              className="bg-black hover:bg-gray-900 text-white px-3 py-1 rounded-md font-medium transition-colors duration-200 focus:outline-none text-sm cursor-pointer"
+            >
+              Оформить подписку
+            </button>
           </div>
         </div>
       </header>
+
+      {/* Mobile Tab Bar */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-neutral-950 border-t border-neutral-700 z-50">
+        <div className="flex justify-around items-center py-2">
+          <button
+            onClick={() => window.location.href = '/'}
+            className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors hover:bg-neutral-800 ${getCurrentPath() === '/' ? 'bg-red-600' : ''}`}
+          >
+            <FaHome className={`w-5 h-5 ${getCurrentPath() === '/' ? 'text-white' : 'text-gray-300'}`} />
+            <span className={`text-xs ${getCurrentPath() === '/' ? 'text-white' : 'text-gray-300'}`}>Главная</span>
+          </button>
+          <button
+            onClick={() => window.location.href = '/beats'}
+            className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors hover:bg-neutral-800 ${getCurrentPath() === '/beats' ? 'bg-red-600' : ''}`}
+          >
+            <FaMusic className={`w-5 h-5 ${getCurrentPath() === '/beats' ? 'text-white' : 'text-gray-300'}`} />
+            <span className={`text-xs ${getCurrentPath() === '/beats' ? 'text-white' : 'text-gray-300'}`}>Биты</span>
+          </button>
+          <button
+            onClick={() => window.location.href = currentUser ? '/profile' : '#'}
+            onClickCapture={currentUser ? undefined : () => setAuthModalOpen(true)}
+            className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors hover:bg-neutral-800 ${getCurrentPath() === '/profile' ? 'bg-red-600' : ''}`}
+          >
+            <FaUser className={`w-5 h-5 ${getCurrentPath() === '/profile' ? 'text-white' : 'text-gray-300'}`} />
+            <span className={`text-xs ${getCurrentPath() === '/profile' ? 'text-white' : 'text-gray-300'}`}>Профиль</span>
+          </button>
+          <button
+            onClick={() => window.location.href = '/support'}
+            className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors hover:bg-neutral-800 ${getCurrentPath() === '/support' ? 'bg-red-600' : ''}`}
+          >
+            <FaQuestionCircle className={`w-5 h-5 ${getCurrentPath() === '/support' ? 'text-white' : 'text-gray-300'}`} />
+            <span className={`text-xs ${getCurrentPath() === '/support' ? 'text-white' : 'text-gray-300'}`}>FAQ</span>
+          </button>
+        </div>
+      </div>
 
       <AuthModal
         isOpen={authModalOpen}
@@ -213,6 +235,11 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
       <AddBeatModal
         isOpen={addBeatModalOpen}
         onClose={() => setAddBeatModalOpen(false)}
+      />
+
+      <SubscriptionModal
+        isOpen={subscriptionModalOpen}
+        onClose={() => setSubscriptionModalOpen(false)}
       />
     </>
   );

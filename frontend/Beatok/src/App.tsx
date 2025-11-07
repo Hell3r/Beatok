@@ -25,10 +25,12 @@ const PageLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
 );
 
 const PageLayoutWithFooter: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <div className="container mx-auto px-4 pt-8">
-    {children}
+  <>
+    <div className="container mx-auto px-4 pt-8">
+      {children}
+    </div>
     <Footer />
-  </div>
+  </>
 );
 
 const App: React.FC = () => {

@@ -28,6 +28,7 @@ const BeatList: React.FC<BeatListProps> = ({
   isPlaying = false,
   onPlay,
   onDownload,
+  isProfileView = false,
   filters,
   onToggleFavorite,
   favoriteBeats = [],
@@ -202,13 +203,13 @@ const BeatList: React.FC<BeatListProps> = ({
                 </div>
 
                 <div className="flex flex-col items-end space-y-1">
-                  {beat.promotion_status !== 'standard' && (
+                  {isProfileView && beat.promotion_status !== 'standard' && (
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       beat.promotion_status === 'featured'
                         ? 'bg-red-600 text-white'
                         : 'bg-yellow-600 text-black'
                     }`}>
-                      {beat.promotion_status}
+                      Продвигается
                     </span>
                   )}
                   {beat.wav_path && (
@@ -263,7 +264,6 @@ const BeatList: React.FC<BeatListProps> = ({
                     onClick={() => {
                       const token = localStorage.getItem('access_token');
                       if (!token) {
-                        // Если не авторизован, открываем модальное окно авторизации
                         const event = new CustomEvent('openAuthModal');
                         window.dispatchEvent(event);
                         return;

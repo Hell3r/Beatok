@@ -328,6 +328,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                           className="w-full h-12 p-3 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
                           required
                           min="1"
+                          max="552"
                         />
                       </div>
 

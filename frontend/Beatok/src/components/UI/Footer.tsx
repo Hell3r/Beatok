@@ -20,7 +20,7 @@ const Footer: React.FC = () => {
 
 
   return (
-    <footer className="bg-neutral-950 border-t border-neutral-700 py-16">
+    <footer className="bg-neutral-950 border-t w-full border-neutral-700 py-16">
       <div className="container mx-auto px-4">
         <div className="flex flex-col items-center space-y-8">
           <div className="flex flex-wrap justify-center space-x-6">
