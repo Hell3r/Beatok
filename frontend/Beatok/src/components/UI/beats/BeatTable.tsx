@@ -237,7 +237,6 @@ const BeatTable: React.FC<BeatTableProps> = ({
   };
 
   const handlePromoteConfirm = async (beatId: number) => {
-    // TODO: Implement promotion logic
     console.log('Promoting beat:', beatId);
     setPromotionModalOpen(false);
     setBeatToPromote(null);
@@ -266,7 +265,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
             {onPlay && (
               <button
                 onClick={() => onPlay(beat)}
-                className={`${
+                className={`hidden md:block ${
                   currentPlayingBeat?.id === beat.id && isPlaying
                     ? 'bg-red-600 hover:bg-red-700'
                     : 'bg-red-600 hover:bg-red-700'
@@ -335,7 +334,6 @@ const BeatTable: React.FC<BeatTableProps> = ({
               onClick={() => {
                 const token = localStorage.getItem('access_token');
                 if (!token) {
-                  // Если не авторизован, открываем модальное окно авторизации
                   const event = new CustomEvent('openAuthModal');
                   window.dispatchEvent(event);
                   return;
@@ -426,7 +424,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   </th>
                 )}
                 <th
-                  className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
+                  className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors hidden md:table-cell"
                   onClick={() => handleSort('genre')}
                 >
                   <div className="flex items-center justify-center space-x-2">
@@ -435,7 +433,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   </div>
                 </th>
                 <th
-                  className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
+                  className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors hidden md:table-cell"
                   onClick={() => handleSort('tempo')}
                 >
                   <div className="flex items-center justify-center space-x-2">
@@ -444,7 +442,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   </div>
                 </th>
                 <th
-                  className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
+                  className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors hidden md:table-cell"
                   onClick={() => handleSort('key')}
                 >
                   <div className="flex items-center justify-center space-x-2">
@@ -453,7 +451,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   </div>
                 </th>
                 <th
-                  className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
+                  className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors hidden md:table-cell"
                   onClick={() => handleSort('duration')}
                 >
                   <div className="flex items-center justify-center space-x-2">
@@ -499,8 +497,8 @@ const BeatTable: React.FC<BeatTableProps> = ({
                     >
                       {truncateText(beat.name, 30)}
                     </div>
-                    <div className="flex items-center justify-center space-x-1 mt-1">
-                      {beat.promotion_status !== 'standard' && (
+                    <div className="hidden md:flex items-center justify-center space-x-1 mt-1">
+                      {isProfileView && beat.promotion_status !== 'standard' && (
                         <span className={`text-xs px-1 rounded select-none ${
                           beat.promotion_status === 'featured'
                             ? 'bg-red-600 text-white'

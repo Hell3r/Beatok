@@ -583,123 +583,203 @@ const rightPanelSpring = useSpring({
           );
         }
 
-        return (
-          <div className="min-h-screen overflow-y-auto">
-            <div className="container mx-30 px-4 max-w-6xl">
-              <div className="mb-8 text-center select-none">
-                <h1 className="text-3xl font-bold text-white mx-auto flex items-center justify-center gap-3">
-                  {isOwnProfile ? (
-                    `Привет, ${user.username}!`
-                  ) : (
-                    <>
-                      <img
-                        src={getAvatarUrl(user.id, user.avatar_path)}
-                        alt="Аватар"
-                        className="w-8 h-8 rounded-full object-cover border border-neutral-600 mt-1"
-                        onError={(e) => {
-                          e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
-                        }}
-                      />
-                      {user.username}
-                    </>
-                  )}
-                </h1>
+  return (
+    <div className="min-h-screen overflow-y-auto md:pb-0 pb-20">
+      <div className="container mx-4 md:mx-30 px-4 max-w-6xl">
+        {/* Mobile: Avatar and description first */}
+        <div className="md:hidden mb-8">
+          <div className="bg-neutral-900 rounded-lg p-0 border border-neutral-700">
+            <div className="flex flex-col items-center mb-6">
+              <div className="relative group select-none">
+                <img
+                  src={getAvatarUrl(user.id, user.avatar_path)}
+                  alt="Аватар"
+                  className="w-32 h-32 rounded-full object-cover border-4 border-neutral-700 select-none"
+                  onError={(e) => {
+                    e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
+                  }}
+                />
               </div>
 
-              <div className="flex gap-8 min-h-125">
-                <animated.div
-                  style={leftPanelSpring}
-                  className="bg-neutral-900 rounded-lg p-6 border border-neutral-700 min-h-125 overflow-hidden flex-shrink-0"
-                >
-                  <div className="flex flex-col items-center mb-6">
-                    <div className="relative group select-none">
-                      <img
-                        src={getAvatarUrl(user.id, user.avatar_path)}
-                        alt="Аватар"
-                        className="w-32 h-32 rounded-full object-cover border-4 border-neutral-700 select-none"
-                        onError={(e) => {
-                          e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
-                        }}
-                      />
-                    </div>
+              <div className="text-center mt-4">
+                <h2 className="text-xl font-semibold text-white">{user.username}</h2>
+                {isOwnProfile && (
+                  <p className="text-neutral-400 text-sm mt-1">ID: #{user.id}</p>
+                )}
+              </div>
 
-                    <div className="text-center mt-4">
-                      <h2 className="text-xl font-semibold text-white">{user.username}</h2>
-                      {isOwnProfile && (
-                        <p className="text-neutral-400 text-sm mt-1">ID: #{user.id}</p>
-                      )}
-                    </div>
+              {isOwnProfile && (
+                <>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleAvatarUpload}
+                    accept="image/jpeg,image/png,image/gif"
+                    className="hidden"
+                  />
 
-                    {isOwnProfile && (
-                      <>
-                        <input
-                          type="file"
-                          ref={fileInputRef}
-                          onChange={handleAvatarUpload}
-                          accept="image/jpeg,image/png,image/gif"
-                          className="hidden"
-                        />
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="mt-4 select-none bg-red-600 hover:bg-red-700 text-white px-4 py-2 cursor-pointer rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {uploading ? 'Загрузка...' : 'Сменить аватар'}
+                  </button>
 
-                        <button
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={uploading}
-                          className="mt-4 select-none bg-red-600 hover:bg-red-700 text-white px-4 py-2 cursor-pointer rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {uploading ? 'Загрузка...' : 'Сменить аватар'}
-                        </button>
+                  <p className="text-xs text-neutral-400 mt-2 text-center select-none">
+                    JPG, PNG или GIF, не более 5MB
+                  </p>
+                </>
+              )}
+            </div>
 
-                        <p className="text-xs text-neutral-400 mt-2 text-center select-none">
-                          JPG, PNG или GIF, не более 5MB
-                        </p>
-                      </>
-                    )}
-                  </div>
+            <div className="mt-4">
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-neutral-400 text-sm font-medium">
+                  Описание
+                </label>
+                {isOwnProfile && !editing && (
+                  <button
+                    onClick={handleEdit}
+                    className="text-red-500 cursor-pointer select-none hover:text-red-400 text-sm transition-colors"
+                  >
+                    Редактировать
+                  </button>
+                )}
+              </div>
 
-                  <div className="mt-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <label className="block text-neutral-400 text-sm font-medium">
-                        Описание
-                      </label>
-                      {isOwnProfile && !editing && (
-                        <button
-                          onClick={handleEdit}
-                          className="text-red-500 cursor-pointer select-none hover:text-red-400 text-sm transition-colors"
-                        >
-                          Редактировать
-                        </button>
-                      )}
-                    </div>
+              {isOwnProfile && editing ? (
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  rows={4}
+                  className="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-red-500 resize-none text-sm"
+                  placeholder="Расскажите о себе..."
+                />
+              ) : (
+                <div className="text-white text-sm bg-neutral-800 p-3 rounded-lg min-h-[100px] whitespace-pre-wrap">
+                  {user.description || 'Не указано'}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
-                    {isOwnProfile && editing ? (
-                      <textarea
-                        name="description"
-                        value={formData.description}
-                        onChange={handleInputChange}
-                        rows={4}
-                        className="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-red-500 resize-none text-sm"
-                        placeholder="Расскажите о себе..."
-                      />
-                    ) : (
-                      <div className="text-white text-sm bg-neutral-800 p-3 rounded-lg min-h-[100px] whitespace-pre-wrap">
-                        {user.description || 'Не указано'}
-                      </div>
-                    )}
-                  </div>
-                </animated.div>
+        <div className="mb-8 text-center select-none">
+          <h1 className="text-3xl font-bold text-white mx-auto flex items-center justify-center gap-3">
+            {isOwnProfile ? (
+              `Привет, ${user.username}!`
+            ) : (
+              <>
+                <img
+                  src={getAvatarUrl(user.id, user.avatar_path)}
+                  alt="Аватар"
+                  className="w-8 h-8 rounded-full object-cover border border-neutral-600 mt-1"
+                  onError={(e) => {
+                    e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
+                  }}
+                />
+                {user.username}
+              </>
+            )}
+          </h1>
+        </div>
 
-                <animated.div
-                  style={rightPanelSpring}
-                  className="bg-neutral-900 rounded-lg p-6 border border-neutral-700 min-h-125 flex-shrink-0"
-                >
+        <div className="flex gap-8 min-h-125">
+          <animated.div
+            style={leftPanelSpring}
+            className="hidden md:block bg-neutral-900 rounded-lg p-6 border border-neutral-700 min-h-125 overflow-hidden flex-shrink-0"
+          >
+            <div className="flex flex-col items-center mb-6">
+              <div className="relative group select-none">
+                <img
+                  src={getAvatarUrl(user.id, user.avatar_path)}
+                  alt="Аватар"
+                  className="w-32 h-32 rounded-full object-cover border-4 border-neutral-700 select-none"
+                  onError={(e) => {
+                    e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
+                  }}
+                />
+              </div>
+
+              <div className="text-center mt-4">
+                <h2 className="text-xl font-semibold text-white">{user.username}</h2>
+                {isOwnProfile && (
+                  <p className="text-neutral-400 text-sm mt-1">ID: #{user.id}</p>
+                )}
+              </div>
+
+              {isOwnProfile && (
+                <>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleAvatarUpload}
+                    accept="image/jpeg,image/png,image/gif"
+                    className="hidden"
+                  />
+
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="mt-4 select-none bg-red-600 hover:bg-red-700 text-white px-4 py-2 cursor-pointer rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {uploading ? 'Загрузка...' : 'Сменить аватар'}
+                  </button>
+
+                  <p className="text-xs text-neutral-400 mt-2 text-center select-none">
+                    JPG, PNG или GIF, не более 5MB
+                  </p>
+                </>
+              )}
+            </div>
+
+            <div className="mt-4">
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-neutral-400 text-sm font-medium">
+                  Описание
+                </label>
+                {isOwnProfile && !editing && (
+                  <button
+                    onClick={handleEdit}
+                    className="text-red-500 cursor-pointer select-none hover:text-red-400 text-sm transition-colors"
+                  >
+                    Редактировать
+                  </button>
+                )}
+              </div>
+
+              {isOwnProfile && editing ? (
+                <textarea
+                  name="description"
+                  value={formData.description}
+                  onChange={handleInputChange}
+                  rows={4}
+                  className="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-red-500 resize-none text-sm"
+                  placeholder="Расскажите о себе..."
+                />
+              ) : (
+                <div className="text-white text-sm bg-neutral-800 p-3 rounded-lg min-h-[100px] whitespace-pre-wrap">
+                  {user.description || 'Не указано'}
+                </div>
+              )}
+            </div>
+          </animated.div>
+
+          <animated.div
+            style={rightPanelSpring}
+            className="bg-neutral-900 rounded-lg p-6 border border-neutral-700 min-h-125 flex-shrink-0"
+          >
                   <div className="bg-neutral-800 rounded-lg p-4 border border-neutral-700 mb-6">
-                    <div className="flex space-x-4 justify-center">
+                    <div className="flex space-x-2 md:space-x-4 justify-center">
                       {isOwnProfile && (
                         <button
                           onClick={() => {
                             setActiveTab('info');
                             setSearchParams({ tab: 'info' });
                           }}
-                          className={`px-4 py-2 rounded-lg transition-colors cursor-pointer select-none ${
+                          className={`px-2 py-1 md:px-4 md:py-2 text-sm md:text-base rounded-lg transition-colors cursor-pointer select-none ${
                             activeTab === 'info'
                               ? 'bg-red-600 text-white'
                               : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
@@ -714,7 +794,7 @@ const rightPanelSpring = useSpring({
                             setActiveTab('balance');
                             setSearchParams({ tab: 'balance' });
                           }}
-                          className={`px-4 py-2 rounded-lg transition-colors cursor-pointer select-none ${
+                          className={`px-2 py-1 md:px-4 md:py-2 text-sm md:text-base rounded-lg transition-colors cursor-pointer select-none ${
                             activeTab === 'balance'
                               ? 'bg-red-600 text-white'
                               : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
@@ -728,7 +808,7 @@ const rightPanelSpring = useSpring({
                           setActiveTab('mybeats');
                           setSearchParams({ tab: 'mybeats' });
                         }}
-                        className={`px-4 py-2 rounded-lg transition-colors cursor-pointer select-none ${
+                        className={`px-2 py-1 md:px-4 md:py-2 text-sm md:text-base rounded-lg transition-colors cursor-pointer select-none ${
                           activeTab === 'mybeats'
                             ? 'bg-red-600 text-white'
                             : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
@@ -741,7 +821,7 @@ const rightPanelSpring = useSpring({
                           setActiveTab('stats');
                           setSearchParams({ tab: 'stats' });
                         }}
-                        className={`px-4 py-2 rounded-lg transition-colors cursor-pointer select-none ${
+                        className={`px-2 py-1 md:px-4 md:py-2 text-sm md:text-base rounded-lg transition-colors cursor-pointer select-none ${
                           activeTab === 'stats'
                             ? 'bg-red-600 text-white'
                               : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
@@ -755,7 +835,7 @@ const rightPanelSpring = useSpring({
                             setActiveTab('favorites');
                             setSearchParams({ tab: 'favorites' });
                           }}
-                          className={`px-4 py-2 rounded-lg transition-colors cursor-pointer select-none ${
+                          className={`px-2 py-1 md:px-4 md:py-2 text-sm md:text-base rounded-lg transition-colors cursor-pointer select-none ${
                             activeTab === 'favorites'
                               ? 'bg-red-600 text-white'
                               : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'

@@ -7,6 +7,7 @@ import type { Beat } from '../types/Beat';
 import BeatList from '../components/UI/beats/BeatList';
 import Filter, { type Filters } from '../components/UI/beats/Filter';
 import { useTransition, animated } from '@react-spring/web';
+import { FaFilter } from 'react-icons/fa';
 
 type ViewMode = 'table' | 'grid';
 
@@ -17,6 +18,7 @@ const BeatsPage: React.FC = () => {
     const saved = localStorage.getItem('beatsViewMode');
     return (saved as ViewMode) || 'table';
   });
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const handleViewModeChange = (newViewMode: ViewMode) => {
     setViewMode(newViewMode);
@@ -196,8 +198,43 @@ const BeatsPage: React.FC = () => {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6">
+          {/* Desktop Filter */}
           <div className="lg:w-80 flex-shrink-0 sticky top-22 self-start">
             <Filter filters={filters} onFiltersChange={setFilters} />
+          </div>
+
+          {/* Mobile Filter Button and Panel */}
+          <div className="md:hidden">
+            <button
+              onClick={() => setIsFilterOpen(!isFilterOpen)}
+              className="fixed bottom-20 right-4 z-40 bg-red-600 hover:bg-red-700 text-white p-3 rounded-full shadow-lg transition-colors"
+            >
+              <FaFilter className="w-5 h-5" />
+            </button>
+
+            {/* Mobile Filter Panel */}
+            <div
+              className={`fixed top-0 left-0 h-full w-full bg-black bg-opacity-50 z-50 transition-transform duration-300 ${
+                isFilterOpen ? 'translate-x-0' : '-translate-x-full'
+              }`}
+              onClick={() => setIsFilterOpen(false)}
+            >
+              <div
+                className="w-80 h-full bg-neutral-900 p-6 overflow-y-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-white font-semibold text-lg">Фильтры</h3>
+                  <button
+                    onClick={() => setIsFilterOpen(false)}
+                    className="text-neutral-400 hover:text-white text-xl"
+                  >
+                    ×
+                  </button>
+                </div>
+                <Filter filters={filters} onFiltersChange={setFilters} />
+              </div>
+            </div>
           </div>
 
           <div className="flex-1">

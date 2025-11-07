@@ -8,6 +8,13 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
+  padding-bottom: 80px; /* Add padding to account for mobile tab bar */
+}
+
+@media (min-width: 768px) {
+  body {
+    padding-bottom: 0; /* Remove padding on desktop */
+  }
 }
 
 :root {
@@ -69,4 +76,22 @@ body {
     100% {
         background-position: -100% 0%;
     }
+}
+
+@keyframes goldShimmer {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.gold-shimmer {
+    background: linear-gradient(90deg, #fbbf24, #f59e0b, #d98f06, #e88d05, #ed8218, #d97706, #e99910, #fbbf24);
+    background-size: 400% 400%;
+    animation: goldShimmer 6s ease-in-out infinite;
 }
