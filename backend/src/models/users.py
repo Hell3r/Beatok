@@ -20,6 +20,7 @@ class UsersModel(Base):
     last_login: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     download_count: Mapped[int] = mapped_column(Integer, default=0)
     description: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
+    prom_status: Mapped[str] = mapped_column(String(500), nullable= False, default= "standard")
 
 
     
