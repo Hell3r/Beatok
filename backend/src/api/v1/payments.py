@@ -158,7 +158,7 @@ async def get_yookassa_config():
         }
     }
     
-        
+
 @router.post("/webhook", summary= "Ручка для вебхуков")
 async def yookassa_webhook(
     request: Request,
