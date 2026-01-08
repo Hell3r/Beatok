@@ -83,7 +83,6 @@ const BeatsPage: React.FC = () => {
   const handleToggleFavorite = async (beat: Beat) => {
     const token = localStorage.getItem('access_token');
     if (!token) {
-      // Если не авторизован, открываем модальное окно авторизации
       const event = new CustomEvent('openAuthModal');
       window.dispatchEvent(event);
       return;
@@ -194,25 +193,24 @@ const BeatsPage: React.FC = () => {
             )}
           </div>
 
-          <ViewToggle currentView={viewMode} onViewChange={handleViewModeChange} />
-        </div>
-
-        <div className="flex flex-col lg:flex-row gap-6">
-          {/* Desktop Filter */}
-          <div className="lg:w-80 flex-shrink-0 sticky top-22 self-start">
-            <Filter filters={filters} onFiltersChange={setFilters} />
-          </div>
-
-          {/* Mobile Filter Button and Panel */}
-          <div className="md:hidden">
+          <div className="flex items-center space-x-2">
+            <ViewToggle currentView={viewMode} onViewChange={handleViewModeChange} />
             <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
-              className="fixed bottom-20 right-4 z-40 bg-red-600 hover:bg-red-700 text-white p-3 rounded-full shadow-lg transition-colors"
+              className="md:hidden bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition-colors"
+              title="Фильтры"
             >
               <FaFilter className="w-5 h-5" />
             </button>
+          </div>
+        </div>
 
-            {/* Mobile Filter Panel */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          <div className="hidden lg:block lg:w-80 flex-shrink-0 sticky top-22 self-start">
+            <Filter filters={filters} onFiltersChange={setFilters} />
+          </div>
+
+          <div className="md:hidden">
             <div
               className={`fixed top-0 left-0 h-full w-full bg-black bg-opacity-50 z-50 transition-transform duration-300 ${
                 isFilterOpen ? 'translate-x-0' : '-translate-x-full'

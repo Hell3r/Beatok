@@ -260,26 +260,6 @@ const BeatList: React.FC<BeatListProps> = ({
                     </svg>
                   </button>
 
-                  <button
-                    onClick={() => {
-                      const token = localStorage.getItem('access_token');
-                      if (!token) {
-                        const event = new CustomEvent('openAuthModal');
-                        window.dispatchEvent(event);
-                        return;
-                      }
-                      onToggleFavorite?.(beat);
-                    }}
-                    className={`p-3 rounded-full transition-colors cursor-pointer ${
-                      favoriteBeats.some(fav => fav.id === beat.id) ? 'text-red-500' : 'text-white hover:bg-neutral-700'
-                    }`}
-                    title={favoriteBeats.some(fav => fav.id === beat.id) ? 'Убрать из избранного' : 'Добавить в избранное'}
-                  >
-                    <svg className="w-4 h-4" fill={favoriteBeats.some(fav => fav.id === beat.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                    </svg>
-                  </button>
-
                   {isFree(beat) ? (
                     <button
                       onClick={() => onDownload?.(beat)}
@@ -302,6 +282,26 @@ const BeatList: React.FC<BeatListProps> = ({
                       от {Math.min(...beat.pricings!.filter(p => p.price !== null && p.is_available).map(p => p.price!))} ₽
                     </button>
                   )}
+
+                  <button
+                    onClick={() => {
+                      const token = localStorage.getItem('access_token');
+                      if (!token) {
+                        const event = new CustomEvent('openAuthModal');
+                        window.dispatchEvent(event);
+                        return;
+                      }
+                      onToggleFavorite?.(beat);
+                    }}
+                    className={`p-3 rounded-full transition-colors cursor-pointer ${
+                      favoriteBeats.some(fav => fav.id === beat.id) ? 'text-red-500' : 'text-white hover:bg-neutral-700'
+                    }`}
+                    title={favoriteBeats.some(fav => fav.id === beat.id) ? 'Убрать из избранного' : 'Добавить в избранное'}
+                  >
+                    <svg className="w-4 h-4" fill={favoriteBeats.some(fav => fav.id === beat.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                  </button>
                 </div>
 
                 <div className="text-xs text-neutral-500">

@@ -87,7 +87,8 @@ async def login_user(
                 "is_active": user.is_active,
                 "date_of_reg": user.date_of_reg,
                 "last_login": user.last_login,
-                "description": user.description
+                "description": user.description,
+                "prom_status": user.prom_status
             }
         }
         
@@ -176,7 +177,8 @@ async def get_user_profile(
             date_of_reg=user.date_of_reg,
             last_login=user.last_login,
             description=user.description,
-            birthday=user.birthday
+            birthday=user.birthday,
+            prom_status=user.prom_status
         )
 
     except Exception as e:
@@ -220,7 +222,8 @@ async def update_user_profile(
             birthday=user.birthday,
             is_active=user.is_active,
             avatar_path=user.avatar_path,
-            description=user.description
+            description=user.description,
+            prom_status=user.prom_status
         )
 
     except Exception as e:

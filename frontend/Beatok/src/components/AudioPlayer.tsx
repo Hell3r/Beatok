@@ -260,7 +260,6 @@ const AudioPlayer: React.FC = () => {
                 onClick={() => {
                   const token = localStorage.getItem('access_token');
                   if (!token) {
-                    // Если не авторизован, открываем модальное окно авторизации
                     const event = new CustomEvent('openAuthModal');
                     window.dispatchEvent(event);
                     return;
