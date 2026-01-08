@@ -33,7 +33,12 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
 
     if (token && userInfo) {
       try {
-        setCurrentUser(JSON.parse(userInfo));
+        const parsedUserInfo = JSON.parse(userInfo);
+        // Ensure prom_status defaults to 'standard' if not present
+        if (!parsedUserInfo.prom_status) {
+          parsedUserInfo.prom_status = 'standard';
+        }
+        setCurrentUser(parsedUserInfo);
       } catch (error) {
         console.error('Error parsing user info:', error);
         localStorage.removeItem('access_token');
@@ -45,7 +50,12 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
       const userInfo = localStorage.getItem('user_info');
       if (userInfo) {
         try {
-          setCurrentUser(JSON.parse(userInfo));
+          const parsedUserInfo = JSON.parse(userInfo);
+          // Ensure prom_status defaults to 'standard' if not present
+          if (!parsedUserInfo.prom_status) {
+            parsedUserInfo.prom_status = 'standard';
+          }
+          setCurrentUser(parsedUserInfo);
           setAvatarKey(prev => prev + 1);
         } catch (error) {
           console.error('Error parsing updated user info:', error);
@@ -148,14 +158,16 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
                     </div>
                   <div className="relative flex items-center">
                     <div className="flex items-center border border-neutral-600 rounded-full px-3 py-1 cursor-pointer hover:bg-neutral-800 transition-colors" onClick={() => setAvatarDropdownOpen(!avatarDropdownOpen)}>
-                      <img
-                        src={`${getAvatarUrl(currentUser.id, currentUser.avatar_path)}?t=${avatarKey}`}
-                        alt="Аватар"
-                        className="w-8 h-8 rounded-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png'
-                        }}
-                      />
+                      <div className={`relative ${currentUser.prom_status === 'subscription' ? 'p-0.5 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 rounded-full' : ''}`}>
+                        <img
+                          src={`${getAvatarUrl(currentUser.id, currentUser.avatar_path)}?t=${avatarKey}`}
+                          alt="Аватар"
+                          className={`w-8 h-8 rounded-full object-cover ${currentUser.prom_status === 'subscription' ? 'border-2 border-none' : ''}`}
+                          onError={(e) => {
+                            e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png'
+                          }}
+                        />
+                      </div>
                       <span className="text-white ml-2 font-medium text-sm">{currentUser.username}</span>
                     </div>
                     <AvatarDropdown
@@ -177,22 +189,24 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
 
           </div>
         </nav>
-        <div className="gold-shimmer py-1 select-none">
-          <div className="container mx-auto px-4 flex justify-center items-center">
-            <p className="text-black font-medium text-sm mr-4">
-              Загружай до 5 битов в день, продавай без комиссии и отключи рекламу с подпиской всего за 200 р./мес!
-            </p>
-            <button
-              onClick={() => setSubscriptionModalOpen(true)}
-              className="bg-black hover:bg-gray-900 text-white px-3 py-1 rounded-md font-medium transition-colors duration-200 focus:outline-none text-sm cursor-pointer"
-            >
-              Оформить подписку
-            </button>
+        {currentUser?.prom_status !== 'subscription' && (
+          <div className="gold-shimmer py-1 select-none">
+            <div className="container mx-auto px-4 flex justify-center items-center">
+              <p className="text-black font-medium text-sm mr-4">
+                Загружай до 5 битов в день, продавай без комиссии и отключи рекламу с подпиской всего за 200 р./мес!
+              </p>
+              <button
+                onClick={() => setSubscriptionModalOpen(true)}
+                className="bg-black hover:bg-gray-900 text-white px-3 py-1 rounded-md font-medium transition-colors duration-200 focus:outline-none text-sm cursor-pointer"
+              >
+                Оформить подписку
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </header>
 
-      {/* Mobile Tab Bar */}
+      {/* mobile tab bar */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-neutral-950 border-t border-neutral-700 z-50">
         <div className="flex justify-around items-center py-2">
           <button

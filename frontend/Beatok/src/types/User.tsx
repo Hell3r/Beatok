@@ -7,4 +7,5 @@ export interface User {
   balance?: number;
   is_active?: boolean;
   description?: string;
+  prom_status?: string;
 }

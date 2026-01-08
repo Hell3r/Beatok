@@ -40,6 +40,7 @@ class UserResponse(BaseModel):
     date_of_reg: date
     last_login: Optional[datetime] = None
     description: Optional[str] = None
+    prom_status: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -57,6 +58,7 @@ class UserUpdate(BaseModel):
     email: Optional[EmailStr] = None
     birthday: Optional[date] = None
     description: Optional[str] = None
+    prom_status: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
     

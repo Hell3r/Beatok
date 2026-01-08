@@ -10,6 +10,7 @@ export interface User {
   date_of_reg?: string;
   last_login?: string;
   description?: string;
+  prom_status?: string;
 }
 
 export interface LoginFormData {
@@ -36,6 +37,7 @@ export interface AuthResponse {
     birthday?: string;
     avatar_path?: string;
     balance?: number;
+    prom_status?: string;
   };
   user?: User;
 }

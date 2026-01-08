@@ -92,7 +92,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   });
 
   const modalHeightSpring = useSpring({
-    height: mode === 'login' ? '425px' : mode === 'register' ? '700px' : '450px',
+    height: mode === 'login' ? (error ? '505px' : '425px') : mode === 'register' ? (error ? '780px' : '700px') : '450px',
     config: { tension: 300, friction: 30 }
   });
 
@@ -144,7 +144,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         birthday: authData.user_info?.birthday || '',
         role: authData.user_info?.role || 'common',
         avatar_path: authData.user_info?.avatar_path || 'static/default_avatar.png',
-        balance: authData.user_info?.balance || 0
+        balance: authData.user_info?.balance || 0,
+        prom_status: authData.user_info?.prom_status || 'standard'
       };
 
       localStorage.setItem('user_info', JSON.stringify(userData));

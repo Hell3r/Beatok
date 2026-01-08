@@ -4,6 +4,7 @@ import type { Beat } from '../../../types/Beat';
 import BeatPurchaseModal from '../../BeatPurchaseModal';
 import { truncateText } from '../../../utils/truncateText';
 import { formatDuration } from '../../../utils/formatDuration';
+import { useAudioPlayer } from '../../../hooks/useAudioPlayer';
 
 
 const FeaturedBeats: React.FC = () => {
@@ -11,6 +12,8 @@ const FeaturedBeats: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
   const [beatToPurchase, setBeatToPurchase] = useState<Beat | null>(null);
+
+  const { playBeat, currentBeat, isPlaying, toggleFavorite, favoriteBeats } = useAudioPlayer();
 
   const isFree = (beat: Beat): boolean => {
     if (!beat.pricings || beat.pricings.length === 0) return true;
@@ -123,30 +126,70 @@ const FeaturedBeats: React.FC = () => {
                     </div>
                   </div>
 
-                  {isFree(beat) ? (
+                  <div className="flex items-center justify-center space-x-2 mb-4">
                     <button
-                      className="bg-neutral-700 hover:bg-neutral-600 text-white px-6 py-2 rounded-full transition-colors cursor-pointer relative"
-                      style={{ minWidth: '120px' }}
-                      title="Скачать"
+                      onClick={() => playBeat(beat)}
+                      className={`${
+                        currentBeat?.id === beat.id && isPlaying
+                          ? 'bg-red-600 hover:bg-red-700'
+                          : 'bg-red-600 hover:bg-red-700'
+                      } text-white p-3 rounded-full transition-colors cursor-pointer`}
+                      title={currentBeat?.id === beat.id && isPlaying ? "Пауза" : "Воспроизвести"}
                     >
-                      Скачать
-                      <div className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold px-1 py-0.5 rounded">
-                        Бесплатно
-                      </div>
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                        {currentBeat?.id === beat.id && isPlaying ? (
+                          <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
+                        ) : (
+                          <path d="M8 5v14l11-7z"/>
+                        )}
+                      </svg>
                     </button>
-                  ) : (
+
+                    {isFree(beat) ? (
+                      <button
+                        className="bg-neutral-700 hover:bg-neutral-600 text-white px-6 py-2 rounded-full transition-colors cursor-pointer relative"
+                        style={{ minWidth: '120px' }}
+                        title="Скачать"
+                      >
+                        Скачать
+                        <div className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold px-1 py-0.5 rounded">
+                          Бесплатно
+                        </div>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          setBeatToPurchase(beat);
+                          setPurchaseModalOpen(true);
+                        }}
+                        className="bg-red-500 hover:bg-red-700 text-white font-bold px-6 py-2 rounded-full transition-colors cursor-pointer"
+                        style={{ minWidth: '120px' }}
+                        title="Купить"
+                      >
+                        от {Math.min(...beat.pricings!.filter(p => p.price !== null && p.is_available).map(p => p.price!))} ₽
+                      </button>
+                    )}
+
                     <button
                       onClick={() => {
-                        setBeatToPurchase(beat);
-                        setPurchaseModalOpen(true);
+                        const token = localStorage.getItem('access_token');
+                        if (!token) {
+                          const event = new CustomEvent('openAuthModal');
+                          window.dispatchEvent(event);
+                          return;
+                        }
+                        toggleFavorite(beat);
                       }}
-                      className="bg-red-500 hover:bg-red-700 text-white font-bold px-6 py-2 rounded-full transition-colors cursor-pointer"
-                      style={{ minWidth: '120px' }}
-                      title="Купить"
+                      className={`p-3 rounded-full transition-colors cursor-pointer ${
+                        favoriteBeats.some(fav => fav.id === beat.id) ? 'text-red-500' : 'text-white hover:bg-neutral-700'
+                      }`}
+                      title={favoriteBeats.some(fav => fav.id === beat.id) ? 'Убрать из избранного' : 'Добавить в избранное'}
                     >
-                      от {Math.min(...beat.pricings!.filter(p => p.price !== null && p.is_available).map(p => p.price!))} ₽
+                      <svg className="w-4 h-4" fill={favoriteBeats.some(fav => fav.id === beat.id) ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                      </svg>
                     </button>
-                  )}
+                  </div>
                 </div>
               </div>
             ))}
