@@ -34,6 +34,14 @@ class UsersModel(Base):
     beats: Mapped[List["BeatModel"]] = relationship("BeatModel", back_populates="owner")
     active_promos: Mapped[List["UserPromoCodeModel"]] = relationship("UserPromoCodeModel", back_populates="user")
     favorites: Mapped[List["FavoriteModel"]] = relationship("FavoriteModel", back_populates="user")
+    sales: Mapped[List["PurchaseModel"]] = relationship("PurchaseModel", foreign_keys="PurchaseModel.seller_id", back_populates="seller", cascade="all, delete-orphan")  
+    purchases: Mapped[List["PurchaseModel"]] = relationship("PurchaseModel", foreign_keys="PurchaseModel.purchaser_id", back_populates="purchaser", cascade="all, delete-orphan")
+    
+    
+    
+    
+    
+    
 
     def __repr__(self) -> str:
         return f"User(id={self.id}, username='{self.username}', email='{self.email}')"

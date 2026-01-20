@@ -8,7 +8,7 @@ from src.services.PaymentService import RealYookassaService
 from src.services.BalanceService import BalanceService
 from src.services.WithdrawalService import WithdrawalService
 from src.services.PaymentFacade import PaymentFacadeService
-
+from src.services.PurchaseService import PurchaseService
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 
 async def get_promo_service(session: SessionDep) -> PromoCodeService:
@@ -26,9 +26,13 @@ async def get_withdrawal_service(session: SessionDep) -> WithdrawalService:
 async def get_payment_facade(session: SessionDep) -> PaymentFacadeService:
     return PaymentFacadeService(session)
 
+async def get_purchase_service(session: SessionDep) -> PurchaseService:
+    return PurchaseService(session)
+
 
 PromoServiceDep = Annotated[PromoCodeService, Depends(get_promo_service)]
 YooKassaServiceDep = Annotated[RealYookassaService, Depends(get_yookassa_service)]
 BalanceServiceDep = Annotated[BalanceService, Depends(get_balance_service)]
 PaymentFacadeServiceDep = Annotated[PaymentFacadeService, Depends(get_payment_facade)]
 WithdrawalServiceDep = Annotated[WithdrawalService, Depends(get_withdrawal_service)]
+PurchaseServiceDep = Annotated[PurchaseService, Depends(get_purchase_service)]

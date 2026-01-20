@@ -36,7 +36,13 @@ class BeatModel(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     owner: Mapped["UsersModel"] = relationship("UsersModel", back_populates="beats")
-    pricings: Mapped[List["BeatPricingModel"]] = relationship("BeatPricingModel", back_populates="bit", cascade="all, delete-orphan")
+    pricings: Mapped[List["BeatPricingModel"]] = relationship("BeatPricingModel", back_populates="beat", cascade="all, delete-orphan")
+    purchases: Mapped[List["PurchaseModel"]] = relationship("PurchaseModel", back_populates="beat", cascade="all, delete-orphan")
+    
+    
+    
+    
+    
     
     def __repr__(self) -> str:
         return f"Beat(id={self.id}, name='{self.name}', author='{self.author}')"

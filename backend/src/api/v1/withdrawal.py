@@ -9,9 +9,9 @@ from src.schemas.withdrawal import (
     WithdrawalStats
 )
 
-router = APIRouter(prefix="/withdrawal", tags=["withdrawal"])
+router = APIRouter(prefix="/withdrawal", tags=["Выводы"])
 
-@router.post("/", response_model=WithdrawalResponse)
+@router.post("/", response_model=WithdrawalResponse, summary="Создать запрос на вывод")
 async def create_withdrawal(
     withdrawal_data: WithdrawalCreate,
     user_id: CurrentUserId,
@@ -34,7 +34,7 @@ async def create_withdrawal(
         print(f"Server error: {e}")
         raise HTTPException(status_code=500, detail="Внутренняя ошибка сервера")
 
-@router.get("/my", response_model=List[WithdrawalResponse])
+@router.get("/my", response_model=List[WithdrawalResponse], summary = "Выводы авторизованного пользователя")
 async def get_my_withdrawals(
     user_id: CurrentUserId,
     withdrawal_service: WithdrawalServiceDep,
@@ -44,7 +44,7 @@ async def get_my_withdrawals(
     withdrawals = await withdrawal_service.get_user_withdrawals(user_id, skip, limit)
     return withdrawals
 
-@router.get("/stats", response_model=WithdrawalStats)
+@router.get("/stats", response_model=WithdrawalStats, summary="Статусы выводов авторизованного пользователя")
 async def get_withdrawal_stats(
     user_id: CurrentUserId,
     withdrawal_service: WithdrawalServiceDep
@@ -53,7 +53,7 @@ async def get_withdrawal_stats(
     return stats
 
 
-@router.get("/admin/pending", response_model=List[WithdrawalResponse])
+@router.get("/admin/pending", response_model=List[WithdrawalResponse], summary="Выводы со статусом pending (Админ)")
 async def get_pending_withdrawals(
     admin: AdminUser,
     withdrawal_service: WithdrawalServiceDep
@@ -61,7 +61,7 @@ async def get_pending_withdrawals(
     withdrawals = await withdrawal_service.get_pending_withdrawals()
     return withdrawals
 
-@router.patch("/admin/{withdrawal_id}", response_model=WithdrawalResponse)
+@router.patch("/admin/{withdrawal_id}", response_model=WithdrawalResponse, summary="Статус вывода (Админ)")
 async def update_withdrawal_status(
     withdrawal_id: int,
     update_data: WithdrawalUpdate,
@@ -96,7 +96,7 @@ async def update_withdrawal_status(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/admin/stats", response_model=WithdrawalStats)
+@router.get("/admin/stats", response_model=WithdrawalStats, summary="Статусы всех выводов (Админ)")
 async def get_admin_withdrawal_stats(
     admin: AdminUser,
     withdrawal_service: WithdrawalServiceDep
