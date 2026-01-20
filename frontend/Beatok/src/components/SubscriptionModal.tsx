@@ -91,7 +91,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose }
                       <svg className="w-5 h-5 text-green-400 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      Загружай до 5 битов в день
+                      Загружай до 15 битов в день
                     </li>
                     <li className="flex items-center">
                       <svg className="w-5 h-5 text-green-400 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -109,13 +109,13 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose }
                       <svg className="w-5 h-5 text-green-400 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      Ускорь вывод средств
+                      Модерация в приоритетной очереди
                     </li>
                     <li className="flex items-center">
                       <svg className="w-5 h-5 text-green-400 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      Минимальный вывод со 100 рублей
+                      Ускоренный вывод средств
                     </li>
                   </ul>
 

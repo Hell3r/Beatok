@@ -4,8 +4,10 @@ import { useSpring, animated } from '@react-spring/web';
 import { userService } from '../services/userService';
 import { beatService } from '../services/beatService';
 import { getAvatarUrl } from '../utils/getAvatarURL';
+import { getCurrentUser } from '../utils/getCurrentUser';
 import AuthModal from '../components/AuthModal';
 import BeatTable from '../components/UI/beats/BeatTable';
+import BeatList from '../components/UI/beats/BeatList';
 import RejectionReasonModal from '../components/RejectionReasonModal';
 import { useNotificationContext } from '../components/NotificationProvider';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
@@ -42,6 +44,7 @@ const ProfilePage: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'info' | 'balance' | 'mybeats' | 'stats' | 'favorites'>('info');
+  const [viewMode, setViewMode] = useState<'tabs' | 'content'>('tabs');
 
   const [formData, setFormData] = useState({
     username: '',
@@ -52,7 +55,7 @@ const ProfilePage: React.FC = () => {
 
   const [myBeats, setMyBeats] = useState<Beat[]>([]);
   const [beatsLoading, setBeatsLoading] = useState(false);
-  const [filters] = useState({
+  const [filters, setFilters] = useState({
     name: '',
     author: '',
     genre: '',
@@ -73,6 +76,15 @@ const ProfilePage: React.FC = () => {
 
   const [favoriteBeats, setFavoriteBeats] = useState<Beat[]>([]);
   const [favoriteBeatsLoading, setFavoriteBeatsLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [currentPlayingBeat, setCurrentPlayingBeat] = useState<Beat | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 1280);
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
 const leftPanelSpring = useSpring({
   opacity: (activeTab === 'mybeats' || activeTab === 'favorites') ? 0 : 1,
@@ -82,39 +94,9 @@ const leftPanelSpring = useSpring({
 });
 
 const rightPanelSpring = useSpring({
-  width: (activeTab === 'mybeats' || activeTab === 'favorites') ? '100%' : '67%',
+  width: (activeTab === 'mybeats' || activeTab === 'favorites') ? '100%' : isMobile ? '100%' : '67%',
   config: { tension: 300, friction: 30 }
 });
-
-  const getCurrentUser = (): UserProfile | null => {
-    try {
-      const userData = localStorage.getItem('user_info');
-      const token = localStorage.getItem('access_token');
-
-      if (!userData || !token) {
-        return null;
-      }
-
-      const parsed = JSON.parse(userData);
-      if (parsed.birthday) {
-        parsed.birthday = new Date(parsed.birthday);
-      }
-      if (parsed.date_of_reg) {
-        parsed.date_of_reg = new Date(parsed.date_of_reg);
-      } else {
-        parsed.date_of_reg = null;
-      }
-      if (parsed.last_login) {
-        parsed.last_login = new Date(parsed.last_login);
-      } else {
-        parsed.last_login = null;
-      }
-      return parsed;
-    } catch (error) {
-      console.error('Failed to get current user:', error);
-      return null;
-    }
-  };
 
   const updateUserInStorage = (userData: Partial<UserProfile>) => {
     try {
@@ -218,8 +200,10 @@ const rightPanelSpring = useSpring({
     const tab = searchParams.get('tab');
     if (tab && ['info', 'balance', 'mybeats', 'stats', 'favorites'].includes(tab)) {
       setActiveTab(tab as 'info' | 'balance' | 'mybeats' | 'stats' | 'favorites');
+      setViewMode('content');
     } else {
       setActiveTab(isOwnProfile ? 'info' : 'mybeats');
+      setViewMode('tabs');
     }
   }, [searchParams, isOwnProfile]);
 
@@ -606,7 +590,7 @@ const rightPanelSpring = useSpring({
           </h1>
         </div>
 
-        <div className="flex flex-row gap-6 max-w-6xl mx-auto mb-20">
+        <div className="flex flex-row gap-6 max-w-7xl md:max-w-6xl mx-auto mb-20">
           {/* desktop left panel */}
           <animated.div
             style={leftPanelSpring}
@@ -695,81 +679,97 @@ const rightPanelSpring = useSpring({
             style={rightPanelSpring}
             className="bg-neutral-900 rounded-lg border border-neutral-700 flex-shrink-0 w-full"
           >
-                  {/* mobile tabs - flex layout */}
-                  <div className="md:hidden bg-neutral-800 rounded-lg p-4 border border-neutral-700 mb-6">
-                    <div className="flex gap-2 pb-2">
-                      {isOwnProfile && (
+                  {/* mobile interface */}
+                  <div className="md:hidden">
+                    {viewMode === 'tabs' ? (
+                      <div className="bg-neutral-800 rounded-lg p-4 border border-neutral-700 mb-6">
+                        <div className="flex flex-col gap-2">
+                          {isOwnProfile && (
+                            <button
+                              onClick={() => {
+                                setActiveTab('info');
+                                setSearchParams({ tab: 'info' });
+                              }}
+                              className={`w-full px-4 py-3 text-sm rounded-lg transition-colors cursor-pointer select-none ${
+                                activeTab === 'info'
+                                  ? 'bg-red-600 text-white'
+                                  : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                              }`}
+                            >
+                              Основная информация
+                            </button>
+                          )}
+                          {isOwnProfile && (
+                            <button
+                              onClick={() => {
+                                setActiveTab('balance');
+                                setSearchParams({ tab: 'balance' });
+                              }}
+                              className={`w-full px-4 py-3 text-sm rounded-lg transition-colors cursor-pointer select-none ${
+                                activeTab === 'balance'
+                                  ? 'bg-red-600 text-white'
+                                  : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                              }`}
+                            >
+                              Баланс
+                            </button>
+                          )}
+                          <button
+                            onClick={() => {
+                              setActiveTab('mybeats');
+                              setSearchParams({ tab: 'mybeats' });
+                            }}
+                            className={`w-full px-4 py-3 text-sm rounded-lg transition-colors cursor-pointer select-none ${
+                              activeTab === 'mybeats'
+                                ? 'bg-red-600 text-white'
+                                : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                            }`}
+                          >
+                            {isOwnProfile ? 'Мои биты' : 'Биты'}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setActiveTab('stats');
+                              setSearchParams({ tab: 'stats' });
+                            }}
+                            className={`w-full px-4 py-3 text-sm rounded-lg transition-colors cursor-pointer select-none ${
+                              activeTab === 'stats'
+                                ? 'bg-red-600 text-white'
+                                : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                            }`}
+                          >
+                            Статистика
+                          </button>
+                          {isOwnProfile && (
+                            <button
+                              onClick={() => {
+                                setActiveTab('favorites');
+                                setSearchParams({ tab: 'favorites' });
+                              }}
+                              className={`w-full px-4 py-3 text-sm rounded-lg transition-colors cursor-pointer select-none ${
+                                activeTab === 'favorites'
+                                  ? 'bg-red-600 text-white'
+                                  : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                              }`}
+                            >
+                              Избранное
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-neutral-800 rounded-lg p-4 border border-neutral-700 mb-6">
                         <button
                           onClick={() => {
-                            setActiveTab('info');
-                            setSearchParams({ tab: 'info' });
+                            setViewMode('tabs');
+                            setSearchParams({});
                           }}
-                          className={`flex-1 px-3 py-2 text-sm rounded-lg transition-colors cursor-pointer select-none ${
-                            activeTab === 'info'
-                              ? 'bg-red-600 text-white'
-                              : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
-                          }`}
+                          className="text-red-500 hover:text-red-400 cursor-pointer select-none text-sm"
                         >
-                          Информация
+                          ← Назад
                         </button>
-                      )}
-                      {isOwnProfile && (
-                        <button
-                          onClick={() => {
-                            setActiveTab('balance');
-                            setSearchParams({ tab: 'balance' });
-                          }}
-                          className={`flex-1 px-3 py-2 text-sm rounded-lg transition-colors cursor-pointer select-none ${
-                            activeTab === 'balance'
-                              ? 'bg-red-600 text-white'
-                              : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
-                          }`}
-                        >
-                          Баланс
-                        </button>
-                      )}
-                      <button
-                        onClick={() => {
-                          setActiveTab('mybeats');
-                          setSearchParams({ tab: 'mybeats' });
-                        }}
-                        className={`flex-1 px-3 py-2 text-sm rounded-lg transition-colors cursor-pointer select-none ${
-                          activeTab === 'mybeats'
-                            ? 'bg-red-600 text-white'
-                            : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
-                        }`}
-                      >
-                        {isOwnProfile ? 'Мои биты' : 'Биты'}
-                      </button>
-                      <button
-                        onClick={() => {
-                          setActiveTab('stats');
-                          setSearchParams({ tab: 'stats' });
-                        }}
-                        className={`flex-1 px-3 py-2 text-sm rounded-lg transition-colors cursor-pointer select-none ${
-                          activeTab === 'stats'
-                            ? 'bg-red-600 text-white'
-                            : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
-                        }`}
-                      >
-                        Статистика
-                      </button>
-                      {isOwnProfile && (
-                        <button
-                          onClick={() => {
-                            setActiveTab('favorites');
-                            setSearchParams({ tab: 'favorites' });
-                          }}
-                          className={`flex-1 px-3 py-2 text-sm rounded-lg transition-colors cursor-pointer select-none ${
-                            activeTab === 'favorites'
-                              ? 'bg-red-600 text-white'
-                              : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
-                          }`}
-                        >
-                          Избранное
-                        </button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* desktop tabs */}
@@ -982,6 +982,32 @@ const rightPanelSpring = useSpring({
                             {isOwnProfile ? 'У вас пока нет загруженных битов' : 'У пользователя нет битов'}
                           </p>
                         </div>
+                      ) : isMobile ? (
+                        <>
+                          <div className="mb-6">
+                            <input
+                              type="text"
+                              value={filters.name}
+                              onChange={(e) => setFilters(prev => ({ ...prev, name: e.target.value }))}
+                              placeholder="Поиск по названию..."
+                              className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2 text-white placeholder-neutral-500 focus:outline-none focus:border-red-500 transition-colors"
+                            />
+                          </div>
+                          <BeatList
+                            beats={myBeats}
+                            loading={beatsLoading}
+                            currentPlayingBeat={currentPlayingBeat}
+                            isPlaying={isPlaying}
+                            onPlay={!isOwnProfile ? handlePlayBeat : undefined}
+                            onDownload={!isOwnProfile ? handleDownloadBeat : undefined}
+                            isProfileView={isOwnProfile}
+                            filters={filters}
+                            onToggleFavorite={!isOwnProfile ? handleToggleFavorite : undefined}
+                            favoriteBeats={!isOwnProfile ? favoriteBeats : undefined}
+                            onDeleteBeat={isOwnProfile ? handleDeleteBeat : undefined}
+                            onShowRejectionReason={isOwnProfile ? handleShowRejectionReason : undefined}
+                          />
+                        </>
                       ) : (
                         <BeatTable
                           beats={myBeats}
@@ -1060,6 +1086,19 @@ const rightPanelSpring = useSpring({
                             У вас пока нет избранных битов
                           </p>
                         </div>
+                      ) : isMobile ? (
+                        <BeatList
+                          beats={favoriteBeats}
+                          loading={favoriteBeatsLoading}
+                          currentPlayingBeat={currentPlayingBeat}
+                          isPlaying={isPlaying}
+                          onPlay={handlePlayBeat}
+                          onDownload={handleDownloadBeat}
+                          isProfileView={false}
+                          filters={filters}
+                          onToggleFavorite={handleToggleFavorite}
+                          favoriteBeats={favoriteBeats}
+                        />
                       ) : (
                         <BeatTable
                           beats={favoriteBeats}

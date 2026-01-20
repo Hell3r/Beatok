@@ -9,6 +9,7 @@ import ContextMenu from '../ContextMenu';
 import DeleteBeatModal from '../../DeleteBeatModal';
 import BeatPurchaseModal from '../../BeatPurchaseModal';
 import BeatPromotionModal from '../../BeatPromotionModal';
+import { getCurrentUser } from '../../../utils/getCurrentUser';
 
 interface BeatTableProps {
   beats: Beat[];
@@ -243,6 +244,9 @@ const BeatTable: React.FC<BeatTableProps> = ({
   };
 
   const renderActions = (beat: Beat) => {
+    const currentUser = getCurrentUser();
+    const isOwnBeat = currentUser && getAuthorId(beat) === currentUser.id;
+
     if (isProfileView) {
       return (
         <td className="p-4 text-center">
@@ -305,7 +309,16 @@ const BeatTable: React.FC<BeatTableProps> = ({
                 )}
               </svg>
             </button>
-            {isFree(beat) ? (
+            {isOwnBeat ? (
+              <button
+                onClick={() => onDownload?.(beat)}
+                className="bg-neutral-700 hover:bg-neutral-600 text-white px-6 py-2 rounded-full transition-colors cursor-pointer"
+                style={{ minWidth: '120px' }}
+                title="Скачать"
+              >
+                Скачать
+              </button>
+            ) : isFree(beat) ? (
               <button
                 onClick={() => onDownload?.(beat)}
                 className="bg-neutral-700 hover:bg-neutral-600 text-white px-6 py-2 rounded-full transition-colors cursor-pointer relative"
@@ -424,7 +437,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   </th>
                 )}
                 <th
-                  className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors hidden md:table-cell"
+                  className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors md:table-cell"
                   onClick={() => handleSort('genre')}
                 >
                   <div className="flex items-center justify-center space-x-2">
@@ -433,7 +446,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   </div>
                 </th>
                 <th
-                  className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors hidden md:table-cell"
+                  className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors md:table-cell"
                   onClick={() => handleSort('tempo')}
                 >
                   <div className="flex items-center justify-center space-x-2">
@@ -442,7 +455,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   </div>
                 </th>
                 <th
-                  className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors hidden md:table-cell"
+                  className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors md:table-cell"
                   onClick={() => handleSort('key')}
                 >
                   <div className="flex items-center justify-center space-x-2">
@@ -451,7 +464,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   </div>
                 </th>
                 <th
-                  className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors hidden md:table-cell"
+                  className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors md:table-cell"
                   onClick={() => handleSort('duration')}
                 >
                   <div className="flex items-center justify-center space-x-2">
@@ -504,7 +517,6 @@ const BeatTable: React.FC<BeatTableProps> = ({
                             ? 'bg-red-600 text-white'
                             : 'bg-yellow-500 text-black'
                         }`}>
-                          Продвигается
                         </span>
                       )}
                       {beat.wav_path && (

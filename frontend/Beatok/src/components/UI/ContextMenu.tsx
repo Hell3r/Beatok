@@ -33,14 +33,12 @@ const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onDelete, onPromote, on
 
   return (
     <>
-      {/* Overlay для закрытия меню */}
       <div
         className="fixed inset-0 z-40"
         onClick={handleClickOutside}
         onContextMenu={handleClickOutside}
       />
 
-      {/* Контекстное меню */}
       <animated.div
         className="fixed z-50 bg-neutral-800 border border-neutral-600 rounded-lg shadow-lg py-2 min-w-[140px]"
         style={{

@@ -194,7 +194,9 @@ const BeatsPage: React.FC = () => {
           </div>
 
           <div className="flex items-center space-x-2">
-            <ViewToggle currentView={viewMode} onViewChange={handleViewModeChange} />
+            <div className="hidden md:block">
+              <ViewToggle currentView={viewMode} onViewChange={handleViewModeChange} />
+            </div>
             <button
               onClick={() => setIsFilterOpen(!isFilterOpen)}
               className="md:hidden bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg transition-colors"
@@ -242,7 +244,22 @@ const BeatsPage: React.FC = () => {
                 <p className="text-neutral-400 mt-4">Загрузка битов...</p>
               </div>
             ) : (
-              transitions((style, item) => (
+              <div className="md:hidden">
+                <BeatList
+                  beats={beats}
+                  loading={loading}
+                  currentPlayingBeat={currentBeat}
+                  isPlaying={isPlaying}
+                  onPlay={handlePlay}
+                  onDownload={handleDownload}
+                  filters={filters}
+                  onToggleFavorite={handleToggleFavorite}
+                  favoriteBeats={favoriteBeats}
+                />
+              </div>
+            )}
+            <div className="hidden md:block">
+              {transitions((style, item) => (
                 <animated.div style={style}>
                   {item === 'table' ? (
                     <BeatTable
@@ -270,8 +287,8 @@ const BeatsPage: React.FC = () => {
                     />
                   )}
                 </animated.div>
-              ))
-            )}
+              ))}
+            </div>
           </div>
         </div>
       </div>

@@ -60,13 +60,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || 'Ошибка при отправке письма');
+        throw new Error('Ошибка при отправке письма');
       }
 
       setResendCooldown(60);
       setError('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Произошла ошибка при отправке письма');
+      setError('Произошла ошибка при отправке письма');
     }
   };
 
@@ -129,7 +129,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           setLoading(false);
           return;
         }
-        throw new Error(errorData.detail || 'Ошибка авторизации');
+        throw new Error('Ошибка авторизации');
       }
 
       const authData: AuthResponse = await response.json();
@@ -154,7 +154,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       window.dispatchEvent(new Event('userUpdated'));
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Произошла ошибка при авторизации');
+      setError('Произошла ошибка при авторизации');
     } finally {
       setLoading(false);
     }
@@ -199,7 +199,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || 'Ошибка регистрации');
+        throw new Error('Ошибка регистрации');
       }
 
       setVerificationEmail(registerData.email);
@@ -207,7 +207,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       setLoading(false);
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Произошла ошибка при регистрации');
+      setError('Произошла ошибка при регистрации');
       setLoading(false);
     }
   };

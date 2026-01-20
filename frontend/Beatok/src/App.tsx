@@ -66,9 +66,13 @@ const App: React.FC = () => {
                   <Route path="/profile" element={isUserAuthenticated ? <PageLayoutWithFooter><ProfilePage /></PageLayoutWithFooter> : <PageLayout><ProfilePage /></PageLayout>} />
                   <Route path="/profile/:id" element={isUserAuthenticated ? <PageLayoutWithFooter><ProfilePage /></PageLayoutWithFooter> : <PageLayout><ProfilePage /></PageLayout>} />
                   <Route path="/beats" element={<PageLayoutWithFooter><BeatsPage /></PageLayoutWithFooter>} />
-                  <Route path="/about" element={<PageLayoutWithFooter><AboutPage /></PageLayoutWithFooter>} />
+                  {
+                  //<Route path="/about" element={<PageLayoutWithFooter><AboutPage /></PageLayoutWithFooter>} />
+                  }
                   <Route path="/beatmakers" element={<PageLayoutWithFooter><BeatmakersPage /></PageLayoutWithFooter>} />
-                  <Route path="/forum" element={<PageLayout><ForumPage /></PageLayout>} />
+                  {
+                  //<Route path="/forum" element={<PageLayout><ForumPage /></PageLayout>} />
+                  }
                   <Route path="/support" element={<PageLayoutWithFooter><SupportPage /></PageLayoutWithFooter>} />
 
                   <Route path="*" element={<PageLayoutWithFooter><Error404 /></PageLayoutWithFooter>} />
