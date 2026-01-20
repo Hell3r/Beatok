@@ -46,12 +46,13 @@ const CallToAction: React.FC = () => {
           получайте обратную связь и находите вдохновение в работах других продюсеров.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <a
+          {/* <a
             href="/forum"
             className="inline-block bg-white text-red-600 hover:bg-gray-300 px-8 py-3 rounded-md font-semibold transition-colors duration-200 shadow-lg"
           >
             Перейти на форум
           </a>
+          */}
           <a
             href="/beats"
             className="inline-block bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-md font-semibold transition-colors duration-200 shadow-lg"

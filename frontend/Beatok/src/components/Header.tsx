@@ -5,7 +5,8 @@ import AvatarDropdown from './AvatarDropdown';
 import SubscriptionModal from './SubscriptionModal';
 import type { User } from '../types/auth';
 import { getAvatarUrl } from '../utils/getAvatarURL';
-import { FaHome, FaMusic, FaUser, FaQuestionCircle } from 'react-icons/fa';
+import { FaHome, FaMusic, FaUser, FaQuestionCircle, FaUsers } from 'react-icons/fa';
+import { useNotificationContext } from './NotificationProvider';
 
 interface HeaderProps {
   isAuthenticated?: boolean;
@@ -19,6 +20,7 @@ interface NavItem {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
+  const { showSuccess } = useNotificationContext();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [addBeatModalOpen, setAddBeatModalOpen] = useState(false);
   const [avatarDropdownOpen, setAvatarDropdownOpen] = useState(false);
@@ -34,7 +36,6 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
     if (token && userInfo) {
       try {
         const parsedUserInfo = JSON.parse(userInfo);
-        // Ensure prom_status defaults to 'standard' if not present
         if (!parsedUserInfo.prom_status) {
           parsedUserInfo.prom_status = 'standard';
         }
@@ -51,7 +52,6 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
       if (userInfo) {
         try {
           const parsedUserInfo = JSON.parse(userInfo);
-          // Ensure prom_status defaults to 'standard' if not present
           if (!parsedUserInfo.prom_status) {
             parsedUserInfo.prom_status = 'standard';
           }
@@ -79,16 +79,26 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
     { href: '/', label: 'ГЛАВНАЯ' },
     { href: '/beats', label: 'БИТЫ' },
     { href: '/beats?free=true', label: 'БЕСПЛАТНЫЕ' },
-    { href: '/forum', label: 'ФОРУМ' },
     { href: '/beatmakers', label: 'БИТМЕЙКЕРЫ' },
-    { href: '/about', label: 'О НАС' },
-    { href: '/support', label: 'FAQ'},]
+  //{ href: '/about', label: 'О НАС' },
+    { href: '/support', label: 'FAQ'},
+    { href: 'mailto:beatok_service@mail.ru', label: 'BEATOK_SERVICE@MAIL.RU'}]
     
 
 
   const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault();
     window.location.href = '/';
+  };
+
+  const handleCopyEmail = async () => {
+    const email = 'beatok_service@mail.ru';
+    try {
+      await navigator.clipboard.writeText(email);
+      showSuccess('Почта скопирована в буфер обмена!');
+    } catch (err) {
+      console.error('Failed to copy email: ', err);
+    }
   };
 
   const getCurrentPath = () => {
@@ -121,6 +131,18 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
                   item.href === '/beats' ? getCurrentPath() === '/beats' && !window.location.search.includes('free=true') :
                   item.href === '/beats?free=true' ? window.location.search.includes('free=true') :
                   getCurrentPath() === item.href;
+                if (item.href.startsWith('mailto:')) {
+                  return (
+                    <button
+                      key={item.href}
+                      onClick={handleCopyEmail}
+                      className={`${isActive ? 'text-white' : 'text-gray-300'} hover:text-white transition-colors duration-200 font-medium focus:outline-none cursor-pointer`}
+                      title="Скопировать почту"
+                    >
+                      {item.label}
+                    </button>
+                  );
+                }
                 return (
                   <a
                     key={item.href}
@@ -214,14 +236,21 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
             className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors hover:bg-neutral-800 ${getCurrentPath() === '/' ? 'bg-red-600' : ''}`}
           >
             <FaHome className={`w-5 h-5 ${getCurrentPath() === '/' ? 'text-white' : 'text-gray-300'}`} />
-            <span className={`text-xs ${getCurrentPath() === '/' ? 'text-white' : 'text-gray-300'}`}>Главная</span>
+            <span className={`text-xs ${getCurrentPath() === '/' ? 'text-white' : 'text-gray-300'}`}></span>
           </button>
           <button
             onClick={() => window.location.href = '/beats'}
             className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors hover:bg-neutral-800 ${getCurrentPath() === '/beats' ? 'bg-red-600' : ''}`}
           >
             <FaMusic className={`w-5 h-5 ${getCurrentPath() === '/beats' ? 'text-white' : 'text-gray-300'}`} />
-            <span className={`text-xs ${getCurrentPath() === '/beats' ? 'text-white' : 'text-gray-300'}`}>Биты</span>
+            <span className={`text-xs ${getCurrentPath() === '/beats' ? 'text-white' : 'text-gray-300'}`}></span>
+          </button>
+          <button
+            onClick={() => window.location.href = '/beatmakers'}
+            className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors hover:bg-neutral-800 ${getCurrentPath() === '/beatmakers' ? 'bg-red-600' : ''}`}
+          >
+            <FaUsers className={`w-5 h-5 ${getCurrentPath() === '/beatmakers' ? 'text-white' : 'text-gray-300'}`} />
+            <span className={`text-xs ${getCurrentPath() === '/beatmakers' ? 'text-white' : 'text-gray-300'}`}></span>
           </button>
           <button
             onClick={() => window.location.href = currentUser ? '/profile' : '#'}
@@ -229,14 +258,14 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
             className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors hover:bg-neutral-800 ${getCurrentPath() === '/profile' ? 'bg-red-600' : ''}`}
           >
             <FaUser className={`w-5 h-5 ${getCurrentPath() === '/profile' ? 'text-white' : 'text-gray-300'}`} />
-            <span className={`text-xs ${getCurrentPath() === '/profile' ? 'text-white' : 'text-gray-300'}`}>Профиль</span>
+            <span className={`text-xs ${getCurrentPath() === '/profile' ? 'text-white' : 'text-gray-300'}`}></span>
           </button>
           <button
             onClick={() => window.location.href = '/support'}
             className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors hover:bg-neutral-800 ${getCurrentPath() === '/support' ? 'bg-red-600' : ''}`}
           >
             <FaQuestionCircle className={`w-5 h-5 ${getCurrentPath() === '/support' ? 'text-white' : 'text-gray-300'}`} />
-            <span className={`text-xs ${getCurrentPath() === '/support' ? 'text-white' : 'text-gray-300'}`}>FAQ</span>
+            <span className={`text-xs ${getCurrentPath() === '/support' ? 'text-white' : 'text-gray-300'}`}></span>
           </button>
         </div>
       </div>

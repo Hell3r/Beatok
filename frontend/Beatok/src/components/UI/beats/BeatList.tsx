@@ -5,6 +5,7 @@ import type { Beat } from '../../../types/Beat';
 import { truncateText } from '../../../utils/truncateText';
 import { formatDuration } from '../../../utils/formatDuration';
 import { getAvatarUrl } from '../../../utils/getAvatarURL';
+import { getCurrentUser } from '../../../utils/getCurrentUser';
 import type { Filters } from './Filter';
 import BeatPurchaseModal from '../../BeatPurchaseModal';
 
@@ -19,6 +20,8 @@ interface BeatListProps {
   filters: Filters;
   onToggleFavorite?: (beat: Beat) => void;
   favoriteBeats?: Beat[];
+  onDeleteBeat?: (beat: Beat) => void;
+  onShowRejectionReason?: (beat: Beat) => void;
 }
 
 const BeatList: React.FC<BeatListProps> = ({
@@ -32,10 +35,13 @@ const BeatList: React.FC<BeatListProps> = ({
   filters,
   onToggleFavorite,
   favoriteBeats = [],
+  onDeleteBeat,
+  onShowRejectionReason,
 }) => {
   const navigate = useNavigate();
   const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
   const [beatToPurchase, setBeatToPurchase] = useState<Beat | null>(null);
+  const currentUser = getCurrentUser();
 
   const isFree = (beat: Beat): boolean => {
     if (!beat.pricings || beat.pricings.length === 0) return true;
@@ -88,7 +94,7 @@ const BeatList: React.FC<BeatListProps> = ({
 
   const filteredBeats = useMemo(() => {
     return beats.filter((beat) => {
-      if (beat.status !== 'available') {
+      if (!isProfileView && beat.status !== 'available') {
         return false;
       }
       if (filters.name && !beat.name.toLowerCase().includes(filters.name.toLowerCase())) {
@@ -107,12 +113,12 @@ const BeatList: React.FC<BeatListProps> = ({
         return false;
       }
 
-      if (filters.freeOnly) {
+      if (!isProfileView && filters.freeOnly) {
         const isBeatFree = isFree(beat);
         if (!isBeatFree) return false;
       }
 
-      if (!filters.freeOnly) {
+      if (!isProfileView && !filters.freeOnly) {
         const beatMinPrice = getBeatMinPrice(beat);
 
         if (filters.minPrice) {
@@ -132,7 +138,7 @@ const BeatList: React.FC<BeatListProps> = ({
 
       return true;
     });
-  }, [beats, filters]);
+  }, [beats, filters, isProfileView]);
 
   const trail = useTrail(filteredBeats.length, {
     from: { opacity: 0 },
@@ -170,7 +176,7 @@ const BeatList: React.FC<BeatListProps> = ({
           const beat = filteredBeats[index];
           return (
             <animated.div key={beat.id} style={style} className="bg-neutral-900 rounded-lg p-4 hover:bg-neutral-800 transition-all duration-300 group border border-neutral-700 relative">
-              {isFree(beat) && (
+              {isFree(beat) && getAuthorId(beat) !== currentUser?.id && (
                 <div className="absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-bl-lg">
                   Бесплатно
                 </div>
@@ -203,13 +209,29 @@ const BeatList: React.FC<BeatListProps> = ({
                 </div>
 
                 <div className="flex flex-col items-end space-y-1">
+                  {isProfileView && (
+                    <span
+                      className={`px-3 py-2 rounded text-sm font-medium select-none ${
+                        beat.status === 'available'
+                          ? 'bg-green-600 text-white'
+                          : beat.status === 'moderated'
+                          ? 'bg-neutral-950 text-white'
+                          : beat.status === 'denied'
+                          ? 'bg-red-600 text-white hover:bg-red-700'
+                          : 'bg-red-600 text-white'
+                      }`}
+                      onClick={() => beat.status === 'denied' && beat.rejection_reason && onShowRejectionReason?.(beat)}
+                      title={beat.status === 'denied' && beat.rejection_reason ? 'Нажмите для просмотра причины' : ''}
+                    >
+                      {beat.status === 'available' ? 'Доступен' : beat.status === 'moderated' ? 'На модерации' : 'Отклонён'}
+                    </span>
+                  )}
                   {isProfileView && beat.promotion_status !== 'standard' && (
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                       beat.promotion_status === 'featured'
                         ? 'bg-red-600 text-white'
                         : 'bg-yellow-600 text-black'
                     }`}>
-                      Продвигается
                     </span>
                   )}
                   {beat.wav_path && (

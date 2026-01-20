@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { userService, type Beatmaker } from '../services/userService';
 import { getAvatarUrl } from '../utils/getAvatarURL';
 
@@ -6,6 +6,7 @@ const BeatmakersPage: React.FC = () => {
     const [beatmakers, setBeatmakers] = useState<Beatmaker[]>([]);
     const [loading, setLoading] = useState(true);
     const [avatarKey, setAvatarKey] = useState(0);
+    const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadBeatmakers();
@@ -33,6 +34,15 @@ const BeatmakersPage: React.FC = () => {
           setLoading(false);
         }
     };
+
+    const filteredBeatmakers = useMemo(() => {
+        if (!searchQuery.trim()) {
+            return beatmakers;
+        }
+        return beatmakers.filter(beatmaker =>
+            beatmaker.username.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+    }, [beatmakers, searchQuery]);
 
 
 
@@ -62,15 +72,33 @@ const BeatmakersPage: React.FC = () => {
     return (
         <div className="min-h-screen select-none p-6">
             <div className="max-w-7xl mx-auto">
-                <h1 className="text-3xl font-bold text-white mb-8">Битмейкеры</h1>
+                
+                <div className='flex-column'>
+                  <h1 className="text-3xl row font-bold text-white mb-8">Битмейкеры</h1>
+                  <div className="mb-6 row">
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Поиск битмейкеров..."
+                        className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4
+                         py-2 text-white placeholder-neutral-500 focus:outline-none focus:border-red-500 transition-colors"
+                    />
+                </div>
+                </div>
+                
 
                 {beatmakers.length === 0 ? (
                     <div className="text-center py-12">
                         <p className="text-neutral-400 text-lg">Пока нет битмейкеров с битами</p>
                     </div>
+                ) : filteredBeatmakers.length === 0 ? (
+                    <div className="text-center py-12">
+                        <p className="text-neutral-400 text-lg">Битмейкеры не найдены</p>
+                    </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {beatmakers.map((beatmaker) => (
+                        {filteredBeatmakers.map((beatmaker) => (
                             <div
                                 key={beatmaker.id}
                                 className="bg-neutral-800 rounded-lg p-6 hover:bg-neutral-700 transition-all duration-300 cursor-pointer group hover:shadow-2xl hover:shadow-red-500/20"

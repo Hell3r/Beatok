@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaTelegram, FaEnvelope, FaVk } from 'react-icons/fa';
+import { useNotificationContext } from '../NotificationProvider';
 
 interface NavItem {
   href: string;
@@ -7,17 +8,26 @@ interface NavItem {
 }
 
 const Footer: React.FC = () => {
+  const { showSuccess } = useNotificationContext();
+
   const navItems: NavItem[] = [
     { href: '/', label: 'ГЛАВНАЯ' },
     { href: '/beats', label: 'БИТЫ' },
     { href: '/beats?free=true', label: 'БЕСПЛАТНЫЕ' },
-    { href: '/forum', label: 'ФОРУМ' },
     { href: '/beatmakers', label: 'БИТМЕЙКЕРЫ' },
     { href: '/about', label: 'О НАС' },
     { href: '/support', label: 'FAQ' },
   ];
 
-
+  const handleCopyEmail = async () => {
+    const email = 'beatok_service@mail.ru';
+    try {
+      await navigator.clipboard.writeText(email);
+      showSuccess('Почта скопирована в буфер обмена!');
+    } catch (err) {
+      console.error('Failed to copy email: ', err);
+    }
+  };
 
   return (
     <footer className="bg-neutral-950 border-t w-full border-neutral-700 py-16">
@@ -47,15 +57,15 @@ const Footer: React.FC = () => {
               </div>
             </a>
 
-            <a
-              href="mailto:beatok_service@mail.ru"
-              className="group flex flex-col items-center transition-all duration-300 hover:scale-110"
-              title="Написать на почту"
+            <button
+              onClick={handleCopyEmail}
+              className="group flex flex-col items-center transition-all duration-300 hover:scale-110 cursor-pointer"
+              title="Скопировать почту"
             >
               <div className="w-16 h-16 bg-transparent rounded-full flex items-center justify-center transition-all duration-300 group-hover:bg-red-500/10">
                 <FaEnvelope className="w-10 h-10 text-white/80 transition-all duration-300 group-hover:text-red-500 group-hover:scale-110" />
               </div>
-            </a>
+            </button>
 
             <a
               href="https://vk.com/beatok_service"
