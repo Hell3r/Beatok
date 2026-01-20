@@ -17,7 +17,7 @@ class BeatPricingModel(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
-    bit: Mapped["BeatModel"] = relationship("BeatModel", back_populates="pricings")
+    beat: Mapped["BeatModel"] = relationship("BeatModel", back_populates="pricings")
     tariff: Mapped["TariffTemplateModel"] = relationship("TariffTemplateModel", back_populates="bit_pricings")
     
     __table_args__ = (
