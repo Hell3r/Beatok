@@ -45,6 +45,9 @@ class TelegramBotHandlers:
     async def _handle_beat_approval(self, beat_id: int, query):
         async with self.get_session() as session:
             try:
+                from ..models.beat_bricing import BeatPricingModel
+                from sqlalchemy import update
+
                 result = await session.execute(
                     select(BeatModel).where(BeatModel.id == beat_id)
                 )
@@ -58,10 +61,19 @@ class TelegramBotHandlers:
                     await query.edit_message_text("Бит уже был обработан.")
                     return
 
+                await session.execute(
+                    update(BeatPricingModel)
+                    .where(
+                        BeatPricingModel.beat_id == beat_id,
+                        BeatPricingModel.tariff_name.in_(['leasing', 'exclusive'])
+                    )
+                    .values(price=BeatPricingModel.price * 1.1)
+                )
+
                 beat.status = StatusType.AVAILABLE
                 await session.commit()
                 await redis_service.delete_pattern("*beats*")
-                
+
 
                 await query.edit_message_text(
                     f"✅ Бит '{beat.name}' (ID: {beat.id}) одобрен и опубликован."

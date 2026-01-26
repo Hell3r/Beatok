@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSpring, animated } from '@react-spring/web';
 import type { Beat } from '../types/Beat';
 
@@ -16,11 +16,23 @@ const BeatPromotionModal: React.FC<BeatPromotionModalProps> = ({
   onPromote,
 }) => {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [shouldRender, setShouldRender] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true);
+    }
+  }, [isOpen]);
 
   const modalSpring = useSpring({
     opacity: isOpen ? 1 : 0,
     transform: isOpen ? 'scale(1)' : 'scale(0.9)',
-    config: { tension: 300, friction: 25 }
+    config: { tension: 300, friction: 25 },
+    onRest: () => {
+      if (!isOpen) {
+        setShouldRender(false);
+      }
+    }
   });
 
   const overlaySpring = useSpring({
@@ -42,7 +54,13 @@ const BeatPromotionModal: React.FC<BeatPromotionModalProps> = ({
     }
   };
 
-  if (!isOpen || !beat) return null;
+  const handleClose = () => {
+    if (!isProcessing) {
+      onClose();
+    }
+  };
+
+  if (!shouldRender || !beat) return null;
 
   return (
     <>
@@ -65,22 +83,18 @@ const BeatPromotionModal: React.FC<BeatPromotionModalProps> = ({
           </div>
 
           <div className="bg-neutral-900 rounded-lg p-4 mb-6">
-            <div className="flex items-center space-x-3 mb-3">
-              <div className="w-12 h-12 bg-neutral-700 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+            <div className="text-center mb-4">
+              <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                 </svg>
               </div>
-              <div className="flex-1">
-                <h3 className="text-white font-medium truncate">{beat.name}</h3>
-                <p className="text-neutral-400 text-sm">{beat.genre} • {beat.tempo} BPM</p>
-              </div>
-            </div>
-
-            <div className="border-t border-neutral-700 pt-3">
-              <div className="flex justify-between items-center">
-                <span className="text-neutral-400">Стоимость продвижения:</span>
-                <span className="text-white font-semibold">200 ₽ / неделя</span>
+              <h3 className="text-white font-medium text-lg mb-2">{beat.name}</h3>
+              <p className="text-neutral-400 text-sm mb-4">{beat.genre} • {beat.tempo} BPM</p>
+              <div className="text-center">
+                <span className="text-neutral-400 text-sm">Стоимость продвижения:</span>
+                <div className="text-white font-bold text-2xl mt-1">200 ₽</div>
+                <div className="text-neutral-500 text-xs">за неделю</div>
               </div>
             </div>
           </div>
@@ -91,7 +105,7 @@ const BeatPromotionModal: React.FC<BeatPromotionModalProps> = ({
               disabled={isProcessing}
               className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isProcessing ? 'Обработка...' : 'Купить продвижение'}
+              {isProcessing ? 'Обработка...' : 'Продвинуть'}
             </button>
             <button
               onClick={onClose}

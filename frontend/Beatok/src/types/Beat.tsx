@@ -14,6 +14,7 @@ export interface Beat {
   rejection_reason?: string;
   created_at: string;
   updated_at: string;
+  likes_count: number;
   owner?: {
     id: number;
     username: string;

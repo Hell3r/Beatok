@@ -229,9 +229,10 @@ const BeatTable: React.FC<BeatTableProps> = ({
     setBeatToDelete(null);
   };
 
-  const handlePromoteClick = () => {
-    if (contextMenu) {
-      setBeatToPromote(contextMenu.beat);
+  const handlePromoteClick = (beat?: Beat) => {
+    const beatToPromote = beat || (contextMenu ? contextMenu.beat : null);
+    if (beatToPromote) {
+      setBeatToPromote(beatToPromote);
       setPromotionModalOpen(true);
       setContextMenu(null);
     }
@@ -266,25 +267,39 @@ const BeatTable: React.FC<BeatTableProps> = ({
             >
               {beat.status === 'available' ? 'Доступен' : beat.status === 'moderated' ? 'На модерации' : 'Отклонён'}
             </span>
-            {onPlay && (
-              <button
-                onClick={() => onPlay(beat)}
-                className={`hidden md:block ${
-                  currentPlayingBeat?.id === beat.id && isPlaying
-                    ? 'bg-red-600 hover:bg-red-700'
-                    : 'bg-red-600 hover:bg-red-700'
-                } text-white p-2 rounded-full transition-colors cursor-pointer`}
-                title={currentPlayingBeat?.id === beat.id && isPlaying ? "Пауза" : "Воспроизвести"}
-              >
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                  {currentPlayingBeat?.id === beat.id && isPlaying ? (
-                    <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
-                  ) : (
-                    <path d="M8 5v14l11-7z"/>
-                  )}
-                </svg>
-              </button>
-            )}
+            <div className="flex space-x-1">
+              {onPlay && (
+                <button
+                  onClick={() => onPlay(beat)}
+                  className={`hidden md:block ${
+                    currentPlayingBeat?.id === beat.id && isPlaying
+                      ? 'bg-red-600 hover:bg-red-700'
+                      : 'bg-red-600 hover:bg-red-700'
+                  } text-white p-2 rounded-full transition-colors cursor-pointer`}
+                  title={currentPlayingBeat?.id === beat.id && isPlaying ? "Пауза" : "Воспроизвести"}
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    {currentPlayingBeat?.id === beat.id && isPlaying ? (
+                      <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
+                    ) : (
+                      <path d="M8 5v14l11-7z"/>
+                    )}
+                  </svg>
+                </button>
+              )}
+              {beat.status === 'available' && (
+                <button
+                  onClick={() => handlePromoteClick(beat)}
+                  className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold px-3 py-2 rounded-lg transition-all duration-300 cursor-pointer flex items-center space-x-2 shadow-md hover:shadow-lg transform hover:scale-[1.02]"
+                  title="Продвигать бит"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                  </svg>
+                  <span className="text-sm">Продвинуть</span>
+                </button>
+              )}
+            </div>
           </div>
         </td>
       );
@@ -508,7 +523,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
                       className="text-white font-medium group-hover:text-red-400 transition-colors cursor-help mx-auto"
                       title={beat.name}
                     >
-                      {truncateText(beat.name, 30)}
+                      {truncateText(beat.name, 25)}
                     </div>
                     <div className="hidden md:flex items-center justify-center space-x-1 mt-1">
                       {isProfileView && beat.promotion_status !== 'standard' && (
