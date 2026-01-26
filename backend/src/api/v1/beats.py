@@ -37,6 +37,7 @@ async def create_beat(
     key: str = Form(...),
     promotion_status: str = Form("standard"),
     status: str = Form("active"),
+    is_free: str = Form("false"),
     mp3_file: UploadFile = File(None),
     wav_file: UploadFile = File(None),
 ):
@@ -137,10 +138,11 @@ async def create_beat(
         elif beat_with_relations.wav_path:
             audio_path = AUDIO_STORAGE / beat_with_relations.wav_path
 
-        import asyncio
-        asyncio.create_task(
-            support_bot.send_beat_moderation_notification(beat_data, user_info, str(audio_path) if audio_path else None)
-        )
+        if is_free.lower() == "true":
+            import asyncio
+            asyncio.create_task(
+                support_bot.send_beat_moderation_notification(beat_data, user_info, str(audio_path) if audio_path else None)
+            )
         
         print("🔄 Начинаем очистку кеша...")
         success = await redis_service.delete_pattern("*beats:*")
@@ -170,8 +172,11 @@ async def get_beats(
     promotion_status: Optional[str] = None
 ):
     from sqlalchemy.orm import selectinload
+    from src.models.favorite import FavoriteModel
 
-    query = select(BeatModel).options(
+    likes_subquery = select(func.count(FavoriteModel.id)).where(FavoriteModel.beat_id == BeatModel.id).scalar_subquery()
+
+    query = select(BeatModel, likes_subquery.label('likes_count')).options(
         selectinload(BeatModel.owner),
         selectinload(BeatModel.pricings).joinedload(BeatPricingModel.tariff)
     )
@@ -186,14 +191,17 @@ async def get_beats(
         query
         .offset(skip)
         .limit(limit)
-        .order_by(BeatModel.created_at.desc())
+        .order_by(likes_subquery.desc())
     )
 
-    beats = result.unique().scalars().all()
+    beats_with_likes = result.unique().all()
+    for beat, likes_count in beats_with_likes:
+        beat.likes_count = likes_count
+    beats = [beat for beat, _ in beats_with_likes]
     return [BeatResponse.model_validate(beat) for beat in beats]
 
 
-@router.get("/top-beatmakers", summary="Получить топ битмейкеров по количеству битов")
+@router.get("/top-beatmakers", summary="Получить топ битмейкеров по количеству лайков на их битах")
 @cached(ttl=600)
 async def get_top_beatmakers(
     session: SessionDep,
@@ -201,18 +209,27 @@ async def get_top_beatmakers(
 ):
     from sqlalchemy.orm import selectinload
     from src.models.users import UsersModel
+    from src.models.favorite import FavoriteModel
+
+    # Subquery to calculate total likes per author
+    total_likes_subquery = select(
+        BeatModel.author_id,
+        func.sum(
+            select(func.count(FavoriteModel.id)).where(FavoriteModel.beat_id == BeatModel.id).scalar_subquery()
+        ).label('total_likes')
+    ).where(BeatModel.status == StatusType.AVAILABLE).group_by(BeatModel.author_id).subquery()
 
     result = await session.execute(
         select(
-            BeatModel.author_id,
-            func.count(BeatModel.id).label('beat_count'),
-            UsersModel.username,
-            UsersModel.avatar_path
+            UsersModel,
+            total_likes_subquery.c.total_likes,
+            func.count(BeatModel.id).label('beat_count')
         )
-        .join(UsersModel, BeatModel.author_id == UsersModel.id)
+        .join(total_likes_subquery, total_likes_subquery.c.author_id == UsersModel.id)
+        .join(BeatModel, BeatModel.author_id == UsersModel.id)
         .where(BeatModel.status == StatusType.AVAILABLE)
-        .group_by(BeatModel.author_id, UsersModel.username, UsersModel.avatar_path)
-        .order_by(func.count(BeatModel.id).desc())
+        .group_by(UsersModel.id, UsersModel.username, UsersModel.avatar_path, total_likes_subquery.c.total_likes)
+        .order_by(total_likes_subquery.c.total_likes.desc())
         .limit(limit)
     )
 
@@ -220,10 +237,11 @@ async def get_top_beatmakers(
 
     return [
         {
-            "user_id": row.author_id,
-            "username": row.username,
-            "avatar_path": row.avatar_path,
-            "beat_count": row.beat_count
+            "user_id": row[0].id,
+            "username": row[0].username,
+            "avatar_path": row[0].avatar_path,
+            "total_likes": row[1] or 0,
+            "beat_count": row[2]
         }
         for row in top_beatmakers
     ]

@@ -71,6 +71,7 @@ const ProfilePage: React.FC = () => {
     beats_count: number;
     sold_count: number;
     download_count: number;
+    liked_beats_count: number;
   } | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
 
@@ -954,6 +955,12 @@ const rightPanelSpring = useSpring({
                               Вывести
                             </button>
                           </div>
+                          <div className='justify-between items-center mt-20'>
+                            <p className='text-neutral-400 text-sm text-center'>
+                              ОБРАТИТЕ ВНИМАНИЕ! <br />
+                              При пополнении баланса сервис взимает комиссию в размере 2.5%!
+                            </p>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -1050,6 +1057,11 @@ const rightPanelSpring = useSpring({
                               <div className="flex justify-between items-center">
                                 <span className="text-neutral-400">Продано битов:</span>
                                 <span className="text-white font-semibold">{userStats?.sold_count || 0}</span>
+                              </div>
+                              <hr className='text-neutral-600' />
+                              <div className="flex justify-between items-center">
+                                <span className="text-neutral-400">Лайкнуто битов:</span>
+                                <span className="text-white font-semibold">{userStats?.liked_beats_count || 0}</span>
                               </div>
                             </div>
                           </div>

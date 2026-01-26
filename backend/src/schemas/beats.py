@@ -35,6 +35,7 @@ class BeatResponse(BaseModel):
     duration: float
     created_at: datetime
     updated_at: datetime
+    likes_count: int = 0
     author: UserInfo
     pricings: List[BeatPricingResponseSchema] = []
     
@@ -56,6 +57,7 @@ class BeatResponse(BaseModel):
                 "duration": obj.duration,
                 "created_at": obj.created_at,
                 "updated_at": obj.updated_at,
+                "likes_count": getattr(obj, 'likes_count', 0),
                 "author": {
                     "id": obj.owner.id,
                     "username": obj.owner.username,
@@ -67,6 +69,7 @@ class BeatResponse(BaseModel):
                         "beat_id": pricing.beat_id,
                         "tariff_name": pricing.tariff_name,
                         "tariff_display_name": pricing.tariff.display_name if pricing.tariff else None,
+                        "tariff_type": pricing.tariff.type.value if pricing.tariff else None,
                         "price": pricing.price,
                         "is_available": pricing.is_available
                     }

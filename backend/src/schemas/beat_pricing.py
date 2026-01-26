@@ -22,9 +22,10 @@ class BeatPricingResponseSchema(BaseModel):
     beat_id: int
     tariff_name: str
     tariff_display_name: Optional[str] = None
+    tariff_type: Optional[str] = None
     price: Optional[Decimal] = None
     is_available: bool
-    
+
     model_config = ConfigDict(from_attributes=True)
         
         

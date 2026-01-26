@@ -740,6 +740,17 @@ async def get_user_stats(
         )
         sold_count = sold_count.scalar()
 
+        # Count how many times user's beats have been favorited
+        from src.models.favorite import FavoriteModel
+        liked_count = await session.execute(
+            select(func.count(FavoriteModel.id)).where(
+                FavoriteModel.beat_id.in_(
+                    select(BeatModel.id).where(BeatModel.author_id == user_id)
+                )
+            )
+        )
+        liked_count = liked_count.scalar()
+
         user_stmt = select(UsersModel.download_count).where(UsersModel.id == user_id)
         download_count_result = await session.execute(user_stmt)
         download_count = download_count_result.scalar()
@@ -750,7 +761,8 @@ async def get_user_stats(
         return {
             "beats_count": beats_count,
             "sold_count": sold_count,
-            "download_count": download_count
+            "download_count": download_count,
+            "liked_beats_count": liked_count
         }
 
     except Exception as e:

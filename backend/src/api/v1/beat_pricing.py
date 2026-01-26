@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Response
-from sqlalchemy import text, select
+from sqlalchemy import text, select, func
 from sqlalchemy.orm import selectinload, joinedload
 from sqlalchemy.exc import IntegrityError
 from typing import List
@@ -10,6 +10,9 @@ from src.schemas.beat_pricing import BeatPricingCreateSchema, BeatPricingRespons
 from src.models.beat_bricing import BeatPricingModel
 from src.models.beats import BeatModel
 from src.models.tarrifs import TariffTemplateModel
+from pathlib import Path
+
+AUDIO_STORAGE = Path("audio_storage")
 
 router = APIRouter(prefix = "/v1/pricing", tags = ["Цены битов"])
 
@@ -66,7 +69,52 @@ async def create_pricing(
         session.add(pricing)
         await session.commit()
         await session.refresh(pricing)
-        
+
+        existing_pricings_count = await session.execute(
+            select(func.count(BeatPricingModel.id)).where(BeatPricingModel.beat_id == pricing_data.beat_id)
+        )
+        pricings_count = existing_pricings_count.scalar()
+
+        if pricings_count == 2:
+            from ...telegram_bot.bot import support_bot
+            from sqlalchemy.orm import selectinload
+
+            beat_result = await session.execute(
+                select(BeatModel)
+                .options(
+                    selectinload(BeatModel.owner),
+                    selectinload(BeatModel.pricings).selectinload(BeatPricingModel.tariff)
+                )
+                .where(BeatModel.id == pricing_data.beat_id)
+            )
+            beat_with_relations = beat_result.scalar_one()
+
+            user_info = {
+                'id': beat_with_relations.owner.id,
+                'username': beat_with_relations.owner.username,
+                'email': beat_with_relations.owner.email
+            }
+
+            beat_data = {
+                'id': beat_with_relations.id,
+                'name': beat_with_relations.name,
+                'genre': beat_with_relations.genre,
+                'tempo': beat_with_relations.tempo,
+                'key': beat_with_relations.key,
+                'promotion_status': beat_with_relations.promotion_status
+            }
+
+            audio_path = None
+            if beat_with_relations.mp3_path:
+                audio_path = AUDIO_STORAGE / beat_with_relations.mp3_path
+            elif beat_with_relations.wav_path:
+                audio_path = AUDIO_STORAGE / beat_with_relations.wav_path
+
+            import asyncio
+            asyncio.create_task(
+                support_bot.send_beat_moderation_notification(beat_data, user_info, str(audio_path) if audio_path else None)
+            )
+
         return pricing
         
     except IntegrityError as e:

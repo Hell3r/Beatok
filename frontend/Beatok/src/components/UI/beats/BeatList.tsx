@@ -8,6 +8,7 @@ import { getAvatarUrl } from '../../../utils/getAvatarURL';
 import { getCurrentUser } from '../../../utils/getCurrentUser';
 import type { Filters } from './Filter';
 import BeatPurchaseModal from '../../BeatPurchaseModal';
+import BeatPromotionModal from '../../BeatPromotionModal';
 
 interface BeatListProps {
   beats: Beat[];
@@ -41,6 +42,8 @@ const BeatList: React.FC<BeatListProps> = ({
   const navigate = useNavigate();
   const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
   const [beatToPurchase, setBeatToPurchase] = useState<Beat | null>(null);
+  const [promotionModalOpen, setPromotionModalOpen] = useState(false);
+  const [beatToPromote, setBeatToPromote] = useState<Beat | null>(null);
   const currentUser = getCurrentUser();
 
   const isFree = (beat: Beat): boolean => {
@@ -174,20 +177,16 @@ const BeatList: React.FC<BeatListProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
         {trail.map((style, index) => {
           const beat = filteredBeats[index];
+          const isOwnBeat = currentUser && getAuthorId(beat) === currentUser.id;
           return (
             <animated.div key={beat.id} style={style} className="bg-neutral-900 rounded-lg p-4 hover:bg-neutral-800 transition-all duration-300 group border border-neutral-700 relative">
-              {isFree(beat) && getAuthorId(beat) !== currentUser?.id && (
-                <div className="absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded-bl-lg">
-                  Бесплатно
-                </div>
-              )}
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1">
                   <h3
                     className="text-white font-semibold text-lg group-hover:text-red-400 transition-colors"
                     title={beat.name}
                   >
-                    {truncateText(beat.name, 30)}
+                    {truncateText(beat.name, 25)}
                   </h3>
                   <div className="flex items-center space-x-2">
                     <img
@@ -262,6 +261,22 @@ const BeatList: React.FC<BeatListProps> = ({
                 </div>
               </div>
 
+              {/* Promote button - positioned prominently */}
+              {isProfileView && beat.status === 'available' && (
+                <div className="mb-4">
+                  <button
+                    onClick={() => setBeatToPromote(beat)}
+                    className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold px-4 py-3 rounded-lg transition-all duration-300 cursor-pointer flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+                    title="Продвигать бит"
+                  >
+                    <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    <span>Продвинуть бит • 200 ₽</span>
+                  </button>
+                </div>
+              )}
+
               <div className="flex justify-between items-center">
                 <div className="flex space-x-2">
                   <button
@@ -282,7 +297,7 @@ const BeatList: React.FC<BeatListProps> = ({
                     </svg>
                   </button>
 
-                  {isFree(beat) ? (
+                  {isOwnBeat ? (
                     <button
                       onClick={() => onDownload?.(beat)}
                       className="bg-neutral-700 hover:bg-neutral-600 text-white px-6 py-2 rounded-full transition-colors cursor-pointer"
@@ -290,6 +305,18 @@ const BeatList: React.FC<BeatListProps> = ({
                       title="Скачать"
                     >
                       Скачать
+                    </button>
+                  ) : isFree(beat) ? (
+                    <button
+                      onClick={() => onDownload?.(beat)}
+                      className="bg-neutral-700 hover:bg-neutral-600 text-white px-6 py-2 rounded-full transition-colors cursor-pointer relative"
+                      style={{ minWidth: '120px' }}
+                      title="Скачать"
+                    >
+                      Скачать
+                      <div className="absolute -top-1 -right-1 bg-red-600 text-white text-xs font-bold px-1 py-0.5 rounded">
+                        Бесплатно
+                      </div>
                     </button>
                   ) : (
                     <button
@@ -339,6 +366,13 @@ const BeatList: React.FC<BeatListProps> = ({
         isOpen={purchaseModalOpen}
         onClose={() => setPurchaseModalOpen(false)}
         beat={beatToPurchase}
+      />
+
+      <BeatPromotionModal
+        isOpen={promotionModalOpen}
+        onClose={() => setPromotionModalOpen(false)}
+        beat={beatToPromote}
+        onPromote={(beatId) => console.log('Promoting beat:', beatId)}
       />
     </>
   );

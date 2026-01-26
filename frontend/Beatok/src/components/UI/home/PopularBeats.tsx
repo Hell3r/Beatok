@@ -49,8 +49,9 @@ const PopularBeats: React.FC = () => {
   const loadPopularBeats = async () => {
     try {
       setLoading(true);
-      const data = await beatService.getBeats(0, 6);
+      const data = await beatService.getBeats(0, 7);
       const availableBeats = data.filter(beat => beat.status === 'available');
+      availableBeats.sort((a, b) => b.likes_count - a.likes_count);
       setBeats(availableBeats);
       setGlobalBeats(availableBeats);
     } catch (error) {

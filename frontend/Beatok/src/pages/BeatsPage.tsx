@@ -186,9 +186,7 @@ const BeatsPage: React.FC = () => {
             </p>
             {currentBeat && (
               <p className="text-xs text-neutral-500 mt-1">
-                Текущий: {currentBeat.name} |
-                WAV: {currentBeat.wav_path ? '✓' : '✗'} |
-                MP3: {currentBeat.mp3_path ? '✓' : '✗'}
+                Текущий: {currentBeat.name}
               </p>
             )}
           </div>

@@ -17,6 +17,7 @@ const Footer: React.FC = () => {
     { href: '/beatmakers', label: 'БИТМЕЙКЕРЫ' },
     { href: '/about', label: 'О НАС' },
     { href: '/support', label: 'FAQ' },
+    { href: '/', label: 'ПОДДЕРЖАТЬ АВТОРОВ'}
   ];
 
   const handleCopyEmail = async () => {
@@ -43,6 +44,23 @@ const Footer: React.FC = () => {
                 {item.label}
               </a>
             ))}
+          </div>
+          <div className='justify-center spacw-x-8 text-center'>
+            <p className='text-gray-400 text-sm'>
+              ИП Репьев Евгений Алексеевич
+            </p>
+            <p className='text-gray-400 text-sm'>
+              ОГРН/ОГРНИП: 324508100488650 
+            </p>
+            <p className='text-gray-400 text-sm'>
+              ЮРИДИЧЕСКИЙ АДРЕС: 141060, РОССИЯ, МОСКОВСКАЯ ОБЛ, Г КОРОЛЁВ,<br /> МКР БОЛШЕВО, ПРОЕЗД БУРКОВСКИЙ, Д 36, КОРП 1, КВ 18 
+            </p>
+            <p className='text-gray-400 text-sm'>
+              ИНН: 592061978176 
+            </p>
+            <p className='text-gray-400 text-sm'>
+              ПОЧТА: repiev.evgeny@yandex.ru  
+            </p>
           </div>
           <div className="flex justify-center space-x-8">
             <a

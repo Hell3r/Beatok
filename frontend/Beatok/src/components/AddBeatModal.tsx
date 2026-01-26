@@ -24,6 +24,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [tariffs, setTariffs] = useState<Tariff[]>([]);
+  const [showRules, setShowRules] = useState(false);
 
   const [beatData, setBeatData] = useState({
     name: '',
@@ -66,6 +67,20 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
     enter: { opacity: 1 },
     leave: { opacity: 0 },
     config: { duration: 200 }
+  });
+
+  const rulesOverlayTransition = useTransition(showRules, {
+    from: { opacity: 0 },
+    enter: { opacity: 1 },
+    leave: { opacity: 0 },
+    config: { duration: 200 }
+  });
+
+  const rulesModalTransition = useTransition(showRules, {
+    from: { opacity: 0, transform: 'scale(0.8) translateY(-20px)' },
+    enter: { opacity: 1, transform: 'scale(1) translateY(0px)' },
+    leave: { opacity: 0, transform: 'scale(0.8) translateY(-20px)' },
+    config: { tension: 300, friction: 30 }
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -116,6 +131,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
       formData.append('genre', beatData.genre);
       formData.append('tempo', beatData.tempo);
       formData.append('key', beatData.key);
+      formData.append('is_free', beatData.is_free.toString());
 
       if (beatData.mp3_file) {
         formData.append('mp3_file', beatData.mp3_file);
@@ -231,19 +247,27 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
               <div className="p-6 border-b border-neutral-800">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h2 className="text-xl font-bold text-white">
+                    <h2 className="text-xl font-bold text-white select-none">
                       Добавить бит
                     </h2>
                   </div>
-                  <button
-                    onClick={onClose}
-                    className="text-neutral-400 cursor-pointer hover:text-white transition-colors"
-                    aria-label="Закрыть"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+                  <div className="flex items-center space-x-4">
+                    <button
+                      onClick={() => setShowRules(true)}
+                      className="text-sm text-neutral-400 select-none hover:text-white transition-colors underline cursor-pointer"
+                    >
+                      Правила добавления бита
+                    </button>
+                    <button
+                      onClick={onClose}
+                      className="text-neutral-400 cursor-pointer hover:text-white transition-colors"
+                      aria-label="Закрыть"
+                    >
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -266,7 +290,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                           placeholder="Введите название бита"
                           value={beatData.name}
                           onChange={(e) => setBeatData({...beatData, name: e.target.value})}
-                          className="w-full h-12 p-3 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
+                          className="w-full h-10 p-2 bg-neutral-800 border border-neutral-600 rounded text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
                           required
                         />
                       </div>
@@ -279,7 +303,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                           type="file"
                           accept=".mp3"
                           onChange={(e) => handleFileChange(e, 'mp3')}
-                          className="w-full h-12 p-1 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer select-none"
+                          className="w-full h-10 p-1 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer select-none"
                         />
                       </div>
 
@@ -291,7 +315,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                           type="file"
                           accept=".wav"
                           onChange={(e) => handleFileChange(e, 'wav')}
-                          className="w-full h-12 p-1 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer select-none"
+                          className="w-full h-10 p-1 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer select-none"
                         />
                       </div>
                     </div>
@@ -304,7 +328,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                         <select
                           value={beatData.genre}
                           onChange={(e) => setBeatData({...beatData, genre: e.target.value})}
-                          className="w-full h-12 p-3 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors cursor-pointer"
+                          className="w-full h-10 p-2 bg-neutral-800 border border-neutral-600 rounded text-white text-sm focus:outline-none focus:border-red-500 transition-colors cursor-pointer"
                           required
                         >
                           <option value="">Выберите жанр</option>
@@ -325,7 +349,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                           placeholder="Например: 140"
                           value={beatData.tempo}
                           onChange={(e) => setBeatData({...beatData, tempo: e.target.value})}
-                          className="w-full h-12 p-3 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
+                          className="w-full h-10 p-2 bg-neutral-800 border border-neutral-600 rounded text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
                           required
                           min="1"
                           max="552"
@@ -339,7 +363,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                         <select
                           value={beatData.key}
                           onChange={(e) => setBeatData({...beatData, key: e.target.value})}
-                          className="w-full h-12 p-3 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors cursor-pointer"
+                          className="w-full h-10 p-2 bg-neutral-800 border border-neutral-600 rounded text-white text-sm focus:outline-none focus:border-red-500 transition-colors cursor-pointer"
                           required
                         >
                           <option value="">Выберите тональность</option>
@@ -368,7 +392,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                     </div>
                     {!beatData.is_free && (
                       <>
-                        <h3 className="text-lg font-medium text-white mb-4">Цены по тарифам</h3>
+                        <h3 className="text-sm text-white mb-4">При добавлении платного бита сервис прибавляет к цене комиссионные 10% к стоимости бита.</h3>
                         <div className="grid grid-cols-1 gap-4">
                           {tariffs.map((tariff) => (
                             <div key={tariff.name} className="flex items-center space-x-4">
@@ -385,7 +409,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                                 placeholder="Цена"
                                 value={beatData.pricings[tariff.name] || ''}
                                 onChange={(e) => handlePricingChange(tariff.name, e.target.value)}
-                                className="w-32 h-12 p-3 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
+                                className="w-32 h-10 p-3 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
                                 min="0"
                                 step="0.01"
                               />
@@ -414,6 +438,58 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                     * - обязательные поля
                   </p>
                 </div>
+              </div>
+            </div>
+          </animated.div>
+        )
+      )}
+
+      {rulesOverlayTransition((style, item) =>
+        item && (
+          <animated.div
+            style={style}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-60"
+            onClick={() => setShowRules(false)}
+          />
+        )
+      )}
+
+      {rulesModalTransition((style, item) =>
+        item && (
+          <animated.div
+            style={style}
+            className="fixed inset-0 flex items-center justify-center z-70 p-4"
+          >
+            <div className="bg-neutral-900 rounded-lg w-full max-w-md border border-neutral-800 shadow-2xl">
+              <div className="p-6 border-b border-neutral-800">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-bold text-white select-none">
+                    Правила добавления бита
+                  </h3>
+                  <button
+                    onClick={() => setShowRules(false)}
+                    className="text-neutral-400 cursor-pointer hover:text-white transition-colors"
+                    aria-label="Закрыть"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div className="p-6">
+                <p className="text-neutral-300 mb-4 select-none">
+                  После добавления бит отправляется на модерацию, чтобы он не был отклонен следуйте требованиям:
+                </p>
+                <ul className="space-y-4 text-m text-neutral-300 select-none">
+                  <li>• В бите обязательно должен быть авторский войстег</li>
+                  <li>• Бит должен быть оригинальным и не украденным</li>
+                  <li>• Бит должен соответствовать выбранному жанру</li>
+                  <li>• Название бита должно быть адекватным</li>
+                  <li>• Темп и тональность должны быть указаны корректно</li>
+                  <li>• Аудиофайл должен быть качественным и без посторонних шумов</li>
+                  <li>• Запрещено добавлять контент, нарушающий авторские права</li>
+                </ul>
               </div>
             </div>
           </animated.div>
