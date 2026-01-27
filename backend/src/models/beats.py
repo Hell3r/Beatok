@@ -26,6 +26,17 @@ class BeatModel(Base):
     genre: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     tempo: Mapped[int] = mapped_column(Integer, nullable=False)
     key: Mapped[str] = mapped_column(String(10), nullable=False)
+    
+    audio_fingerprint: Mapped[Optional[str]] = mapped_column(
+        String(64),
+        nullable=True,
+        index=True
+    )
+    audio_fingerprint_timings: Mapped[Optional[str]] = mapped_column(
+        String(2000),
+        nullable=True
+    )
+    
 
     size: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     duration: Mapped[float] = mapped_column(Float, default=0.0, nullable=False)
