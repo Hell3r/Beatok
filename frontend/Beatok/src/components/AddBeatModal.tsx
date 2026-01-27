@@ -149,7 +149,15 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
         body: formData
       });
 
+      if (response.status === 409)
+      {
+        setError('Слыш блять чо биты пиздишь сука');
+        setLoading(false);
+        return
+      }
+
       if (!response.ok) {
+        console.log(response.status)
         const errorData = await response.json();
         throw new Error(errorData.detail || 'Ошибка при добавлении бита');
       }

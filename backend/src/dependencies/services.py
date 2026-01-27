@@ -9,7 +9,12 @@ from src.services.BalanceService import BalanceService
 from src.services.WithdrawalService import WithdrawalService
 from src.services.PaymentFacade import PaymentFacadeService
 from src.services.PurchaseService import PurchaseService
+from src.services.AudioFingerprintService import AudioFingerprintService
+
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
+
+async def get_fingerprint_service(session: SessionDep) -> AudioFingerprintService:
+    return AudioFingerprintService(session)
 
 async def get_promo_service(session: SessionDep) -> PromoCodeService:
     return PromoCodeService(session)
@@ -30,6 +35,7 @@ async def get_purchase_service(session: SessionDep) -> PurchaseService:
     return PurchaseService(session)
 
 
+AudioFingerprintServiceDep = Annotated[AudioFingerprintService, Depends(get_fingerprint_service)]
 PromoServiceDep = Annotated[PromoCodeService, Depends(get_promo_service)]
 YooKassaServiceDep = Annotated[RealYookassaService, Depends(get_yookassa_service)]
 BalanceServiceDep = Annotated[BalanceService, Depends(get_balance_service)]
