@@ -17,6 +17,8 @@ import BeatmakersPage from './pages/BeatmakersPage';
 import ForumPage from './pages/ForumPage';
 import AdminSwaggerPage from './pages/AdminSwaggerPage';
 import SupportPage from './pages/SupportPage';
+import EmailChange from './pages/success/EmailChange';
+import PasswordResetPage from './pages/PasswordResetPage';
 
 const PageLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="container mx-auto px-4 py-8">
@@ -74,6 +76,8 @@ const App: React.FC = () => {
                   //<Route path="/forum" element={<PageLayout><ForumPage /></PageLayout>} />
                   }
                   <Route path="/support" element={<PageLayoutWithFooter><SupportPage /></PageLayoutWithFooter>} />
+                  <Route path="/email-change" element={<EmailChange />} />
+                  <Route path="/reset-password" element={<PasswordResetPage />} />
 
                   <Route path="*" element={<PageLayoutWithFooter><Error404 /></PageLayoutWithFooter>} />
                 </Routes>

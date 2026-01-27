@@ -8,7 +8,7 @@ interface AuthModalProps {
   onClose: () => void;
 }
 
-type AuthMode = 'login' | 'register' | 'emailVerification';
+type AuthMode = 'login' | 'register' | 'emailVerification' | 'forgotPassword' | 'forgotPasswordSuccess';
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   const { openModal, closeModal } = useModal();
@@ -70,6 +70,32 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  const handleResendForgotPassword = async () => {
+    if (resendCooldown > 0) return;
+
+    try {
+      const response = await fetch('http://localhost:8000/v1/users/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: verificationEmail
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Ошибка при отправке письма');
+      }
+
+      setResendCooldown(60);
+      setError('');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Произошла ошибка при отправке письма');
+    }
+  };
+
   const modalTransition = useTransition(isOpen, {
     from: { opacity: 0, transform: 'scale(0.8) translateY(-20px)' },
     enter: { opacity: 1, transform: 'scale(1) translateY(0px)' },
@@ -92,7 +118,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   });
 
   const modalHeightSpring = useSpring({
-    height: mode === 'login' ? (error ? '505px' : '425px') : mode === 'register' ? (error ? '780px' : '700px') : '450px',
+    height: mode === 'login' ? (error ? '505px' : '445px') : mode === 'register' ? (error ? '780px' : '700px') : mode === 'forgotPassword' ? '390px' : mode === 'forgotPasswordSuccess' ? '540px' : '450px',
     config: { tension: 300, friction: 30 }
   });
 
@@ -212,6 +238,38 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch('http://localhost:8000/v1/users/forgot-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: loginData.email
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || 'Ошибка при отправке письма');
+      }
+
+      setError('');
+      setVerificationEmail(loginData.email);
+      setMode('forgotPasswordSuccess');
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Произошла ошибка при отправке письма');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <>
       {overlayTransition((style, item) =>
@@ -238,7 +296,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                 <div className="flex justify-between items-start">
                   <div>
                     <h2 className="text-xl font-bold text-white">
-                      {mode === 'login' ? 'Вход' : mode === 'register' ? 'Регистрация' : 'Подтверждение Email'}
+                      {mode === 'login' ? 'Вход' : mode === 'register' ? 'Регистрация' : mode === 'forgotPassword' ? 'Восстановление пароля' : mode === 'forgotPasswordSuccess' ? 'Письмо отправлено' : 'Подтверждение Email'}
                     </h2>
                   </div>
                   <button
@@ -299,6 +357,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                         >
                           {loading ? 'Вход...' : 'Войти'}
                         </button>
+
+                        <div className="text-center">
+                          <button
+                            type="button"
+                            onClick={() => setMode('forgotPassword')}
+                            className="text-red-400 hover:text-red-300 cursor-pointer select-none font-medium transition-colors duration-200"
+                          >
+                            Забыли пароль?
+                          </button>
+                        </div>
                       </form>
                     ) : item === 'register' ? (
                       <form onSubmit={handleRegister} className="space-y-4">
@@ -379,6 +447,68 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                           {loading ? 'Регистрация...' : 'Зарегистрироваться'}
                         </button>
                       </form>
+                    ) : item === 'forgotPassword' ? (
+                      <form onSubmit={handleForgotPassword} className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-neutral-300 mb-2">
+                            Email
+                          </label>
+                          <input
+                            type="email"
+                            placeholder="your@email.com"
+                            value={loginData.email}
+                            onChange={(e) => setLoginData({...loginData, email: e.target.value})}
+                            className="w-full p-3 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
+                            required
+                          />
+                        </div>
+
+                        <button
+                          type="submit"
+                          disabled={loading}
+                          className="w-full cursor-pointer bg-red-600 hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {loading ? 'Отправка...' : 'Отправить письмо'}
+                        </button>
+                      </form>
+                    ) : item === 'forgotPasswordSuccess' ? (
+                      <div className="space-y-4">
+                        <div className="text-center select-none">
+                          <div className="mb-4">
+                            <svg className="mx-auto h-12 w-12 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                          <h3 className="text-lg font-medium text-white mb-2">Письмо отправлено!</h3>
+                          <p className="text-neutral-300 mb-4">
+                            Мы отправили письмо с инструкциями по восстановлению пароля на адрес <strong>{maskEmail(verificationEmail)}</strong>
+                          </p>
+                          <p className="text-sm text-neutral-400 mb-6">
+                            Пожалуйста, проверьте свою почту и перейдите по ссылке в письме для сброса пароля.
+                          </p>
+                          <div className="space-y-3">
+                            <button
+                              onClick={() => {
+                                setMode('login');
+                                setVerificationEmail('');
+                                setError('');
+                                setResendCooldown(0);
+                              }}
+                              className="w-full select-none cursor-pointer bg-red-600 hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200"
+                            >
+                              Понятно
+                            </button>
+
+                            <button
+                              onClick={handleResendForgotPassword}
+                              disabled={resendCooldown > 0}
+                              className="w-full select-none cursor-pointer bg-neutral-700 hover:bg-neutral-600 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {resendCooldown > 0 ? `Отправить ещё раз (${resendCooldown} сек)` : 'Отправить ещё раз'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                     ) : (
                       <div className="space-y-4">
                         <div className="text-center select-none">
@@ -421,8 +551,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                   </animated.div>
                 ))}
 
-                <div className="mt-6 text-center">
-                  <p className="text-neutral-400">
+                <div className="my-6 text-center">
+                  <p className="text-neutral-400 select-none">
                     {mode === 'login' ? 'Нет аккаунта? ' : 'Уже есть аккаунт? '}
                     <button
                       type="button"
