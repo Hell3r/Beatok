@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useSearchParams } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useSpring, animated } from '@react-spring/web';
 import { userService } from '../services/userService';
 import { beatService } from '../services/beatService';
@@ -32,6 +32,7 @@ const ProfilePage: React.FC = () => {
   const { showSuccess, showError } = useNotificationContext();
   const { id } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const isOwnProfile = !id;
   const profileUserId = id ? parseInt(id) : null;
 
@@ -899,10 +900,20 @@ const rightPanelSpring = useSpring({
                         </div>
                         <hr className='text-neutral-600' />
                         <div>
-                          <label className="block text-neutral-400 text-sm font-medium mb-2">
-                            Email
-                          </label>
-                            <div className="text-white text-lg">{user.email}</div>
+                          <div className="flex justify-between items-center mb-2">
+                            <label className="block text-neutral-400 text-sm font-medium">
+                              Email
+                            </label>
+                            {isOwnProfile && !editing && (
+                              <button
+                                onClick={() => navigate('/email-change')}
+                                className="text-red-500 cursor-pointer select-none hover:text-red-400 text-sm transition-colors"
+                              >
+                                Изменить
+                              </button>
+                            )}
+                          </div>
+                          <div className="text-white text-lg">{user.email}</div>
                         </div>
                         <hr className='text-neutral-600' />
                         <div>

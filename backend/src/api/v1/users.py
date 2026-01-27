@@ -14,7 +14,7 @@ from datetime import date
 from src.models.email_verification import EmailVerificationModel
 from src.services.rate_limiter import check_rate_limit
 from src.services.RedisService import redis_service
-from src.schemas.users import DeleteUserRequest, UsersSchema, UserResponse, UserCreate, TokenResponse, UserUpdate, VerifyEmailRequest, MessageResponse, ResendVerificationRequest
+from src.schemas.users import DeleteUserRequest, UsersSchema, UserResponse, UserCreate, TokenResponse, UserUpdate, VerifyEmailRequest, MessageResponse, ResendVerificationRequest, ForgotPasswordRequest, ResetPasswordRequest
 from src.services.EmailService import email_service
 from src.services.AuthService import (  
     add_to_blacklist,
@@ -769,4 +769,164 @@ async def get_user_stats(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Ошибка при получении статистики: {str(e)}"
+        )
+
+
+@router.post(
+    "/forgot-password",
+    response_model=MessageResponse,
+    summary="Запрос на восстановление пароля",
+    tags=["Верификация Email и авторизация"]
+)
+async def forgot_password(
+    forgot_data: ForgotPasswordRequest,
+    background_tasks: BackgroundTasks,
+    session: SessionDep
+):
+    try:
+        user = await session.execute(
+            select(UsersModel).where(UsersModel.email == forgot_data.email)
+        )
+        user = user.scalar_one_or_none()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Аккаунта с указанной почтой не существует"
+            )
+
+        # Delete any existing unused password reset tokens for this email
+        await session.execute(
+            delete(EmailVerificationModel).where(
+                and_(
+                    EmailVerificationModel.email == forgot_data.email,
+                    EmailVerificationModel.verification_type == "password_reset",
+                    EmailVerificationModel.is_used == False
+                )
+            )
+        )
+
+        # Create new password reset token
+        verification = EmailVerificationModel(
+            email=forgot_data.email,
+            verification_type="password_reset"
+        )
+
+        session.add(verification)
+        await session.commit()
+
+        background_tasks.add_task(
+            email_service.send_password_reset_email,
+            forgot_data.email,
+            verification.token,
+            user.username
+        )
+
+        logger.info(f"Password reset email sent to: {forgot_data.email}")
+
+        return MessageResponse(
+            message="Письмо с инструкциями по восстановлению пароля отправлено на ваш email"
+        )
+
+    except HTTPException:
+        await session.rollback()
+        raise
+    except Exception as e:
+        await session.rollback()
+        logger.error(f"Forgot password error for {forgot_data.email}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Произошла ошибка при отправке письма. Пожалуйста, попробуйте позже."
+        )
+
+
+@router.post(
+    "/reset-password",
+    response_model=MessageResponse,
+    summary="Сброс пароля",
+    tags=["Верификация Email и авторизация"]
+)
+async def reset_password(
+    reset_data: ResetPasswordRequest,
+    session: SessionDep
+):
+    try:
+        # Find the verification token
+        verification = await session.execute(
+            select(EmailVerificationModel).where(
+                and_(
+                    EmailVerificationModel.token == reset_data.token,
+                    EmailVerificationModel.verification_type == "password_reset"
+                )
+            )
+        )
+        verification = verification.scalar_one_or_none()
+
+        if not verification:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Неверный или устаревший токен сброса пароля"
+            )
+
+        if not verification.is_valid():
+            if verification.is_used:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Этот токен сброса пароля уже был использован"
+                )
+            else:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Срок действия токена сброса пароля истек"
+                )
+
+        # Validate passwords match
+        if reset_data.new_password != reset_data.confirm_password:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Пароли не совпадают"
+            )
+
+        if len(reset_data.new_password) < 6:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Пароль должен содержать минимум 6 символов"
+            )
+
+        # Find the user
+        user = await session.execute(
+            select(UsersModel).where(UsersModel.email == verification.email)
+        )
+        user = user.scalar_one_or_none()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Пользователь не найден"
+            )
+
+        # Hash the new password
+        hashed_password = get_password_hash(reset_data.new_password)
+        user.password = hashed_password
+
+        # Mark the token as used
+        verification.is_used = True
+
+        await session.commit()
+
+        logger.info(f"Password reset successful for user: {user.email}")
+
+        return MessageResponse(
+            message="Пароль успешно изменен"
+        )
+
+    except HTTPException:
+        await session.rollback()
+        raise
+    except Exception as e:
+        await session.rollback()
+        logger.error(f"Reset password error for token {reset_data.token}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Произошла ошибка при сбросе пароля. Пожалуйста, попробуйте позже."
         )
