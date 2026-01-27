@@ -21,6 +21,7 @@ from src.core.cache import cached
 from src.services.RedisService import redis_service
 from pathlib import Path
 from src.services.rate_limiter import check_rate_limit
+from src.services.rate_limiter import RateLimiter
 
 
 router = APIRouter(prefix="/beats", tags=["Аудио файлы"])
@@ -77,6 +78,8 @@ async def create_beat(
     audio_path_for_fingerprint = None
     
     try:
+        rate_limiter = RateLimiter()
+        new_count = await rate_limiter.increment_daily_beat_counter(current_user_id)
         beat_folder = AUDIO_STORAGE / "beats" / str(beat.id)
         beat_folder.mkdir(parents=True, exist_ok=True)
         total_size = 0
@@ -228,7 +231,7 @@ async def create_beat(
     except HTTPException:
         raise
         
-    except Exception as e:
+    except Exception as e:  
         await session.rollback()
         if beat_folder and beat_folder.exists():
             import shutil
