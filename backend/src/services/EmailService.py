@@ -148,7 +148,6 @@ class EmailService:
             message["To"] = to_email
             message["Subject"] = subject
             
-            # Attach plain text part first
             text_content = self._html_to_text(html_content)
             text_part = MIMEText(text_content, "plain", "utf-8")
             message.attach(text_part)
@@ -158,7 +157,28 @@ class EmailService:
             html_part.replace_header('Content-Type', 'text/html; charset=utf-8')
             message.attach(html_part)
             
-            smtp = aiosmtplib.SMTP(hostname=self.smtp_host, port=self.smtp_port)
+            import ssl
+            context = ssl.create_default_context()
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+            
+            # Используем SMTP_SSL для порта 465
+            if self.smtp_port == 465:
+                smtp = aiosmtplib.SMTP(
+                    hostname=self.smtp_host,
+                    port=self.smtp_port,
+                    use_tls=True,
+                    tls_context=context
+                )
+            # Или SMTP с STARTTLS для порта 587
+            else:
+                smtp = aiosmtplib.SMTP(
+                    hostname=self.smtp_host,
+                    port=self.smtp_port,
+                    use_tls=False,
+                    start_tls=True,
+                    tls_context=context
+                )
             await smtp.connect()
             
             await smtp.login(self.smtp_username, self.smtp_password)
@@ -170,7 +190,82 @@ class EmailService:
             return True
             
         except Exception as e:
-            logger.error(f"SMTP error: {str(e)}")
+            logger.error(f"SMTP error: {str(e)}", exc_info=True)
+            return False
+        
+        
+        
+    async def send_beat_download_link(
+        self,
+        to_email: str,
+        username: str,
+        beat_name: str,
+        download_url: str,
+        purchase_details: dict,
+        expires_in_hours: int = 72
+        ) -> bool:
+        
+        self._initialize()
+        if not all([self.smtp_username, self.smtp_password]):
+            logger.warning("SMTP не настроен, не могу отправить письмо")
+            return False
+        
+        subject = f"🎵 Ссылка на скачивание бита '{beat_name}' | Beatok"
+        
+        # HTML с табличной вёрсткой
+        html_content = self._render_download_link_template(
+            username=username,
+            beat_name=beat_name,
+            download_url=download_url,
+            purchase_details=purchase_details,
+            expires_in_hours=expires_in_hours,
+            app_name=self.app_name
+        )
+        
+        try:
+            message = MIMEMultipart("alternative")
+            message["From"] = formataddr((self.from_name, self.from_email))
+            message["To"] = to_email
+            message["Subject"] = subject
+            
+            # Текстовая версия
+            text_content = f"""
+            Здравствуйте, {username}!
+            
+            Спасибо за покупку на Beatok!
+            
+            🎧 Детали покупки:
+            • Бит: {beat_name}
+            • Тариф: {purchase_details.get('tariff_name', 'Standard')}
+            • Цена: {purchase_details.get('price', 0)} руб.
+            • ID покупки: {purchase_details.get('purchase_id', 'N/A')}
+            
+            📥 Скачать бит:
+            {download_url}
+            
+            ⚠️ Важно:
+            • Ссылка действительна {expires_in_hours} часов
+            • Максимум 5 скачиваний
+            • Не передавайте ссылку другим
+            
+            Спасибо, что выбрали Beatok!
+            """
+            
+            message.attach(MIMEText(text_content, "plain", "utf-8"))
+            message.attach(MIMEText(html_content, "html", "utf-8"))
+            
+            # Отправка
+            smtp = aiosmtplib.SMTP(hostname=self.smtp_host, port=self.smtp_port)
+            await smtp.connect()
+            await smtp.login(self.smtp_username, self.smtp_password)
+            await smtp.send_message(message)
+            await smtp.quit()
+            
+            logger.info(f"✅ Ссылка на скачивание отправлена на {to_email}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"Ошибка отправки ссылки: {e}")
             return False
     
     def _html_to_text(self, html_content: str) -> str:
@@ -310,7 +405,193 @@ class EmailService:
             reset_url=reset_url,
             app_name=app_name
         )
-    
+        
+    def _render_download_link_template(
+        self,
+        username: str,
+        beat_name: str,
+        download_url: str,
+        purchase_details: dict,
+        expires_in_hours: int,
+        app_name: str
+        ) -> str:
+        template_str = '''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+    <html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <title>Ваш бит готов к скачиванию</title>
+        <style type="text/css">
+            /* Reset */
+            body { margin: 0; padding: 0; width: 100% !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+            table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+            img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+            
+            /* Main styles */
+            body { font-family: Arial, Helvetica, sans-serif; color: #333333; background-color: #f5f5f5; }
+            .container { max-width: 600px; margin: 0 auto; }
+            
+            /* Header */
+            .header { background-color: #111111; padding: 25px 0; text-align: center; }
+            .logo { color: #ffffff; font-size: 28px; font-weight: bold; text-decoration: none; }
+            .logo-red { color: #dc2626; }
+            
+            /* Content */
+            .content { background-color: #ffffff; padding: 40px 30px; }
+            .title { color: #111111; font-size: 24px; font-weight: bold; margin-bottom: 20px; }
+            .greeting { color: #444444; font-size: 16px; line-height: 1.6; margin-bottom: 25px; }
+            
+            /* Purchase info table */
+            .info-table { width: 100%; border: 1px solid #e0e0e0; border-collapse: collapse; margin: 25px 0; }
+            .info-table td { padding: 15px 20px; border-bottom: 1px solid #e0e0e0; }
+            .info-table .label { color: #666666; font-weight: bold; width: 40%; background-color: #f9f9f9; }
+            .info-table .value { color: #333333; }
+            .info-table tr:last-child td { border-bottom: none; }
+            
+            /* Download section */
+            .download-box { background-color: #f0f7ff; border: 2px dashed #3b82f6; border-radius: 8px; padding: 25px; text-align: center; margin: 30px 0; }
+            .download-title { color: #1e40af; font-size: 20px; font-weight: bold; margin-bottom: 15px; }
+            .download-button { display: inline-block; background-color: #dc2626; color: white !important; text-decoration: none; 
+                            padding: 14px 35px; border-radius: 5px; font-size: 16px; font-weight: bold; margin: 15px 0; }
+            .download-url { color: #3b82f6; word-break: break-all; font-size: 14px; margin-top: 15px; }
+            
+            /* Instructions */
+            .instructions { background-color: #fff7ed; border-left: 4px solid #f59e0b; padding: 20px; margin: 25px 0; }
+            .instructions-title { color: #92400e; font-weight: bold; margin-bottom: 10px; }
+            .instructions-list { color: #78350f; margin: 0; padding-left: 20px; }
+            .instructions-list li { margin-bottom: 8px; }
+            
+            /* Footer */
+            .footer { background-color: #111111; color: #999999; padding: 25px; text-align: center; font-size: 12px; }
+            .footer a { color: #cccccc; text-decoration: none; }
+            .footer-links { margin-bottom: 15px; }
+            .footer-links a { margin: 0 10px; }
+            .copyright { margin-top: 15px; }
+            
+            /* Mobile */
+            @media only screen and (max-width: 600px) {
+                .content { padding: 25px 15px; }
+                .info-table td { padding: 10px 15px; display: block; width: 100%; }
+                .info-table .label { border-bottom: none; padding-bottom: 5px; }
+                .download-box { padding: 20px 15px; }
+                .download-button { display: block; }
+            }
+        </style>
+    </head>
+    <body>
+        <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f5f5f5">
+            <tr>
+                <td align="center">
+                    <table class="container" width="600" cellpadding="0" cellspacing="0" border="0">
+                        <!-- Header -->
+                        <tr>
+                            <td class="header">
+                                <a href="{{ base_url }}" class="logo">BEAT<span class="logo-red">OK</span></a>
+                            </td>
+                        </tr>
+                        
+                        <!-- Content -->
+                        <tr>
+                            <td class="content">
+                                <h1 class="title">Ваш бит готов к скачиванию! 🎵</h1>
+                                
+                                <p class="greeting">
+                                    Здравствуйте, <strong>{{ username }}</strong>!<br>
+                                    Спасибо за покупку на {{ app_name }}. Ваш WAV файл доступен для скачивания по ссылке ниже.
+                                </p>
+                                
+                                <!-- Purchase Details Table -->
+                                <table class="info-table">
+                                    <tr>
+                                        <td class="label">Название бита:</td>
+                                        <td class="value"><strong>{{ beat_name }}</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label">Тариф:</td>
+                                        <td class="value">{{ purchase_details.tariff_name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label">Цена:</td>
+                                        <td class="value">{{ purchase_details.price }} руб.</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label">ID покупки:</td>
+                                        <td class="value">#{{ purchase_details.purchase_id }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="label">Дата покупки:</td>
+                                        <td class="value">{{ purchase_details.purchase_date }}</td>
+                                    </tr>
+                                </table>
+                                
+                                <!-- Download Section -->
+                                <div class="download-box">
+                                    <div class="download-title">Скачать WAV файл</div>
+                                    <a href="{{ download_url }}" class="download-button">⬇️ СКАЧАТЬ БИТ</a>
+                                    <div class="download-url">
+                                        Или скопируйте ссылку:<br>
+                                        <a href="{{ download_url }}">{{ download_url }}</a>
+                                    </div>
+                                </div>
+                                
+                                <!-- Instructions -->
+                                <div class="instructions">
+                                    <div class="instructions-title">📌 Важная информация:</div>
+                                    <ul class="instructions-list">
+                                        <li>Ссылка действительна <strong>{{ expires_in_hours }} часов</strong></li>
+                                        <li>Доступно <strong>5 попыток</strong> скачивания</li>
+                                        <li>Файл в формате WAV (высокое качество)</li>
+                                        <li>Используйте согласно условиям тарифа "{{ purchase_details.tariff_name }}"</li>
+                                        <li>Не передавайте ссылку третьим лицам</li>
+                                    </ul>
+                                </div>
+                                
+                                <!-- Support -->
+                                <p style="color: #666666; font-size: 14px; line-height: 1.6; margin-top: 30px;">
+                                    Если возникли проблемы со скачиванием или у вас есть вопросы,<br>
+                                    ответьте на это письмо или напишите в поддержку: 
+                                    <a href="mailto:support@beatok.ru">support@beatok.ru</a>
+                                </p>
+                            </td>
+                        </tr>
+                        
+                        <!-- Footer -->
+                        <tr>
+                            <td class="footer">
+                                <div class="footer-links">
+                                    <a href="{{ base_url }}/terms">Условия использования</a> | 
+                                    <a href="{{ base_url }}/privacy">Конфиденциальность</a> | 
+                                    <a href="{{ base_url }}/support">Поддержка</a>
+                                </div>
+                                <div class="copyright">
+                                    © {{ current_year }} {{ app_name }}. Все права защищены.<br>
+                                    Это письмо отправлено автоматически, пожалуйста, не отвечайте на него.
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </body>
+    </html>'''
+        
+        from jinja2 import Template
+        template = Template(template_str)
+        return template.render(
+            username=username,
+            beat_name=beat_name,
+            download_url=download_url,
+            purchase_details=purchase_details,
+            expires_in_hours=expires_in_hours,
+            app_name=app_name,
+            base_url=self.base_url,
+            current_year=datetime.now().year
+        )
+        
+        
+        
+        
     async def test_connection(self) -> dict:
         self._initialize()
         
