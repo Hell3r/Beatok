@@ -91,7 +91,56 @@ class EmailService:
         
         logger.error(f"All attempts failed to send email to {email}")
         return False
-    
+
+    async def send_password_reset_email(self, email: str, token: str, username: str) -> bool:
+        self._initialize()
+
+        if not self.base_url:
+            logger.error("BASE_URL not configured")
+            return False
+
+        # Ensure BASE_URL has protocol
+        if not self.base_url.startswith(('http://', 'https://')):
+            self.base_url = f"http://{self.base_url}"
+            logger.warning(f"BASE_URL updated to include protocol: {self.base_url}")
+
+        if not all([self.smtp_username, self.smtp_password]):
+            logger.warning(f"Password reset URL: {self.base_url}/reset-password?token={token}")
+            return True
+
+        reset_url = f"{self.base_url}/reset-password?token={token}"
+
+        logger.info(f"Sending password reset email to {email}")
+
+        subject = f"Восстановление пароля в Beatok"
+
+        html_content = self._render_password_reset_template(
+            username=username,
+            reset_url=reset_url,
+            app_name=self.app_name
+        )
+
+        for attempt in range(3):
+            try:
+                success = await self._send_email(
+                    to_email=email,
+                    subject=subject,
+                    html_content=html_content
+                )
+
+                if success:
+                    logger.info(f"Password reset email successfully sent to {email}")
+                    return True
+
+            except Exception as e:
+                logger.error(f"Error sending password reset email to {email} (attempt {attempt + 1}): {str(e)}")
+
+            if attempt < 2:
+                await asyncio.sleep(5)
+
+        logger.error(f"All attempts failed to send password reset email to {email}")
+        return False
+
     async def _send_email(self, to_email: str, subject: str, html_content: str) -> bool:
         try:
             message = MIMEMultipart("alternative")
@@ -193,6 +242,72 @@ class EmailService:
         return template.render(
             username=username,
             verification_url=verification_url,
+            app_name=app_name
+        )
+
+    def _render_password_reset_template(self, username: str, reset_url: str, app_name: str) -> str:
+        template_str = """<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+        <html>
+        <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        </head>
+        <body style="margin:0; padding:20px; background:#f6f6f6; font-family:Arial, sans-serif;">
+        <table width="100%" cellpadding="0" cellspacing="0" bgcolor="#333333" border="0" style="max-width:600px; margin:0 auto; font-family: Arial, sans-serif; border-radius: 10px; border-collapse: separate; border-spacing: 0;">
+        <tr>
+            <td style="padding:30px; text-align:center; background:#222222; border-top-left-radius: 10px; border-top-right-radius: 10px;">
+                <span style="color:#ffffff; display: inline; font-size:24px; font-weight:bold;">BEAT</span>
+                <span style="color:#dc2626; display: inline; font-size:24px; font-weight:bold;">OK</span>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding:30px; color:#ffffff; font-size:16px; margin:0;">
+                Здравствуйте, {{ username }}!
+            </td>
+        </tr>
+        <tr>
+            <td style="padding:0 30px 20px 30px; color:#ffffff; font-size:14px;">
+                Вы запросили восстановление пароля. Для сброса пароля нажмите на кнопку:
+            </td>
+        </tr>
+        <tr>
+            <td style="padding:0 30px 20px 30px; text-align:center;">
+                <table cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;">
+                <tr>
+                    <td bgcolor="#dc2626" style="border-radius:4px; text-align:center;">
+                        <a href="{{ reset_url }}" style="display:inline-block; padding:12px 30px; color:#ffffff; text-decoration:none; font-size:16px; font-weight:bold;">Сбросить пароль</a>
+                    </td>
+                </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding:0 30px 10px 30px; color:#ffffff; font-size:14px;">
+                Или скопируйте ссылку в браузер:
+            </td>
+        </tr>
+        <tr>
+            <td style="padding:20px 30px 20px 30px; color:#ffffff; font-size:12px; border:none; word-break:break-word;">
+                <a href="{{ reset_url }}" style="text-decoration:none; outline:none; color:#ffffff;">{{ reset_url }}</a>
+            </td>
+        </tr>
+        <tr>
+            <td style="padding:10px 30px 20px 30px; color:#cccccc; font-size:12px;">
+                Ссылка действительна 1 час
+            </td>
+        </tr>
+        <tr>
+            <td style="padding:20px; text-align:center; background:#333333; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
+                <p style="color:#999999; font-size:12px; margin:0;">Beatok &copy; 2025</p>
+            </td>
+        </tr>
+        </table>
+        </body>
+        </html>"""
+
+        template = Template(template_str)
+        return template.render(
+            username=username,
+            reset_url=reset_url,
             app_name=app_name
         )
     
