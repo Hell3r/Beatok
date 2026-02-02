@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Скачать бит - Beatok</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #ffffff 0%, #ffffff 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .logo-red { color: #dc2626; }
+        .beat-name {
+            font-size: 24px;
+            color: #333;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #dc2626;
+        }
+        .download-btn {
+            display: inline-block;
+            background: #dc2626;
+            color: white;
+            padding: 18px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            text-decoration: none;
+            border-radius: 50px;
+            margin: 25px 0;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+        }
+        .download-btn:hover {
+            background: #b91c1c;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(220, 38, 38, 0.6);
+        }
+        .info-box {
+            background: #f0f7ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+            font-size: 14px;
+            color: #555;
+        }
+        .instructions {
+            font-size: 13px;
+            color: #777;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        .icon {
+            font-size: 48px;
+            margin: 20px 0;
+        }
+        .countdown {
+            font-size: 14px;
+            color: #666;
+            margin: 15px 0;
+        }
+        #popupBlocked {
+            display: none;
+            color: #dc2626;
+            padding: 15px;
+            background: #fee;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        .alternative-link {
+            word-break: break-all;
+            font-size: 12px;
+            color: #666;
+            margin: 15px 0;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            BEAT<span class="logo-red">OK</span>
+        </div>
+        
+        <div class="icon">🎵</div>
+        
+        <h1>Ваш бит готов!</h1>
+        
+        <div class="beat-name">
+            {{ beat_name }}
+        </div>
+        
+        <div class="info-box">
+            <p><strong>📦 Формат:</strong> ZIP архив с WAV файлом</p>
+            <p><strong>⏱️ Скачивание начнется через:</strong> <span id="countdown">5</span> сек</p>
+            <p><strong>📥 Осталось скачиваний:</strong> {{ downloads_left }}</p>
+            <p><strong>⏳ Срок действия:</strong> до {{ expires_at }}</p>
+        </div>
+        
+        <button onclick="startDownload()" class="download-btn" id="autoDownloadBtn">
+            ⬇️ СКАЧАТЬ СЕЙЧАС
+        </button>
+        
+        <div id="popupBlocked">
+            <strong>Браузер заблокировал всплывающее окно.</strong><br>
+            Разрешите всплывающие окна для этого сайта или используйте альтернативный способ:
+        </div>
+        
+        <div class="alternative-link">
+            <strong>Альтернативная ссылка:</strong><br>
+            <a href="{{ direct_download_url }}" onclick="event.stopPropagation();">{{ direct_download_url }}</a>
+        </div>
+        
+        <div class="instructions">
+            <p><strong>Если файл не скачивается:</strong></p>
+            <ol>
+                <li>Нажмите правой кнопкой на кнопку "СКАЧАТЬ СЕЙЧАС"</li>
+                <li>Выберите "Сохранить ссылку как..."</li>
+                <li>Сохраните файл на компьютер</li>
+            </ol>
+            <p style="margin-top: 15px; font-size: 12px;">
+                Beatok © {{ current_year }}
+            </p>
+        </div>
+    </div>
+
+    <script>
+        let seconds = 5;
+        const countdownElement = document.getElementById('countdown');
+        
+        const countdown = setInterval(() => {
+            seconds--;
+            countdownElement.textContent = seconds;
+            
+            if (seconds <= 0) {
+                clearInterval(countdown);
+                document.getElementById('autoDownloadBtn').click();
+            }
+        }, 1000);
+        
+        function startDownload() {
+            const downloadWindow = window.open('{{ download_action_url }}', '_blank');
+            
+            if (downloadWindow) {
+                downloadWindow.focus();
+            } else {
+                document.getElementById('popupBlocked').style.display = 'block';
+            }
+        }
+        
+        document.querySelector('.alternative-link a').addEventListener('click', function(e) {
+            const url = new URL(this.href);
+            url.searchParams.set('t', Date.now());
+            this.href = url.toString();
+        });
+    </script>
+</body>
+</html>

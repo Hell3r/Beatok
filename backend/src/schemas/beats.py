@@ -13,8 +13,8 @@ class BeatBase(BaseModel):
     genre: str
     tempo: int
     key: str
-    promotion_status: str = Field(default="standard", pattern="^(standard|premium)$")
-    status: str = Field(default="active", pattern="^(active|inactive)$")
+    promotion_status: str = "standard"
+    status: str = "active"
     
 
 class BeatCreate(BeatBase):
@@ -32,6 +32,7 @@ class BeatResponse(BaseModel):
     tempo: int
     key: str
     promotion_status: str
+    status: str
     rejection_reason: Optional[str] = None
     size: int
     duration: float
@@ -62,6 +63,7 @@ class BeatResponse(BaseModel):
                 "tempo": obj.tempo,
                 "key": obj.key,
                 "promotion_status": obj.promotion_status,
+                "status": obj.status,
                 "rejection_reason": obj.rejection_reason,
                 "size": obj.size,
                 "duration": obj.duration,

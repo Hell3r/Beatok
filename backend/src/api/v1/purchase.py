@@ -1,10 +1,26 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi.responses import FileResponse
 from typing import List
 from typing_extensions import Annotated
+from sqlalchemy import select
 import logging
+import zipfile
+import io
+import os
+from datetime import datetime
 from src.services.DownlandService import DownloadService
 from src.dependencies.auth import CurrentUserId
+from src.models.users import UsersModel
+from src.models.beats import BeatModel
 from src.database.deps import SessionDep
+from src.services.DownlandService import DownloadService
+from src.services.EmailService import email_service
+from src.services.template_service import template_service
+from src.scripts.zip_creator import ZipCreator
+from src.database.database import get_session
+from src.models.users import UsersModel
+from src.models.beats import BeatModel
+from src.models.downland_token import DownloadTokenModel
 from src.dependencies.services import PurchaseServiceDep, DownloadServiceDep, EmailServiceDep
 from src.schemas.purchase import (
     PurchaseBeatRequest,
@@ -16,13 +32,12 @@ from src.schemas.purchase import (
 router = APIRouter(prefix="/purchase", tags=["Покупки"])
 logger = logging.getLogger(__name__)
 
+
 @router.post("/beat", response_model=PurchaseBeatResponse, summary="Купить бит")
 async def purchase_beat(
     request: PurchaseBeatRequest,
     user_id: CurrentUserId,
     purchase_service: PurchaseServiceDep,
-    download_service: DownloadServiceDep,
-    email_service: EmailServiceDep,
     session: SessionDep
 ):
     try:
@@ -33,29 +48,32 @@ async def purchase_beat(
         if not user_data:
             raise HTTPException(status_code=404, detail="Пользователь не найден")
         purchaser_email, purchaser_username = user_data
-        
+
         beat_result = await session.execute(
             select(BeatModel).where(BeatModel.id == request.beat_id)
         )
         beat = beat_result.scalar_one_or_none()
         if not beat:
             raise HTTPException(status_code=404, detail="Бит не найден")
-        
+
         purchase_result = await purchase_service.purchase_beat(
             beat_id=request.beat_id,
             tariff_name=request.tariff_name,
             purchaser_id=user_id
         )
 
-        download_token = await download_service.create_download_token(
+        download_token = await DownloadService.create_download_token(
             session=session,
             user_id=user_id,
             beat_id=request.beat_id,
             purchase_id=purchase_result["purchase_id"],
-            validity_hours=72  # 3 дня
+            validity_hours=72
         )
 
-        download_url = f"{email_service.base_url}/api/v1/download/beat/{download_token}"
+        BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
+        confirm_url = f"{BASE_URL}/purchase/download/confirm/{download_token}"
+ 
+        direct_download_url = f"{BASE_URL}/purchase/download/direct/{download_token}"
 
         import asyncio
         asyncio.create_task(
@@ -63,7 +81,8 @@ async def purchase_beat(
                 to_email=purchaser_email,
                 username=purchaser_username,
                 beat_name=beat.name,
-                download_url=download_url,
+                confirm_url=confirm_url,
+                direct_download_url=direct_download_url,
                 purchase_details=purchase_result,
                 expires_in_hours=72
             )
@@ -71,7 +90,8 @@ async def purchase_beat(
         
         logger.info(f"✅ Покупка #{purchase_result['purchase_id']}. Ссылка отправлена на {purchaser_email}")
  
-        purchase_result["download_url"] = download_url
+        purchase_result["confirm_url"] = confirm_url
+        purchase_result["direct_download_url"] = direct_download_url
         purchase_result["expires_in_hours"] = 72
         
         return PurchaseBeatResponse(**purchase_result)
@@ -107,39 +127,6 @@ async def get_my_purchases(
     
     
     
-    
-@router.get("/download/beat/{token}", summary = "Ссылка для скачивания бита")
-async def download_beat_by_token(
-    token: str,
-    download_service: DownloadServiceDep,
-    session: SessionDep
-):
-    file_info = await download_service.validate_download_token(session, token)
-    
-    if not file_info:
-        raise HTTPException(
-            status_code=404,
-            detail="Ссылка недействительна, просрочена или превышен лимит скачиваний"
-        )
-    
-    file_path = file_info["file_path"]
-    
-    if not file_path.exists():
-        raise HTTPException(status_code=404, detail="Файл не найден")
-    
-    # Возвращаем файл
-    from fastapi.responses import FileResponse
-    
-    return FileResponse(
-        path=file_path,
-        filename=file_info["file_name"],
-        media_type="audio/wav",
-        headers={
-            "Content-Disposition": f"attachment; filename={file_info['file_name']}",
-            "X-Beat-Name": file_info["beat_name"],
-            "X-Downloads-Left": str(file_info["downloads_left"])
-        }
-    )
     
     
     

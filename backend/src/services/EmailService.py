@@ -6,6 +6,7 @@ import os
 import logging
 import asyncio
 from jinja2 import Template
+from datetime import datetime, date, timedelta 
 
 logger = logging.getLogger(__name__)
 
@@ -200,7 +201,8 @@ class EmailService:
         to_email: str,
         username: str,
         beat_name: str,
-        download_url: str,
+        confirm_url: str,
+        direct_download_url: str,
         purchase_details: dict,
         expires_in_hours: int = 72
         ) -> bool:
@@ -216,7 +218,8 @@ class EmailService:
         html_content = self._render_download_link_template(
             username=username,
             beat_name=beat_name,
-            download_url=download_url,
+            confirm_url=confirm_url,
+            direct_download_url=direct_download_url,
             purchase_details=purchase_details,
             expires_in_hours=expires_in_hours,
             app_name=self.app_name
@@ -241,7 +244,7 @@ class EmailService:
             • ID покупки: {purchase_details.get('purchase_id', 'N/A')}
             
             📥 Скачать бит:
-            {download_url}
+            {direct_download_url}
             
             ⚠️ Важно:
             • Ссылка действительна {expires_in_hours} часов
@@ -255,11 +258,38 @@ class EmailService:
             message.attach(MIMEText(html_content, "html", "utf-8"))
             
             # Отправка
-            smtp = aiosmtplib.SMTP(hostname=self.smtp_host, port=self.smtp_port)
+            import ssl
+            context = ssl.create_default_context()
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+            
+            if self.smtp_port == 465:
+                smtp = aiosmtplib.SMTP(
+                    hostname=self.smtp_host,
+                    port=self.smtp_port,
+                    use_tls=True,
+                    tls_context=context
+                )
+            else:
+                smtp = aiosmtplib.SMTP(
+                    hostname=self.smtp_host,
+                    port=self.smtp_port,
+                    use_tls=False,
+                    start_tls=True,
+                    tls_context=context
+                )
+            
             await smtp.connect()
             await smtp.login(self.smtp_username, self.smtp_password)
             await smtp.send_message(message)
             await smtp.quit()
+            
+            logger.info(f"✅ Ссылка на скачивание отправлена на {to_email}")
+            return True
+        
+        except Exception as e:
+            logger.error(f"Ошибка отправки ссылки: {e}")
+            return False
             
             logger.info(f"✅ Ссылка на скачивание отправлена на {to_email}")
             return True
@@ -410,7 +440,8 @@ class EmailService:
         self,
         username: str,
         beat_name: str,
-        download_url: str,
+        confirm_url: str,
+        direct_download_url: str,
         purchase_details: dict,
         expires_in_hours: int,
         app_name: str
@@ -526,23 +557,24 @@ class EmailService:
                                 
                                 <!-- Download Section -->
                                 <div class="download-box">
-                                    <div class="download-title">Скачать WAV файл</div>
-                                    <a href="{{ download_url }}" class="download-button">⬇️ СКАЧАТЬ БИТ</a>
+                                    <div class="download-title">📦 Скачать ZIP архив</div>
+                                    <p style="color: #666; font-size: 14px; margin-bottom: 15px;">
+                                        Бит упакован в ZIP архив вместе с лицензионным соглашением.
+                                    </p>
+                                    <a href="{{ confirm_url }}" class="download-button">⬇️ СКАЧАТЬ ZIP АРХИВ</a>
                                     <div class="download-url">
                                         Или скопируйте ссылку:<br>
-                                        <a href="{{ download_url }}">{{ download_url }}</a>
+                                        <a href="{{ direct_download_url }}">{{ direct_download_url }}</a>
                                     </div>
                                 </div>
                                 
                                 <!-- Instructions -->
                                 <div class="instructions">
-                                    <div class="instructions-title">📌 Важная информация:</div>
+                                    <div class="instructions-title">📦 В ZIP архиве вы найдете:</div>
                                     <ul class="instructions-list">
-                                        <li>Ссылка действительна <strong>{{ expires_in_hours }} часов</strong></li>
-                                        <li>Доступно <strong>5 попыток</strong> скачивания</li>
-                                        <li>Файл в формате WAV (высокое качество)</li>
-                                        <li>Используйте согласно условиям тарифа "{{ purchase_details.tariff_name }}"</li>
-                                        <li>Не передавайте ссылку третьим лицам</li>
+                                        <li><strong>WAV файл</strong> - основной аудиофайл в высоком качестве</li>
+                                        <li><strong>ПРОЧТИ_МЕНЯ.txt</strong> - детали покупки и контакты</li>
+                                        <li><strong>ЛИЦЕНЗИЯ.txt</strong> - лицензионное соглашение</li>
                                     </ul>
                                 </div>
                                 
@@ -581,7 +613,8 @@ class EmailService:
         return template.render(
             username=username,
             beat_name=beat_name,
-            download_url=download_url,
+            confirm_url=confirm_url,
+            direct_download_url = direct_download_url,
             purchase_details=purchase_details,
             expires_in_hours=expires_in_hours,
             app_name=app_name,
