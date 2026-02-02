@@ -19,7 +19,7 @@ async def get_fingerprint_service(session: SessionDep) -> AudioFingerprintServic
     return AudioFingerprintService(session)
 
 async def get_download_service(session: SessionDep) -> DownloadService:
-    return DownloadService(session)
+    return DownloadService()
 
 async def get_promo_service(session: SessionDep) -> PromoCodeService:
     return PromoCodeService(session)
@@ -40,7 +40,7 @@ async def get_purchase_service(session: SessionDep) -> PurchaseService:
     return PurchaseService(session)
 
 async def get_email_service(session: SessionDep) -> EmailService:
-    return EmailService(session)
+    return EmailService()
 
 
 AudioFingerprintServiceDep = Annotated[AudioFingerprintService, Depends(get_fingerprint_service)]

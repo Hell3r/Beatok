@@ -11,7 +11,7 @@ class PurchaseModel(Base):
     purchaser_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True)
     seller_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True)
     beat_id: Mapped[int] = mapped_column(Integer, ForeignKey("beats.id", ondelete="CASCADE"), index=True)
-    tariff_name: Mapped[str] = mapped_column(String(50), ForeignKey("tariffs.name"), index=True)  # Связь по имени тарифа
+    tariff_name: Mapped[str] = mapped_column(String(50), ForeignKey("tariffs.name"), index=True)
     amount: Mapped[float] = mapped_column(DECIMAL(10, 2))
     status: Mapped[str] = mapped_column(String(20), default="pending")  # pending, completed, canceled
     transaction_id: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)

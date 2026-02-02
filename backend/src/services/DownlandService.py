@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 from src.models.downland_token import DownloadTokenModel
 from src.models.beats import BeatModel
+from sqlalchemy.orm import selectinload
 import secrets
 
 class DownloadService:

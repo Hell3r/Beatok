@@ -12,9 +12,9 @@ from src.api.v1.payments import router as payment_router
 from src.api.v1.favorite import router as favorite_router
 from src.api.v1.withdrawal import router as payout_router
 from src.api.v1.purchase import router as purchase_router
+from src.api.v1.download import router as download_router
 
 main_router = APIRouter()
-
 
 main_router.include_router(health_router)
 main_router.include_router(beats_router)
@@ -29,3 +29,4 @@ main_router.include_router(payment_router)
 main_router.include_router(favorite_router)
 main_router.include_router(payout_router)
 main_router.include_router(purchase_router)
+main_router.include_router(download_router)
