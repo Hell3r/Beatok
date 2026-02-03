@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from src.database.database import engine, get_session, Base
 from src.database.deps import SessionDep
 from src.schemas.tarrifs import TarrifCreate, TarrifResponse
-from src.models.tarrifs import TariffTemplateModel
+from src.models.tarrifs import TariffTemplateModel, TariffType
 
 
 
@@ -13,27 +13,39 @@ router = APIRouter(prefix = "/v1/tarrifs", tags = ["Тарифы"])
 
 
 
-@router.post("/", response_model= TarrifCreate, summary = "Добавить тариф")
+@router.post("/", response_model=TarrifResponse, summary="Добавить тариф")
 async def create_tarrif(
-    session : SessionDep,
-    tarrif_data : TarrifCreate
+    session: SessionDep,
+    tarrif_data: TarrifCreate
 ):
     try:
-        tarrif = TariffTemplateModel(
-            name = tarrif_data.name,
-            display_name = tarrif_data.display_name,
-            description = tarrif_data.description
+        name_lower = tarrif_data.name.lower()
+        tariff_type = TariffType.EXCLUSIVE if "exclusive" in name_lower or "эксклюзив" in name_lower else TariffType.LEASING
+
+        tariff = TariffTemplateModel(
+            name=tarrif_data.name,
+            display_name=tarrif_data.display_name,
+            description=tarrif_data.description,
+            type=tariff_type
         )
-        session.add(tarrif)
+
+        session.add(tariff)
+
         await session.commit()
-        await session.refresh(tarrif)
+
+        result = await session.execute(
+            select(TariffTemplateModel).where(TariffTemplateModel.id == tariff.id)
+        )
+        tariff = result.scalar_one()
+
+        print(f"Создан тариф: ID={tariff.id}, name={tariff.name}, type={tariff.type}")
         
-        
-        return tarrif
+        return tariff
         
     except Exception as e:
         await session.rollback()
-        print(e)
+        print(f"Ошибка создания тарифа: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
         
         
         

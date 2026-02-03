@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request, HTTPException
 from src.api import main_router
+import atexit
 import logging
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
@@ -107,7 +108,7 @@ async def startup_event():
     else:
         print("Telegram bot not configured or already started - skipping startup")
 
-    task_manager.start_cleanup_tasks()
+    task_manager.start_all_tasks()
     logger.info(" Application started with background tasks")
 
 async def run_telegram_bot_with_error_handling():
@@ -153,5 +154,5 @@ def custom_swagger():
 @app.on_event("shutdown") 
 async def shutdown_event():
     await redis_service.disconnect()
-    task_manager.shutdown()
+    task_manager.stop_all_tasks()
     logger.info(" Application shutdown")

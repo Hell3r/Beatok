@@ -12,10 +12,10 @@ from src.services.template_service import template_service
 from src.scripts.zip_creator import ZipCreator
 import logging
 
-router = APIRouter(prefix="/purchase/download", tags=["download"])
+router = APIRouter(prefix="/purchase/download", tags=["Загрузки"])
 logger = logging.getLogger(__name__)
 
-@router.get("/confirm/{token}", response_class=HTMLResponse)
+@router.get("/confirm/{token}", response_class=HTMLResponse, summary = "Открытие страницы подтверждения скачивания (по токену)")
 async def download_confirm(
     token: str,
     request: Request,
@@ -67,7 +67,7 @@ async def download_confirm(
         )
 
 
-@router.get("/zip/{token}")
+@router.get("/zip/{token}", summary = "Скачивание архива с битов (по токену)")
 async def download_zip(
     token: str,
     session: AsyncSession = Depends(get_session)
@@ -140,7 +140,7 @@ async def download_zip(
         raise HTTPException(status_code=500, detail="Ошибка при создании архива")
 
 
-@router.get("/direct/{token}")
+@router.get("/direct/{token}", summary = "Прямая ссылка на скачивание WAV (по токену)")
 async def download_direct(
     token: str,
     session: AsyncSession = Depends(get_session)

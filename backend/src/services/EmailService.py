@@ -528,7 +528,7 @@ class EmailService:
                                 
                                 <p class="greeting">
                                     Здравствуйте, <strong>{{ username }}</strong>!<br>
-                                    Спасибо за покупку на {{ app_name }}. Ваш WAV файл доступен для скачивания по ссылке ниже.
+                                    Спасибо за покупку на Beatok. Ваш WAV файл доступен для скачивания по ссылке ниже.
                                 </p>
                                 
                                 <!-- Purchase Details Table -->
@@ -543,7 +543,7 @@ class EmailService:
                                     </tr>
                                     <tr>
                                         <td class="label">Цена:</td>
-                                        <td class="value">{{ purchase_details.price }} руб.</td>
+                                        <td class="value">{{ purchase_details.amount }} руб.</td>
                                     </tr>
                                     <tr>
                                         <td class="label">ID покупки:</td>

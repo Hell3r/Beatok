@@ -62,7 +62,7 @@ class ZipCreator:
 💰 ИНФОРМАЦИЯ О ПОКУПКЕ:
 • ID покупки: #{purchase_info.get('purchase_id', 'N/A')}
 • Тариф: {purchase_info.get('tariff_name', 'Standard')}
-• Цена: {purchase_info.get('price', 0)} руб.
+• Цена: {purchase_info.get('amount', 0)} руб.
 • Дата покупки: {purchase_info.get('purchase_date', current_date)}
 
 📥 СТАТУС СКАЧИВАНИЯ:

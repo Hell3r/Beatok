@@ -36,6 +36,11 @@ class UsersModel(Base):
     favorites: Mapped[List["FavoriteModel"]] = relationship("FavoriteModel", back_populates="user")
     sales: Mapped[List["PurchaseModel"]] = relationship("PurchaseModel", foreign_keys="PurchaseModel.seller_id", back_populates="seller", cascade="all, delete-orphan")  
     purchases: Mapped[List["PurchaseModel"]] = relationship("PurchaseModel", foreign_keys="PurchaseModel.purchaser_id", back_populates="purchaser", cascade="all, delete-orphan")
+    beat_promotions: Mapped[List["BeatPromotionModel"]] = relationship(
+        "BeatPromotionModel", 
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
     
     
     

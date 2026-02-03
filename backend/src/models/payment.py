@@ -35,3 +35,4 @@ class PaymentModel(Base):
     
     # Связи
     user: Mapped["UsersModel"] = relationship("UsersModel", back_populates="payments")
+    
