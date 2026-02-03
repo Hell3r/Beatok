@@ -49,8 +49,35 @@ class BeatModel(Base):
     owner: Mapped["UsersModel"] = relationship("UsersModel", back_populates="beats")
     pricings: Mapped[List["BeatPricingModel"]] = relationship("BeatPricingModel", back_populates="beat", cascade="all, delete-orphan")
     purchases: Mapped[List["PurchaseModel"]] = relationship("PurchaseModel", back_populates="beat", cascade="all, delete-orphan")
+    promotions: Mapped[List["BeatPromotionModel"]] = relationship(
+        "BeatPromotionModel", 
+        back_populates="beat",
+        cascade="all, delete-orphan"
+    )
     
+    @property
+    def is_promoted(self) -> bool:
+        return self.promotion_status == "promoted"
     
+    @property
+    def active_promotion(self) -> Optional["BeatPromotionModel"]:
+        if not self.promotions:
+            return None
+        
+        for promotion in self.promotions:
+            if promotion.is_active and not promotion.is_expired:
+                return promotion
+        return None
+    
+    @property
+    def promotion_ends_at(self) -> Optional[datetime]:
+        promotion = self.active_promotion
+        return promotion.ends_at if promotion else None
+    
+    @property
+    def promotion_days_left(self) -> int:
+        promotion = self.active_promotion
+        return promotion.days_remaining if promotion else 0
     
     
     

@@ -16,7 +16,7 @@ class TariffTemplateModel(Base):
     name: Mapped[str] = mapped_column(String(50), unique=True, nullable=False)
     display_name: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(String(500))
-    type: Mapped[TariffType] = mapped_column(Enum(TariffType), default=TariffType.LEASING)  # НОВОЕ ПОЛЕ
+    type: Mapped[TariffType] = mapped_column(Enum(TariffType), default=TariffType.LEASING)
     
     bit_pricings: Mapped[List["BeatPricingModel"]] = relationship("BeatPricingModel", back_populates="tariff")
     purchases: Mapped[List["PurchaseModel"]] = relationship("PurchaseModel", back_populates="tariff", cascade="all, delete-orphan")

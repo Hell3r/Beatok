@@ -25,11 +25,7 @@ class PurchaseService:
         tariff_name: str,
         purchaser_id: int
     ) -> dict:
-        """
-        Покупка бита через таблицу beat_pricing
-        """
         try:
-            # 1. Проверяем покупателя
             purchaser_result = await self.db.execute(
                 select(UsersModel).where(UsersModel.id == purchaser_id)
             )
@@ -37,8 +33,7 @@ class PurchaseService:
             
             if not purchaser:
                 raise ValueError("Покупатель не найден")
-            
-            # 2. Проверяем бит
+
             beat_result = await self.db.execute(
                 select(BeatModel).where(
                     BeatModel.id == beat_id,
@@ -49,12 +44,10 @@ class PurchaseService:
             
             if not beat:
                 raise ValueError("Бит не найден или недоступен для покупки")
-            
-            # 3. Проверяем, что пользователь не покупает свой же бит
+
             if beat.author_id == purchaser_id:
                 raise ValueError("Нельзя купить собственный бит")
-            
-            # 4. Проверяем цену в таблице beat_pricing
+
             pricing_result = await self.db.execute(
                 select(BeatPricingModel, TariffTemplateModel)
                 .join(TariffTemplateModel, TariffTemplateModel.name == BeatPricingModel.tariff_name)
@@ -76,8 +69,7 @@ class PurchaseService:
                 raise ValueError("Цена не установлена для этого тарифа")
             
             price = Decimal(str(beat_pricing.price))
-            
-            # 5. Проверяем, не продан ли уже эксклюзив
+
             if tariff.type == TariffType.EXCLUSIVE:
                 exclusive_purchase_result = await self.db.execute(
                     select(PurchaseModel).where(
@@ -89,12 +81,10 @@ class PurchaseService:
                 
                 if exclusive_purchase_result.scalar_one_or_none():
                     raise ValueError("Этот бит уже продан по эксклюзивному тарифу")
-            
-            # 6. Проверяем баланс покупателя
+
             if purchaser.balance < price:
                 raise ValueError("Недостаточно средств на балансе")
-            
-            # 7. Получаем продавца (автора бита)
+
             seller_result = await self.db.execute(
                 select(UsersModel).where(UsersModel.id == beat.author_id)
             )
@@ -102,23 +92,19 @@ class PurchaseService:
             
             if not seller:
                 raise ValueError("Автор бита не найден")
-            
-            # Запоминаем балансы до операции
+
             purchaser_balance_before = purchaser.balance
             seller_balance_before = seller.balance
-            
-            # 8. СПИСЫВАЕМ СРЕДСТВА С ПОКУПАТЕЛЯ
+
             purchaser.balance -= price
             
-            
-            # 11. ЗАПИСЫВАЕМ ОПЕРАЦИЮ НАЧИСЛЕНИЯ
+
             await self.balance_service.deposit(
                 user_id=seller.id,
                 amount=price,
                 description=f"Продажа бита: {beat.name} ({tariff.display_name})"
             )
-            
-            # 12. СОЗДАЕМ ЗАПИСЬ О ПОКУПКЕ
+
             purchase = PurchaseModel(
                 purchaser_id=purchaser_id,
                 seller_id=seller.id,
@@ -131,13 +117,10 @@ class PurchaseService:
             )
             
             self.db.add(purchase)
-            
-            # 13. ОБРАБОТКА В ЗАВИСИМОСТИ ОТ ТИПА ТАРИФА
+
             if tariff.type == TariffType.EXCLUSIVE:
-                # ЭКСКЛЮЗИВ: делаем бит недоступным для дальнейших покупок
                 beat.status = StatusType.SOLD
-                
-                # Делаем все тарифы для этого бита недоступными
+
                 await self.db.execute(
                     update(BeatPricingModel)
                     .where(BeatPricingModel.beat_id == beat_id)
@@ -146,13 +129,11 @@ class PurchaseService:
                 
                 logger.info(f"Бит {beat_id} продан по эксклюзивному тарифу, скрыт из продажи")
             else:
-                # ЛИЗИНГ: бит остается в продаже
-                # Можно добавить счетчик покупок если нужно
+
                 logger.info(f"Бит {beat_id} продан по лизинговому тарифу, остается в продаже")
             
             await self.db.commit()
-            
-            # 14. ПОДГОТАВЛИВАЕМ РЕЗУЛЬТАТ
+
             result = {
                 "success": True,
                 "purchase_id": purchase.id,
@@ -188,9 +169,7 @@ class PurchaseService:
             raise ValueError(f"Ошибка при покупке: {str(e)}")
 
     async def get_available_tariffs_for_beat(self, beat_id: int, user_id: int) -> List[dict]:
-        """
-        Получение доступных тарифов для бита
-        """
+
         try:
             # Проверяем, что бит существует и активен
             beat_result = await self.db.execute(
@@ -203,12 +182,10 @@ class PurchaseService:
             
             if not beat:
                 return []
-            
-            # Проверяем, что это не собственный бит
+
             if beat.author_id == user_id:
                 return []
-            
-            # Получаем все доступные тарифы для бита
+
             result = await self.db.execute(
                 select(BeatPricingModel, TariffTemplateModel)
                 .join(TariffTemplateModel, TariffTemplateModel.name == BeatPricingModel.tariff_name)
@@ -221,7 +198,6 @@ class PurchaseService:
             
             tariffs = []
             for beat_pricing, tariff in result:
-                # Проверяем, не продан ли уже эксклюзив
                 if tariff.type == TariffType.EXCLUSIVE:
                     exclusive_result = await self.db.execute(
                         select(PurchaseModel).where(
@@ -232,7 +208,7 @@ class PurchaseService:
                     )
                     
                     if exclusive_result.scalar_one_or_none():
-                        continue  # Пропускаем эксклюзив если уже продан
+                        continue
                 
                 tariffs.append({
                     "tariff_name": tariff.name,
@@ -250,9 +226,6 @@ class PurchaseService:
             return []
 
     async def get_user_purchases(self, user_id: int) -> List[dict]:
-        """
-        Получение покупок пользователя
-        """
         try:
             result = await self.db.execute(
                 select(PurchaseModel, BeatModel, TariffTemplateModel)
