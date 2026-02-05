@@ -215,7 +215,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
           <div className="gold-shimmer py-1 select-none">
             <div className="container mx-auto px-4 flex justify-center items-center">
               <p className="text-black font-medium text-sm mr-4">
-                Загружай до 15 битов в день, продавай без комиссии и отключи рекламу с подпиской всего за 200 р./мес!
+                Загружай до 15 битов в день, пополняй баланс без комиссии и отключи рекламу с подпиской всего за 300 ₽ /мес!
               </p>
               <button
                 onClick={() => setSubscriptionModalOpen(true)}

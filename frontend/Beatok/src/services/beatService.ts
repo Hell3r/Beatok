@@ -27,6 +27,27 @@ export interface BeatPricingCreate {
   is_available: boolean;
 }
 
+export interface PurchaseBeatRequest {
+  beat_id: number;
+  tariff_name: string;
+}
+
+export interface PurchaseBeatResponse {
+  success: boolean;
+  purchase_id: number;
+  beat_id: number;
+  beat_name: string;
+  tariff_name: string;
+  tariff_type: string;
+  amount: number;
+  purchaser_balance_before: number;
+  purchaser_balance_after: number;
+  seller_balance_before: number;
+  seller_balance_after: number;
+  message: string;
+  purchased_at: string;
+}
+
 class BeatService {
   private async fetchApi(endpoint: string, options: RequestInit = {}) {
     const url = `${API_BASE_URL}${endpoint}`;
@@ -168,6 +189,29 @@ class BeatService {
   async getPromotedBeats(): Promise<Beat[]> {
     const response = await this.fetchApi('/beats?promotion_status=promoted&limit=3');
     return response;
+  }
+
+  async purchaseBeat(request: PurchaseBeatRequest): Promise<PurchaseBeatResponse> {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      throw new Error('Не авторизован');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/v1/purchase/beat`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Ошибка при покупке бита' }));
+      throw new Error(errorData.detail || errorData.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
   }
 }
 

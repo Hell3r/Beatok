@@ -968,8 +968,8 @@ const rightPanelSpring = useSpring({
                           </div>
                           <div className='justify-between items-center mt-20'>
                             <p className='text-neutral-400 text-sm text-center'>
-                              ОБРАТИТЕ ВНИМАНИЕ! <br />
-                              При пополнении баланса сервис взимает комиссию в размере 2.5%!
+                              ОБРАТИТЕ ВНИМАНИЕ <br />
+                              При пополнении баланса сервис взимает комиссию в размере 2.5%
                             </p>
                           </div>
                         </div>
