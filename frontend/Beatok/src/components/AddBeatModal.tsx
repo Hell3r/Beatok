@@ -400,7 +400,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                     </div>
                     {!beatData.is_free && (
                       <>
-                        <h3 className="text-sm text-white mb-4">При добавлении платного бита сервис прибавляет к цене комиссионные 10% к стоимости бита.</h3>
+                        <h3 className="text-sm text-white mb-4">При добавлении платного бита сервис прибавляет к цене комиссионные 200 р. к стоимости бита.</h3>
                         <div className="grid grid-cols-1 gap-4">
                           {tariffs.map((tariff) => (
                             <div key={tariff.name} className="flex items-center space-x-4">

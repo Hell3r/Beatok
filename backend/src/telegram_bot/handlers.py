@@ -67,7 +67,7 @@ class TelegramBotHandlers:
                         BeatPricingModel.beat_id == beat_id,
                         BeatPricingModel.tariff_name.in_(['leasing', 'exclusive'])
                     )
-                    .values(price=BeatPricingModel.price * 1.1)
+                    .values(price=BeatPricingModel.price + 200)
                 )
 
                 beat.status = StatusType.AVAILABLE

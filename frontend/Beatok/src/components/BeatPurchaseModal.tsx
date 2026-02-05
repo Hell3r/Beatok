@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTransition, animated } from '@react-spring/web';
 import type { Beat } from '../types/Beat';
 import { useModal } from '../hooks/useModal';
+import { beatService } from '../services/beatService';
+import { useNotificationContext } from './NotificationProvider';
 
 interface BeatPurchaseModalProps {
   isOpen: boolean;
@@ -11,6 +13,8 @@ interface BeatPurchaseModalProps {
 
 const BeatPurchaseModal: React.FC<BeatPurchaseModalProps> = ({ isOpen, onClose, beat }) => {
   const { openModal, closeModal } = useModal();
+  const { showSuccess, showError } = useNotificationContext();
+  const [purchasingTariff, setPurchasingTariff] = useState<string | null>(null);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -51,6 +55,26 @@ const BeatPurchaseModal: React.FC<BeatPurchaseModalProps> = ({ isOpen, onClose, 
 
 
   const availablePricings = beat.pricings?.filter(p => p.is_available && p.price !== null) || [];
+
+  const handlePurchase = async (tariffName: string) => {
+    if (!beat) return;
+
+    setPurchasingTariff(tariffName);
+    try {
+      const response = await beatService.purchaseBeat({
+        beat_id: beat.id,
+        tariff_name: tariffName
+      });
+
+      showSuccess('Покупка успешно совершена! Проверьте вашу почту для получения ссылки на скачивание.');
+      onClose();
+    } catch (error) {
+      console.error('Purchase error:', error);
+      showError(error instanceof Error ? error.message : 'Ошибка при покупке бита');
+    } finally {
+      setPurchasingTariff(null);
+    }
+  };
 
   return (
     <>
@@ -134,8 +158,12 @@ const BeatPurchaseModal: React.FC<BeatPurchaseModalProps> = ({ isOpen, onClose, 
                             <div className="text-white font-bold text-lg">
                               {pricing.price} ₽
                             </div>
-                            <button className="mt-2 bg-red-600 cursor-pointer hover:bg-red-700 text-white px-4 py-2 rounded transition-colors">
-                              Купить
+                            <button
+                              onClick={() => handlePurchase(pricing.tariff_name)}
+                              disabled={purchasingTariff === pricing.tariff_name}
+                              className="mt-2 bg-red-600 cursor-pointer hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded transition-colors"
+                            >
+                              {purchasingTariff === pricing.tariff_name ? 'Покупка...' : 'Купить'}
                             </button>
                           </div>
                         </div>
