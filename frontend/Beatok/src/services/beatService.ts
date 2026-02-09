@@ -197,7 +197,7 @@ class BeatService {
       throw new Error('Не авторизован');
     }
 
-    const response = await fetch(`${API_BASE_URL}/v1/purchase/beat`, {
+    const response = await fetch(`${API_BASE_URL}/purchase/beat`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

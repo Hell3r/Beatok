@@ -107,7 +107,7 @@ class EmailService:
             logger.warning(f"Password reset URL: {self.base_url}/reset-password?token={token}")
             return True
 
-        reset_url = f"{self.base_url}/reset-password?token={token}"
+        reset_url = f"http://127.0.0.1:5173/reset-password?token={token}"
 
         logger.info(f"Sending password reset email to {email}")
 

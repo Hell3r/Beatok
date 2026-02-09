@@ -119,13 +119,16 @@ async def download_zip(
             expires_at=download_token.expires_at
         )
 
-        zip_filename = ZipCreator.get_zip_filename(beat.name)
+        zip_filename = f"beatok_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
+        
+        import urllib.parse
+        encoded_filename = urllib.parse.quote(zip_filename, safe='')
 
         return StreamingResponse(
             zip_buffer,
             media_type="application/zip",
             headers={
-                "Content-Disposition": f"attachment; filename=\"{zip_filename}\"",
+                "Content-Disposition": f"attachment; filename=\"{encoded_filename}\"",
                 "Content-Type": "application/zip",
                 "Cache-Control": "no-cache, no-store, must-revalidate",
                 "Pragma": "no-cache",

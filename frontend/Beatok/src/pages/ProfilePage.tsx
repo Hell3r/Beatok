@@ -1234,7 +1234,7 @@ const rightPanelSpring = useSpring({
                                     {item.type === 'purchase' ? '-' : '+'}{item.amount} ₽
                                   </div>
                                   <div className="text-neutral-400 text-sm">
-                                    {item.tariff_name}
+                                    {item.tariff_name === 'leasing' ? 'Аренда' : 'Эксклюзив'}
                                   </div>
                                 </div>
                               </div>
