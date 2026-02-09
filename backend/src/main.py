@@ -42,6 +42,8 @@ origins = [
     "http://localhost:8000",
     "http://localhost:3000",
     "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:3000"
 ]
 
 app.add_middleware(
@@ -90,7 +92,11 @@ async def global_rate_limit_middleware(request: Request, call_next):
     response = await call_next(request)
     return response        
 
-
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    logger.info(f"Incoming request: {request.method} {request.url.path}")
+    response = await call_next(request)
+    return response
 
 
 @app.on_event("startup")
