@@ -71,6 +71,13 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ isOpen, onClose }) => {
         >
           Избранное
         </a>
+        <a
+          href="/profile?tab=history"
+          onClick={handleLinkClick}
+          className="block px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors duration-200"
+        >
+          История
+        </a>
         <hr className="border-neutral-600 my-2" />
         <button
           onClick={() => {

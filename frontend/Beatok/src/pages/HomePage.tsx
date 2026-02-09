@@ -4,6 +4,7 @@ import FeaturedBeats from '../components/UI/home/FeaturedBeats';
 import TopBeatmakers from '../components/UI/home/TopBeatmakers';
 import CallToAction from '../components/UI/home/CallToAction';
 import Steps from '../components/UI/home/Steps';
+import SecuritySection from '../components/UI/home/SecuritySection';
 import HorizontalLine from '../components/UI/home/HorizontalLine';
 import InverseHorizontalLine from '../components/UI/home/InverseHorizontalLine';
 import Footer from '../components/UI/Footer';
@@ -74,9 +75,11 @@ const HomePage: React.FC = () => {
                     <CallToAction />
                     <HorizontalLine />
                 </div>
-                <div className="container mx-auto max-w-full space-y-8"> 
+                <div className="container mx-auto max-w-full space-y-8">
                     <TopBeatmakers />
                 </div>
+                    <HorizontalLine />
+                    <SecuritySection />
                     <HorizontalLine />
                 <div className="w-full select-none">
                     <Steps/>

@@ -14,11 +14,11 @@ from datetime import date
 from src.models.email_verification import EmailVerificationModel
 from src.services.rate_limiter import check_rate_limit
 from src.services.RedisService import redis_service
-from src.schemas.users import DeleteUserRequest, UsersSchema, UserResponse, UserCreate, TokenResponse, UserUpdate, VerifyEmailRequest, MessageResponse, ResendVerificationRequest, ForgotPasswordRequest, ResetPasswordRequest
+from src.schemas.users import DeleteUserRequest, UsersSchema, UserResponse, UserCreate, TokenResponse, UserUpdate, VerifyEmailRequest, MessageResponse, ResendVerificationRequest, ForgotPasswordRequest, ResetPasswordRequest, HistoryItem
 from src.services.EmailService import email_service
-from src.services.AuthService import (  
+from src.services.AuthService import (
     add_to_blacklist,
-    pwd_context, 
+    pwd_context,
     oauth2_scheme,
     create_access_token,
     authenticate_user,
@@ -40,7 +40,7 @@ DEFAULT_AVATAR_PATH = "static/default_avatar.png"
 os.makedirs(AVATAR_DIR, exist_ok=True)
 
 ALLOWED_EXTENSIONS = {".png", ".jpg", ".jpeg", ".gif"}
-MAX_FILE_SIZE = 5 * 1024 * 1024 
+MAX_FILE_SIZE = 5 * 1024 * 1024
 
 
 
@@ -91,7 +91,7 @@ async def login_user(
                 "prom_status": user.prom_status
             }
         }
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -111,7 +111,7 @@ async def logout_user(
         await add_to_blacklist(token)
 
         response.delete_cookie("access_token")
-        
+
         return {
             "message": "Logout successful",
             "detail": "Token invalidated. Client should discard the token."
@@ -121,8 +121,8 @@ async def logout_user(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Logout error: {str(e)}"
         )
-    
-    
+
+
 @router.get("/users", response_model=List[UserResponse], tags=["Пользователи"], summary=["Получить всех пользователей"])
 async def get_all_users(session: SessionDep):
     try:
@@ -131,10 +131,11 @@ async def get_all_users(session: SessionDep):
         return users
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
-    
-    
-        
-        
+
+
+
+
+
 @router.get("/check-username/{username}", tags = ["Пользователи"], summary="Проверить Имя на уникальность")
 async def check_username_available(
     username: str,
@@ -195,7 +196,7 @@ async def update_user_profile(
 ):
     try:
         print(f"Updating user {user_id} with data: {user_data}")
-        
+
         user_stmt = select(UsersModel).where(UsersModel.id == user_id)
         user_result = await session.execute(user_stmt)
         user = user_result.scalar_one_or_none()
@@ -232,9 +233,10 @@ async def update_user_profile(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Ошибка при обновлении профиля: {str(e)}")
-        
-
     
+
+
+
 
 @router.post("/{user_id}/avatar", tags = ["Аватарки"], summary="Загрузить аватарку пользователя")
 async def upload_avatar(
@@ -247,13 +249,13 @@ async def upload_avatar(
         user_stmt = select(UsersModel).where(UsersModel.id == user_id)
         user_result = await session.execute(user_stmt)
         user = user_result.scalar_one_or_none()
-        
+
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Пользователь не найден"
             )
-        
+
 
         file_extension = os.path.splitext(file.filename)[1].lower()
         if file_extension not in ALLOWED_EXTENSIONS:
@@ -261,29 +263,29 @@ async def upload_avatar(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Разрешены только файлы: {', '.join(ALLOWED_EXTENSIONS)}"
             )
-        
+
         file_size = 0
         content = await file.read()
         file_size = len(content)
-        
+
         if file_size > MAX_FILE_SIZE:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Файл слишком большой. Максимальный размер: 5MB"
             )
-        
+
         filename = f"{user_id}_{uuid.uuid4()}{file_extension}"
         file_path = os.path.join(AVATAR_DIR, filename)
-        
+
         with open(file_path, "wb") as f:
             f.write(content)
-        
-        
+
+
         user.avatar_path = filename
         await session.commit()
-        
+
         return {"message": "Аватарка успешно загружена", "avatar_path": filename}
-        
+
     except Exception as e:
         await session.rollback()
         print(f"Error uploading avatar: {e}")
@@ -291,9 +293,10 @@ async def upload_avatar(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Ошибка при загрузке аватарки"
         )
-        
-        
-        
+
+
+
+
 @router.get("/{user_id}/avatar", tags = ["Аватарки"], summary="Получить аватарку пользователя")
 async def get_user_avatar(
     user_id: int,
@@ -303,19 +306,19 @@ async def get_user_avatar(
         user_stmt = select(UsersModel).where(UsersModel.id == user_id)
         user_result = await session.execute(user_stmt)
         user = user_result.scalar_one_or_none()
-        
+
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Пользователь не найден"
             )
         avatar_path = None
-        
+
         if user.avatar_path and user.avatar_path != "default_avatar.png":
             user_avatar_path = os.path.join(AVATAR_DIR, user.avatar_path)
             if os.path.exists(user_avatar_path):
                 avatar_path = user_avatar_path
-        
+
 
         if not avatar_path:
             avatar_path = DEFAULT_AVATAR_PATH
@@ -324,9 +327,9 @@ async def get_user_avatar(
                     status_code=status.HTTP_404_NOT_FOUND,
                     detail="Аватарка не найдена"
                 )
-        
+
         return FileResponse(avatar_path)
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -335,11 +338,12 @@ async def get_user_avatar(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Ошибка при получении аватарки"
         )
-        
-        
-        
-        
-        
+
+
+
+
+
+
 @router.patch("/me", response_model=UserResponse, tags = ["Пользователи"], summary="Обновить данные авторизованного пользователя")
 async def patch_current_user(
     user_data: UserUpdate,
@@ -380,7 +384,7 @@ async def patch_current_user(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Username already taken"
                 )
-        
+
         if 'email' in update_data and update_data['email'] != current_user.email:
             existing_user = await session.execute(
                 select(UsersModel).where(UsersModel.email == update_data['email'])
@@ -390,16 +394,16 @@ async def patch_current_user(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Email already registered"
                 )
-        
+
         for field, value in update_data.items():
             setattr(current_user, field, value)
-        
+
         await session.commit()
         await session.refresh(current_user)
         await redis_service.delete_pattern("*beats:*")
-        
+
         return current_user
-        
+
     except HTTPException:
         await session.rollback()
         raise
@@ -409,9 +413,10 @@ async def patch_current_user(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Error updating user: {str(e)}"
         )
-        
-        
-        
+
+
+
+
 @router.post(
     "/register",
     response_model=MessageResponse,
@@ -433,7 +438,7 @@ async def register(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Пользователь с таким email уже зарегистрирован"
             )
-        
+
         existing_username = await session.execute(
             select(UsersModel).where(UsersModel.username == user_data.username)
         )
@@ -442,42 +447,42 @@ async def register(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Это имя пользователя уже занято"
             )
-        
+
         hashed_password = get_password_hash(user_data.password)
-        
+
         user = UsersModel(
             email=user_data.email,
             username=user_data.username,
             password=hashed_password,
             birthday=user_data.birthday,
-            is_active=False, 
+            is_active=False,
         )
-        
+
         session.add(user)
         await session.commit()
         await session.refresh(user)
-        
+
         verification = EmailVerificationModel(
             email=user_data.email,
             verification_type="registration"
         )
-        
+
         session.add(verification)
         await session.commit()
-        
+
         background_tasks.add_task(
             email_service.send_verification_email,
             user_data.email,
             verification.token,
             user_data.username
         )
-        
+
         logger.info(f"New user registered: {user_data.email}, verification token: {verification.token}")
-        
+
         return MessageResponse(
             message="Регистрация успешна! На ваш email отправлено письмо с подтверждением."
         )
-        
+
     except HTTPException:
         await session.rollback()
         raise
@@ -508,13 +513,13 @@ async def verify_email(
             )
         )
         verification = verification.scalar_one_or_none()
-        
+
         if not verification:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Неверный или устаревший токен подтверждения"
             )
-        
+
         if not verification.is_valid():
             if verification.is_used:
                 raise HTTPException(
@@ -526,19 +531,19 @@ async def verify_email(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Срок действия токена подтверждения истек"
                 )
-        
+
         user = await session.execute(
             select(UsersModel).where(UsersModel.email == verification.email)
         )
         user = user.scalar_one_or_none()
-        
+
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Пользователь не найден"
             )
-        
-        
+
+
         user.is_active = True
 
         verification.is_used = True
@@ -551,8 +556,8 @@ async def verify_email(
             "success_verify.html",
             {"request": {}}
         )
-        
-        
+
+
     except HTTPException:
         await session.rollback()
         raise
@@ -563,9 +568,10 @@ async def verify_email(
             "error_verify.html",
             {"request": {}, "error_message": "Произошла внутренняя ошибка сервера"}
         )
-        
-        
-        
+
+
+
+
 @router.post(
     "/resend-verification",
     response_model=MessageResponse,
@@ -582,14 +588,14 @@ async def resend_verification(
             select(UsersModel).where(UsersModel.email == resend_data.email)
         )
         user = user.scalar_one_or_none()
-        
+
         if not user:
             return MessageResponse(
                 message="Если пользователь с таким email существует, письмо с подтверждением будет отправлено"
             )
-        
+
         await session.execute(
-            delete(EmailVerificationModel).where( 
+            delete(EmailVerificationModel).where(
                 and_(
                     EmailVerificationModel.email == resend_data.email,
                     EmailVerificationModel.verification_type == "registration",
@@ -597,28 +603,28 @@ async def resend_verification(
                 )
             )
         )
-        
+
         verification = EmailVerificationModel(
             email=resend_data.email,
             verification_type="registration"
         )
-        
+
         session.add(verification)
         await session.commit()
-        
+
         background_tasks.add_task(
             email_service.send_verification_email,
             resend_data.email,
             verification.token,
             user.username
         )
-        
+
         logger.info(f"Verification email resent to: {resend_data.email}")
-        
+
         return MessageResponse(
             message="Письмо с подтверждением отправлено на ваш email"
         )
-        
+
     except HTTPException:
         await session.rollback()
         raise
@@ -632,9 +638,9 @@ async def resend_verification(
 
 
 @router.put(
-    "/{user_id}/activate", 
-    response_model=MessageResponse, 
-    tags=["Верификация Email и авторизация"], 
+    "/{user_id}/activate",
+    response_model=MessageResponse,
+    tags=["Верификация Email и авторизация"],
     summary="Быстро активировать аккаунт пользователя"
 )
 async def quick_activate_user(
@@ -673,7 +679,7 @@ async def quick_activate_user(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Ошибка при активации аккаунта: {str(e)}"
         )
-    
+
 
 @router.put(
     "/{user_id}/change_to_admin",
@@ -929,4 +935,94 @@ async def reset_password(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Произошла ошибка при сбросе пароля. Пожалуйста, попробуйте позже."
+        )
+
+
+@router.get("/{user_id}/history", response_model=List[HistoryItem], tags=["Пользователи"], summary="Получить историю покупок и продаж пользователя")
+async def get_user_history(
+    user_id: int,
+    session: SessionDep,
+    current_user: UsersModel = Depends(get_current_user)
+):
+    try:
+        # Only allow users to see their own history
+        if current_user.id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Доступ запрещен"
+            )
+
+        from src.models.purchase import PurchaseModel
+        from src.models.beats import BeatModel
+
+        # Get purchases (where user is purchaser)
+        purchases_query = select(
+            PurchaseModel.id,
+            PurchaseModel.amount,
+            PurchaseModel.tariff_name,
+            PurchaseModel.created_at,
+            BeatModel.name.label("beat_name"),
+            BeatModel.id.label("beat_id"),
+            UsersModel.username.label("counterparty_username")
+        ).join(BeatModel, PurchaseModel.beat_id == BeatModel.id)\
+        .join(UsersModel, PurchaseModel.seller_id == UsersModel.id)\
+        .where(PurchaseModel.purchaser_id == user_id)
+
+        purchases_result = await session.execute(purchases_query)
+        purchases = purchases_result.all()
+
+        # Get sales (where user is seller)
+        sales_query = select(
+            PurchaseModel.id,
+            PurchaseModel.amount,
+            PurchaseModel.tariff_name,
+            PurchaseModel.created_at,
+            BeatModel.name.label("beat_name"),
+            BeatModel.id.label("beat_id"),
+            UsersModel.username.label("counterparty_username")
+        ).join(BeatModel, PurchaseModel.beat_id == BeatModel.id)\
+        .join(UsersModel, PurchaseModel.purchaser_id == UsersModel.id)\
+        .where(PurchaseModel.seller_id == user_id)
+
+        sales_result = await session.execute(sales_query)
+        sales = sales_result.all()
+
+        # Combine and sort by date
+        history_items = []
+
+        for purchase in purchases:
+            history_items.append(HistoryItem(
+                id=purchase.id,
+                type="purchase",
+                beat_name=purchase.beat_name,
+                beat_id=purchase.beat_id,
+                amount=float(purchase.amount),
+                tariff_name=purchase.tariff_name,
+                created_at=purchase.created_at,
+                counterparty_username=purchase.counterparty_username
+            ))
+
+        for sale in sales:
+            history_items.append(HistoryItem(
+                id=sale.id,
+                type="sale",
+                beat_name=sale.beat_name,
+                beat_id=sale.beat_id,
+                amount=float(sale.amount),
+                tariff_name=sale.tariff_name,
+                created_at=sale.created_at,
+                counterparty_username=sale.counterparty_username
+            ))
+
+        # Sort by created_at descending
+        history_items.sort(key=lambda x: x.created_at, reverse=True)
+
+        return history_items
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка при получении истории: {str(e)}"
         )
