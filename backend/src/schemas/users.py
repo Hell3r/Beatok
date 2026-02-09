@@ -81,3 +81,15 @@ class ResetPasswordRequest(BaseModel):
     token: str
     new_password: str
     confirm_password: str
+
+class HistoryItem(BaseModel):
+    id: int
+    type: str
+    beat_name: str
+    beat_id: int
+    amount: float
+    tariff_name: str
+    created_at: datetime
+    counterparty_username: str
+
+    model_config = ConfigDict(from_attributes=True)

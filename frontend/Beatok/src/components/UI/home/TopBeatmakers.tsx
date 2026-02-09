@@ -8,6 +8,8 @@ const TopBeatmakers: React.FC = () => {
   const [avatarKey, setAvatarKey] = useState(0);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [donationAmount, setDonationAmount] = useState('');
 
   useEffect(() => {
     loadTopBeatmakers();
@@ -84,6 +86,12 @@ const TopBeatmakers: React.FC = () => {
       <div className="container mx-auto px-4 py-4">
         <div className="text-center">
           <div className="text-3xl font-bold text-white mb-2">Лучшие битмейкеры</div>
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-300 mb-4"
+          >
+            ПОДДЕРЖАТЬ АВТОРОВ
+          </button>
           <div className="text-gray-300">Слушай активных битмейкеров, которые лучше всех реализовали свой талант.</div>
           <hr className='text-red-500 my-4 mx-auto border max-w-200'/>
         </div>

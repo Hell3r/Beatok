@@ -44,7 +44,7 @@ const ProfilePage: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'info' | 'balance' | 'mybeats' | 'stats' | 'favorites'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'balance' | 'mybeats' | 'stats' | 'favorites' | 'history'>('info');
   const [viewMode, setViewMode] = useState<'tabs' | 'content'>('tabs');
 
   const [formData, setFormData] = useState({
@@ -81,6 +81,9 @@ const ProfilePage: React.FC = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [currentPlayingBeat, setCurrentPlayingBeat] = useState<Beat | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+
+  const [historyItems, setHistoryItems] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1280);
@@ -200,8 +203,8 @@ const rightPanelSpring = useSpring({
 
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['info', 'balance', 'mybeats', 'stats', 'favorites'].includes(tab)) {
-      setActiveTab(tab as 'info' | 'balance' | 'mybeats' | 'stats' | 'favorites');
+    if (tab && ['info', 'balance', 'mybeats', 'stats', 'favorites', 'history'].includes(tab)) {
+      setActiveTab(tab as 'info' | 'balance' | 'mybeats' | 'stats' | 'favorites' | 'history');
       setViewMode('content');
     } else {
       setActiveTab(isOwnProfile ? 'info' : 'mybeats');
@@ -230,6 +233,12 @@ const rightPanelSpring = useSpring({
       loadFavoriteBeats();
     }
   }, [user, activeTab, favoriteBeats.length]);
+
+  useEffect(() => {
+    if (user && activeTab === 'history' && historyItems.length === 0) {
+      loadUserHistory();
+    }
+  }, [user, activeTab, historyItems.length]);
 
   useEffect(() => {
     if (user && activeTab === 'mybeats' && !isOwnProfile && favoriteBeats.length === 0) {
@@ -277,6 +286,20 @@ const rightPanelSpring = useSpring({
       console.error('Failed to load favorite beats:', error);
     } finally {
       setFavoriteBeatsLoading(false);
+    }
+  };
+
+  const loadUserHistory = async () => {
+    if (!user) return;
+
+    try {
+      setHistoryLoading(true);
+      const history = await userService.getUserHistory(user.id);
+      setHistoryItems(history);
+    } catch (error) {
+      console.error('Failed to load user history:', error);
+    } finally {
+      setHistoryLoading(false);
     }
   };
 
@@ -757,6 +780,21 @@ const rightPanelSpring = useSpring({
                               Избранное
                             </button>
                           )}
+                          {isOwnProfile && (
+                            <button
+                              onClick={() => {
+                                setActiveTab('history');
+                                setSearchParams({ tab: 'history' });
+                              }}
+                              className={`w-full px-4 py-3 text-sm rounded-lg transition-colors cursor-pointer select-none ${
+                                activeTab === 'history'
+                                  ? 'bg-red-600 text-white'
+                                  : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                              }`}
+                            >
+                              История
+                            </button>
+                          )}
                         </div>
                       </div>
                     ) : (
@@ -846,6 +884,21 @@ const rightPanelSpring = useSpring({
                           }`}
                         >
                           Избранное
+                        </button>
+                      )}
+                      {isOwnProfile && (
+                        <button
+                          onClick={() => {
+                            setActiveTab('history');
+                            setSearchParams({ tab: 'history' });
+                          }}
+                          className={`px-4 py-2 text-base rounded-lg transition-colors cursor-pointer select-none ${
+                            activeTab === 'history'
+                              ? 'bg-red-600 text-white'
+                              : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                          }`}
+                        >
+                          История
                         </button>
                       )}
                     </div>
@@ -1133,6 +1186,61 @@ const rightPanelSpring = useSpring({
                           onToggleFavorite={handleToggleFavorite}
                           favoriteBeats={favoriteBeats}
                         />
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'history' && isOwnProfile && (
+                    <div className='p-4'>
+                      <h2 className="text-xl font-semibold text-white mb-6">История</h2>
+
+                      {historyLoading ? (
+                        <div className="flex justify-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                        </div>
+                      ) : historyItems.length === 0 ? (
+                        <div className="text-center py-8">
+                          <p className="text-neutral-400">
+                            У вас пока нет истории покупок и продаж
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {historyItems.map((item) => (
+                            <div key={item.id} className="bg-neutral-750 rounded-lg p-4">
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className={`px-2 py-1 text-xs rounded-full ${
+                                      item.type === 'purchase'
+                                        ? 'bg-green-600 text-white'
+                                        : 'bg-blue-600 text-white'
+                                    }`}>
+                                      {item.type === 'purchase' ? 'Покупка' : 'Продажа'}
+                                    </span>
+                                    <span className="text-neutral-400 text-sm">
+                                      {formatDate(item.created_at)}
+                                    </span>
+                                  </div>
+                                  <h3 className="text-white font-medium mb-1">{item.beat_name}</h3>
+                                  <p className="text-neutral-400 text-sm">
+                                    {item.type === 'purchase' ? 'От' : 'Кому'}: {item.counterparty_username}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <div className={`text-lg font-bold ${
+                                    item.type === 'purchase' ? 'text-red-500' : 'text-green-500'
+                                  }`}>
+                                    {item.type === 'purchase' ? '-' : '+'}{item.amount} ₽
+                                  </div>
+                                  <div className="text-neutral-400 text-sm">
+                                    {item.tariff_name}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </div>
                   )}

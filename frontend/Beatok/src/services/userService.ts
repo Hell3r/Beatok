@@ -82,4 +82,9 @@ async updateUserProfile(data: any) {
     const response = await api.get(`/v1/users/${userId}/stats`);
     return response.data;
   },
+
+  async getUserHistory(userId: number) {
+    const response = await api.get(`/v1/users/${userId}/history`);
+    return response.data;
+  },
 };
