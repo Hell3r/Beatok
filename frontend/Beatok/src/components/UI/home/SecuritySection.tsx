@@ -12,7 +12,7 @@ const SecuritySection: React.FC = () => {
           <hr className='text-red-500 my-4 mx-auto border max-w-200'/>
         </div>
 
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto text-center">
           <div className="bg-neutral-800 rounded-xl p-8 border border-neutral-700">
             <div className="text-center mb-6">
               <div className="text-4xl mb-4">🔒</div>
