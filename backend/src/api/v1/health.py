@@ -17,6 +17,9 @@ from src.models.purchase import PurchaseModel
 from src.services.EmailService import email_service
 from src.dependencies.services import PaymentFacadeServiceDep
 from src.services.PaymentFacade import PaymentFacadeService
+from src.dependencies.auth import get_current_admin_user
+from src.database.deps import SessionDep
+from datetime import datetime
 import json
 import logging
 
@@ -139,3 +142,4 @@ async def check_tunnel_status():
             "error": str(e),
             "analysis": "❌ Туннель недоступен - перезапустите localhost.run"
         }
+        

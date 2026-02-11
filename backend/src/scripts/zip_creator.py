@@ -3,6 +3,7 @@ import io
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any
+import random
 
 
 class ZipCreator:
@@ -18,7 +19,11 @@ class ZipCreator:
         zip_buffer = io.BytesIO()
         
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            safe_filename = ZipCreator._safe_filename(beat_name) + ".wav"
+            current_datetime = datetime.now().strftime("%Y-%m-%d")
+            random_digits = ''.join(random.choice('0123456789') for _ in range(5))
+            safe_filename = f"{random_digits}_{current_datetime}.wav"
+            
+            
             zip_file.write(file_path, safe_filename)
             
             info_content = ZipCreator._create_info_content(
@@ -133,6 +138,5 @@ class ZipCreator:
     
     @staticmethod
     def get_zip_filename(beat_name: str) -> str:
-        safe_name = ZipCreator._safe_filename(beat_name)
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M')
-        return f"{safe_name}_{timestamp}.zip"
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        return f"beatok_{timestamp}.zip"
