@@ -9,14 +9,11 @@ from src.models.tarrifs import TariffTemplateModel
 from src.models.email_verification import EmailVerificationModel
 from src.models.promo import PromoCodeModel, UserPromoCodeModel
 from src.models.requests import RequestsModel
-from src.models.withdrawal import WithdrawalModel
 from src.models.payment import PaymentModel
 from src.models.balance import UserBalanceModel
 from src.models.favorite import FavoriteModel
 from src.models.purchase import PurchaseModel
 from src.services.EmailService import email_service
-from src.dependencies.services import PaymentFacadeServiceDep
-from src.services.PaymentFacade import PaymentFacadeService
 from src.dependencies.auth import get_current_admin_user
 from src.database.deps import SessionDep
 from datetime import datetime
