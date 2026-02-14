@@ -37,6 +37,9 @@ class Settings():
     DEBUG: bool = os.getenv("DEBUG", "true").lower() == "true"
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     
+    TPAY_TERMINAL_KEY="TinkoffBankTest"
+    TPAY_PASSWORD="TinkoffBankTest"
+    
     class Config:
         env_file = ".env"
 
