@@ -218,7 +218,7 @@ const BeatList: React.FC<BeatListProps> = ({
                           : beat.status === 'denied'
                           ? 'bg-red-600 text-white hover:bg-red-700'
                           : 'bg-red-600 text-white'
-                      }`}
+                      } ${beat.status === 'denied' ? 'cursor-pointer' : ''}`}
                       onClick={() => beat.status === 'denied' && beat.rejection_reason && onShowRejectionReason?.(beat)}
                       title={beat.status === 'denied' && beat.rejection_reason ? 'Нажмите для просмотра причины' : ''}
                     >

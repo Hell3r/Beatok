@@ -261,7 +261,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   : beat.status === 'denied'
                   ? 'bg-red-600 text-white hover:bg-red-700'
                   : 'bg-red-600 text-white'
-              }`}
+              } ${beat.status === 'denied' ? 'cursor-pointer' : ''}`}
               onClick={() => beat.status === 'denied' && beat.rejection_reason && onShowRejectionReason?.(beat)}
               title={beat.status === 'denied' && beat.rejection_reason ? 'Нажмите для просмотра причины' : ''}
             >
@@ -514,7 +514,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
               {sortedBeats.map((beat) => (
                 <tr
                   key={beat.id}
-                  className="border-b border-neutral-800 hover:bg-neutral-800 transition-all duration-300 group"
+                  className={`border-b border-neutral-800 hover:bg-neutral-800 transition-all duration-300 group ${beat.status === 'denied' ? 'cursor-select' : ''}`}
                   onDoubleClick={() => setExpandedBeatId(expandedBeatId === beat.id ? null : beat.id)}
                   onContextMenu={(e) => handleContextMenu(e, beat)}
                 >

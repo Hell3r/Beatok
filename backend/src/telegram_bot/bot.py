@@ -11,7 +11,7 @@ class SupportBot:
 
     async def send_support_notification(self, request_data: dict, user_info: dict):
         if not TelegramConfig.is_configured():
-            print("Telegram bot not configured - skipping notification")
+            print("Telegram bot not configured - skipping notification")    
             return
 
         message = MessageTemplates.support_request(request_data, user_info)
@@ -32,7 +32,6 @@ class SupportBot:
             print("Telegram bot not configured - skipping beat moderation notification")
             return
 
-        # Получаем цены бита
         pricings = []
         try:
             from ..database.database import new_async_session
@@ -79,7 +78,9 @@ class SupportBot:
                                 chat_id=chat_id,
                                 audio=audio_file,
                                 title=f"Бит: {beat_data['name']}",
-                                performer=user_info.get('username', 'Unknown')
+                                performer=user_info.get('username', 'Unknown'),
+                                write_timeout=120,
+                                connect_timeout=10
                             )
                     except Exception as e:
                         print(f"Failed to send audio file to {chat_id}: {e}")

@@ -12,7 +12,7 @@ from contextlib import asynccontextmanager
 class TelegramBotHandlers:
     def __init__(self, session_factory):
         self.session_factory = session_factory
-        self.pending_rejections = {}  # user_id -> beat_id
+        self.pending_rejections = {}
 
     @asynccontextmanager
     async def get_session(self):
@@ -98,8 +98,6 @@ class TelegramBotHandlers:
                 if beat.status != StatusType.MODERATED:
                     await query.edit_message_text("Бит уже был обработан.")
                     return
-
-                # Устанавливаем состояние ожидания причины отказа
                 user_id = query.from_user.id
                 self.pending_rejections[user_id] = beat_id
 

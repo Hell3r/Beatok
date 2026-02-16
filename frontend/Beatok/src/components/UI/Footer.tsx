@@ -17,7 +17,6 @@ const Footer: React.FC = () => {
     { href: '/beatmakers', label: 'БИТМЕЙКЕРЫ' },
     { href: '/about', label: 'О НАС' },
     { href: '/support', label: 'FAQ' },
-    { href: '/', label: 'ПОДДЕРЖАТЬ АВТОРОВ'}
   ];
 
   const handleCopyEmail = async () => {
