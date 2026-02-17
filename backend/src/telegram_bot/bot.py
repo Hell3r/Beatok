@@ -35,7 +35,7 @@ class SupportBot:
         pricings = []
         try:
             from ..database.database import new_async_session
-            from ..models.beat_bricing import BeatPricingModel
+            from ..models.beat_pricing import BeatPricingModel
             from sqlalchemy import select
             from sqlalchemy.orm import joinedload
 

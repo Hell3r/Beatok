@@ -11,7 +11,7 @@ from mutagen import File as MutagenFile
 from pathlib import Path
 from src.database.deps import SessionDep
 from src.models.beats import BeatModel, StatusType
-from src.models.beat_bricing import BeatPricingModel
+from src.models.beat_pricing import BeatPricingModel
 from src.schemas.beats import BeatResponse, BeatResponse
 from src.services.AuthService import get_current_user
 from src.dependencies.auth import get_current_user_id

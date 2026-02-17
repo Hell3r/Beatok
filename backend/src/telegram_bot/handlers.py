@@ -45,7 +45,7 @@ class TelegramBotHandlers:
     async def _handle_beat_approval(self, beat_id: int, query):
         async with self.get_session() as session:
             try:
-                from ..models.beat_bricing import BeatPricingModel
+                from ..models.beat_pricing import BeatPricingModel
                 from sqlalchemy import update
 
                 result = await session.execute(
