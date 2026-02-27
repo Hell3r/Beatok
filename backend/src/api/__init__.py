@@ -32,3 +32,5 @@ main_router.include_router(purchase_router)
 main_router.include_router(download_router)
 main_router.include_router(promotion_router)
 main_router.include_router(pages_router)
+
+# женя вонючка
