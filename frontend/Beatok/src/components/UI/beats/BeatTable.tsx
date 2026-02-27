@@ -9,6 +9,7 @@ import ContextMenu from '../ContextMenu';
 import DeleteBeatModal from '../../DeleteBeatModal';
 import BeatPurchaseModal from '../../BeatPurchaseModal';
 import BeatPromotionModal from '../../BeatPromotionModal';
+import BeatInfoModal from '../../BeatInfoModal';
 import { getCurrentUser } from '../../../utils/getCurrentUser';
 
 interface BeatTableProps {
@@ -53,6 +54,8 @@ const BeatTable: React.FC<BeatTableProps> = ({
   const [beatToPurchase, setBeatToPurchase] = useState<Beat | null>(null);
   const [promotionModalOpen, setPromotionModalOpen] = useState(false);
   const [beatToPromote, setBeatToPromote] = useState<Beat | null>(null);
+  const [infoModalOpen, setInfoModalOpen] = useState(false);
+  const [beatToShowInfo, setBeatToShowInfo] = useState<Beat | null>(null);
 
   const isFree = (beat: Beat): boolean => {
     if (!beat.pricings || beat.pricings.length === 0) return true;
@@ -520,8 +523,12 @@ const BeatTable: React.FC<BeatTableProps> = ({
                 >
                   <td className="p-4 text-center">
                     <div
-                      className="text-white font-medium group-hover:text-red-400 transition-colors cursor-help mx-auto"
+                      className="text-white font-medium group-hover:text-red-400 transition-colors cursor-pointer"
                       title={beat.name}
+                      onClick={() => {
+                        setBeatToShowInfo(beat);
+                        setInfoModalOpen(true);
+                      }}
                     >
                       {truncateText(beat.name, 25)}
                     </div>
@@ -633,6 +640,12 @@ const BeatTable: React.FC<BeatTableProps> = ({
         onClose={() => setPromotionModalOpen(false)}
         beat={beatToPromote}
         onPromote={handlePromoteConfirm}
+      />
+
+      <BeatInfoModal
+        isOpen={infoModalOpen}
+        onClose={() => setInfoModalOpen(false)}
+        beat={beatToShowInfo}
       />
     </>
   );

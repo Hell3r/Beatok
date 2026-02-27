@@ -2,7 +2,7 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query, Dep
 from typing import Optional, List
 from typing_extensions import Annotated
 from sqlalchemy import select, func
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 import os
 import shutil
 import json
@@ -12,6 +12,7 @@ from pathlib import Path
 from src.database.deps import SessionDep
 from src.models.beats import BeatModel, StatusType
 from src.models.beat_pricing import BeatPricingModel
+from src.models.terms_of_use import TermsOfUseModel
 from src.schemas.beats import BeatResponse, BeatResponse
 from src.services.AuthService import get_current_user
 from src.dependencies.auth import get_current_user_id
@@ -41,6 +42,7 @@ async def create_beat(
     key: str = Form(...),
     promotion_status: str = Form("standard"),
     is_free: str = Form("false"),
+    terms_of_use: str = Form(None),
     mp3_file: UploadFile = File(None),
     wav_file: UploadFile = File(None),
 ):
@@ -176,6 +178,27 @@ async def create_beat(
                 
                 beat.audio_fingerprint = fingerprint
                 beat.audio_fingerprint_timings = json.dumps(fingerprint_data["timings"])
+
+        if terms_of_use:
+            try:
+                from src.models.terms_of_use import TermsOfUseModel
+                terms_data = json.loads(terms_of_use)
+                
+                terms_of_use_model = TermsOfUseModel(
+                    beat_id=beat.id,
+                    recording_tracks=terms_data.get('recording_tracks', False),
+                    commercial_perfomance=terms_data.get('commercial_perfomance', False),
+                    rotation_on_the_radio=terms_data.get('rotation_on_the_radio', False),
+                    music_video_recording=terms_data.get('music_video_recording', False),
+                    release_of_copies=terms_data.get('release_of_copies', False)
+                )
+                print(terms_data)
+                session.add(terms_of_use_model)
+                await session.flush()
+            except json.JSONDecodeError:
+                print("Ошибка при парсинге terms_of_use")
+            except Exception as e:
+                print(f"Ошибка при сохранении terms_of_use: {e}")
         
         await session.commit()
         
@@ -184,7 +207,8 @@ async def create_beat(
             .where(BeatModel.id == beat.id)
             .options(
                 selectinload(BeatModel.owner),
-                selectinload(BeatModel.pricings).selectinload(BeatPricingModel.tariff)
+                selectinload(BeatModel.pricings).selectinload(BeatPricingModel.tariff),
+                selectinload(BeatModel.terms_of_use_backref)
             )
         )
         beat_with_relations = result.scalar_one()
@@ -255,8 +279,9 @@ async def get_beats(
     likes_subquery = select(func.count(FavoriteModel.id)).where(FavoriteModel.beat_id == BeatModel.id).scalar_subquery()
 
     query = select(BeatModel, likes_subquery.label('likes_count')).options(
-        selectinload(BeatModel.owner),
-        selectinload(BeatModel.pricings).joinedload(BeatPricingModel.tariff)
+       selectinload(BeatModel.owner),
+       selectinload(BeatModel.pricings).joinedload(BeatPricingModel.tariff),
+       selectinload(BeatModel.terms_of_use_backref)
     )
 
     if author_id is not None:
@@ -289,7 +314,6 @@ async def get_top_beatmakers(
     from src.models.users import UsersModel
     from src.models.favorite import FavoriteModel
 
-    # Subquery to calculate total likes per author
     total_likes_subquery = select(
         BeatModel.author_id,
         func.sum(
@@ -384,7 +408,10 @@ async def get_beat(
     
     result = await session.execute(
         select(BeatModel)
-        .options(selectinload(BeatModel.owner))
+        .options(
+            selectinload(BeatModel.owner),
+            selectinload(BeatModel.terms_of_use_backref)
+        )
         .where(BeatModel.id == beat_id)
     )
     
@@ -429,7 +456,7 @@ async def stream_beat(
             old_count = author.download_count
             author.download_count = 1 if author.download_count is None else author.download_count + 1
             await session.commit()
-            await session.refresh(author)  # Обновляем чтобы увидеть изменения
+            await session.refresh(author)
             print(f"🔍 Download count updated: {old_count} -> {author.download_count}")
 
     from fastapi.responses import FileResponse
@@ -621,14 +648,12 @@ async def toggle_favorite(
     from src.models.favorite import FavoriteModel
     from src.models.beats import BeatModel
 
-    # Проверяем, существует ли бит
     result = await session.execute(select(BeatModel).where(BeatModel.id == beat_id))
     beat = result.scalar_one_or_none()
 
     if not beat:
         raise HTTPException(404, "Бит не найден")
 
-    # Проверяем, есть ли уже в избранном
     favorite_result = await session.execute(
         select(FavoriteModel).where(
             FavoriteModel.user_id == current_user_id,
@@ -638,12 +663,10 @@ async def toggle_favorite(
     existing_favorite = favorite_result.scalar_one_or_none()
 
     if existing_favorite:
-        # Удаляем из избранного
         await session.delete(existing_favorite)
         await session.commit()
         return {"message": "Бит удален из избранного", "action": "removed"}
     else:
-        # Добавляем в избранное
         favorite = FavoriteModel(
             user_id=current_user_id,
             beat_id=beat_id

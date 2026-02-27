@@ -79,7 +79,11 @@ class BeatModel(Base):
         promotion = self.active_promotion
         return promotion.days_remaining if promotion else 0
     
-    
+    @property
+    def terms_of_use(self):
+        if self.terms_of_use_backref and len(self.terms_of_use_backref) > 0:
+            return self.terms_of_use_backref[0]
+        return None
     
     
     def __repr__(self) -> str:

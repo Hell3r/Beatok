@@ -31,6 +31,13 @@ export interface Beat {
     avatar_path?: string;
   };
   pricings?: BeatPricing[];
+  terms_of_use?: {
+    recording_tracks: boolean;
+    commercial_perfomance: boolean;
+    rotation_on_the_radio: boolean;
+    music_video_recording: boolean;
+    release_of_copies: boolean;
+  };
 }
 
 export interface BeatPricing {

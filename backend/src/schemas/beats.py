@@ -17,8 +17,24 @@ class BeatBase(BaseModel):
     status: str = "active"
     
 
+class TermsOfUseCreate(BaseModel):
+    recording_tracks: bool = False
+    commercial_perfomance: bool = False
+    rotation_on_the_radio: bool = False
+    music_video_recording: bool = False
+    release_of_copies: bool = False
+
+class TermsOfUseResponse(BaseModel):
+    recording_tracks: bool = False
+    commercial_perfomance: bool = False
+    rotation_on_the_radio: bool = False
+    music_video_recording: bool = False
+    release_of_copies: bool = False
+    
+    model_config = ConfigDict(from_attributes=True)
+
 class BeatCreate(BeatBase):
-    pass
+    terms_of_use: Optional[TermsOfUseCreate] = None
 
 class BeatFingerprintInfo(BaseModel):
     fingerprint: str 
@@ -44,6 +60,7 @@ class BeatResponse(BaseModel):
     
     pricings: List[BeatPricingResponseSchema] = []
     audio_fingerprint: Optional[str] = None
+    terms_of_use: Optional[TermsOfUseResponse] = None
     
     model_config = ConfigDict(from_attributes=True)
     
@@ -55,7 +72,31 @@ class BeatResponse(BaseModel):
                 "username": obj.owner.username,
                 "avatar_path": obj.owner.avatar_path
             }
-            
+
+            terms_of_use_data = None
+
+            if hasattr(obj, 'terms_of_use_backref') and obj.terms_of_use_backref:
+                terms_list = obj.terms_of_use_backref
+                if terms_list and len(terms_list) > 0:
+                    terms_obj = terms_list[0]
+                    terms_of_use_data = {
+                        "recording_tracks": terms_obj.recording_tracks,
+                        "commercial_perfomance": terms_obj.commercial_perfomance,
+                        "rotation_on_the_radio": terms_obj.rotation_on_the_radio,
+                        "music_video_recording": terms_obj.music_video_recording,
+                        "release_of_copies": terms_obj.release_of_copies
+                    }
+            elif hasattr(obj, 'terms_of_use') and obj.terms_of_use:
+                terms_obj = obj.terms_of_use
+                if terms_obj:
+                    terms_of_use_data = {
+                        "recording_tracks": terms_obj.recording_tracks,
+                        "commercial_perfomance": terms_obj.commercial_perfomance,
+                        "rotation_on_the_radio": terms_obj.rotation_on_the_radio,
+                        "music_video_recording": terms_obj.music_video_recording,
+                        "release_of_copies": terms_obj.release_of_copies
+                    }
+
             data = {
                 "id": obj.id,
                 "name": obj.name,
@@ -83,7 +124,8 @@ class BeatResponse(BaseModel):
                     }
                     for pricing in obj.pricings
                 ] if hasattr(obj, 'pricings') else [],
-                "audio_fingerprint": obj.audio_fingerprint
+                "audio_fingerprint": obj.audio_fingerprint,
+                "terms_of_use": terms_of_use_data
             }
             return cls(**data)
         return super().model_validate(obj)

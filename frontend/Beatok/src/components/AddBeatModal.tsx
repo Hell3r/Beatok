@@ -34,7 +34,14 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
     mp3_file: null as File | null,
     wav_file: null as File | null,
     pricings: {} as Record<string, string>,
-    is_free: false
+    is_free: false,
+    terms_of_use: {
+      recording_tracks: false,
+      commercial_perfomance: false,
+      rotation_on_the_radio: false,
+      music_video_recording: false,
+      release_of_copies: false
+    }
   });
 
   useEffect(() => {
@@ -117,6 +124,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
       setLoading(false);
       return;
     }
+    console.log(error)
 
     try {
       const token = localStorage.getItem('access_token');
@@ -132,6 +140,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
       formData.append('tempo', beatData.tempo);
       formData.append('key', beatData.key);
       formData.append('is_free', beatData.is_free.toString());
+      formData.append('terms_of_use', JSON.stringify(beatData.terms_of_use));
 
       if (beatData.mp3_file) {
         formData.append('mp3_file', beatData.mp3_file);
@@ -141,6 +150,8 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
         formData.append('wav_file', beatData.wav_file);
       }
 
+      console.log(error)
+
       const response = await fetch('http://localhost:8000/beats/create', {
         method: 'POST',
         headers: {
@@ -149,11 +160,12 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
         body: formData
       });
 
-      if (response.status === 409)
-      {
-        setError('Слыш блять чо биты пиздишь сука');
+      if (response.status === 409) {
+        const errorData = await response.json();
+        const errorMessage = errorData.detail?.message || 'Слыш блять чо биты пиздишь сука';
+        setError(errorMessage);
         setLoading(false);
-        return
+        return;
       }
 
       if (!response.ok) {
@@ -194,9 +206,16 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
         mp3_file: null,
         wav_file: null,
         pricings: {},
-        is_free: false
+        is_free: false,
+        terms_of_use: {
+          recording_tracks: false,
+          commercial_perfomance: false,
+          rotation_on_the_radio: false,
+          music_video_recording: false,
+          release_of_copies: false
+        }
       });
-
+      console.log(error)
       onClose();
       showSuccess('Бит успешно отправлен на модерацию!');
 
@@ -229,6 +248,16 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
       pricings: {
         ...beatData.pricings,
         [tariffName]: price
+      }
+    });
+  };
+
+  const handleTermsOfUseChange = (field: string, value: boolean) => {
+    setBeatData({
+      ...beatData,
+      terms_of_use: {
+        ...beatData.terms_of_use,
+        [field]: value
       }
     });
   };
@@ -287,11 +316,11 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                 )}
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium select-none text-neutral-300 mb-2">
-                          Название бита *
+                          Название бита
                         </label>
                         <input
                           type="text"
@@ -328,10 +357,10 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                       </div>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-4 w-70">
                       <div>
                         <label className="block select-none text-sm font-medium text-neutral-300 mb-2">
-                          Жанр *
+                          Жанр
                         </label>
                         <select
                           value={beatData.genre}
@@ -350,11 +379,11 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
 
                       <div>
                         <label className="block select-none text-sm font-medium text-neutral-300 mb-2">
-                          Темп (BPM) *
+                          Темп (BPM)
                         </label>
                         <input
                           type="number"
-                          placeholder="Например: 140"
+                          placeholder="140"
                           value={beatData.tempo}
                           onChange={(e) => setBeatData({...beatData, tempo: e.target.value})}
                           className="w-full h-10 p-2 bg-neutral-800 border border-neutral-600 rounded text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
@@ -366,7 +395,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
 
                       <div>
                         <label className="block select-none text-sm font-medium text-neutral-300 mb-2">
-                          Тональность *
+                          Тональность
                         </label>
                         <select
                           value={beatData.key}
@@ -383,6 +412,72 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                         </select>
                       </div>
                     </div>
+
+                    <div className="space-y-3 ml-8  select-none">
+                      <label className="block text-sm font-medium text-neutral-300 mb-2">
+                        Условия использования
+                      </label>
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="recording_tracks"
+                          checked={beatData.terms_of_use.recording_tracks}
+                          onChange={(e) => handleTermsOfUseChange('recording_tracks', e.target.checked)}
+                          className="mr-2 w-4 h-4 rounded accent-red-600"
+                        />
+                        <label htmlFor="recording_tracks" className="text-sm text-neutral-300">
+                          Запись треков
+                        </label>
+                      </div>
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="commercial_perfomance"
+                          checked={beatData.terms_of_use.commercial_perfomance}
+                          onChange={(e) => handleTermsOfUseChange('commercial_perfomance', e.target.checked)}
+                          className="mr-2 w-4 h-4 rounded accent-red-600"
+                        />
+                        <label htmlFor="commercial_perfomance" className="text-sm text-neutral-300">
+                          Коммерческое исполнение
+                        </label>
+                      </div>
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="rotation_on_the_radio"
+                          checked={beatData.terms_of_use.rotation_on_the_radio}
+                          onChange={(e) => handleTermsOfUseChange('rotation_on_the_radio', e.target.checked)}
+                          className="mr-2 w-4 h-4 rounded accent-red-600"
+                        />
+                        <label htmlFor="rotation_on_the_radio" className="text-sm text-neutral-300">
+                          Ротация на радио
+                        </label>
+                      </div>
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="music_video_recording"
+                          checked={beatData.terms_of_use.music_video_recording}
+                          onChange={(e) => handleTermsOfUseChange('music_video_recording', e.target.checked)}
+                          className="mr-2 w-4 h-4 rounded accent-red-600"
+                        />
+                        <label htmlFor="music_video_recording" className="text-sm text-neutral-300">
+                          Съемка музыкального видео
+                        </label>
+                      </div>
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="release_of_copies"
+                          checked={beatData.terms_of_use.release_of_copies}
+                          onChange={(e) => handleTermsOfUseChange('release_of_copies', e.target.checked)}
+                          className="mr-2 w-4 h-4 rounded accent-red-600"
+                        />
+                        <label htmlFor="release_of_copies" className="text-sm text-neutral-300">
+                          Выпуск копий
+                        </label>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="border-t border-neutral-700 pt-4">
@@ -392,9 +487,9 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                         id="is_free"
                         checked={beatData.is_free}
                         onChange={(e) => setBeatData({ ...beatData, is_free: e.target.checked })}
-                        className="mr-2"
+                        className="mr-2 accent-red-600"
                       />
-                      <label htmlFor="is_free" className="text-lg font-medium text-white">
+                      <label htmlFor="is_free" className="text-lg select-none font-medium text-white">
                         Бесплатно
                       </label>
                     </div>

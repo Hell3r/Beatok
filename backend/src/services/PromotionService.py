@@ -6,7 +6,7 @@ from typing import List, Optional
 from src.models.beats import BeatModel
 from src.models.promotion import BeatPromotionModel
 from src.models.users import UsersModel
-from src.services.BalanceService import BalanceService  # Добавили импорт!
+from src.services.BalanceService import BalanceService
 
 logger = logging.getLogger(__name__)
 

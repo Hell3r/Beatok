@@ -9,6 +9,7 @@ import { getCurrentUser } from '../../../utils/getCurrentUser';
 import type { Filters } from './Filter';
 import BeatPurchaseModal from '../../BeatPurchaseModal';
 import BeatPromotionModal from '../../BeatPromotionModal';
+import BeatInfoModal from '../../BeatInfoModal';
 
 interface BeatListProps {
   beats: Beat[];
@@ -44,6 +45,8 @@ const BeatList: React.FC<BeatListProps> = ({
   const [beatToPurchase, setBeatToPurchase] = useState<Beat | null>(null);
   const [promotionModalOpen, setPromotionModalOpen] = useState(false);
   const [beatToPromote, setBeatToPromote] = useState<Beat | null>(null);
+  const [infoModalOpen, setInfoModalOpen] = useState(false);
+  const [beatToShowInfo, setBeatToShowInfo] = useState<Beat | null>(null);
   const currentUser = getCurrentUser();
 
   const isFree = (beat: Beat): boolean => {
@@ -183,8 +186,12 @@ const BeatList: React.FC<BeatListProps> = ({
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1">
                   <h3
-                    className="text-white font-semibold text-lg group-hover:text-red-400 transition-colors"
+                    className="text-white font-semibold text-lg group-hover:text-red-400 transition-colors cursor-pointer"
                     title={beat.name}
+                    onClick={() => {
+                      setBeatToShowInfo(beat);
+                      setInfoModalOpen(true);
+                    }}
                   >
                     {truncateText(beat.name, 25)}
                   </h3>
@@ -261,7 +268,6 @@ const BeatList: React.FC<BeatListProps> = ({
                 </div>
               </div>
 
-              {/* Promote button - positioned prominently */}
               {isProfileView && beat.status === 'available' && (
                 <div className="mb-4">
                   <button
@@ -373,6 +379,12 @@ const BeatList: React.FC<BeatListProps> = ({
         onClose={() => setPromotionModalOpen(false)}
         beat={beatToPromote}
         onPromote={(beatId) => console.log('Promoting beat:', beatId)}
+      />
+
+      <BeatInfoModal
+        isOpen={infoModalOpen}
+        onClose={() => setInfoModalOpen(false)}
+        beat={beatToShowInfo}
       />
     </>
   );
