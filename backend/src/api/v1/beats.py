@@ -13,6 +13,7 @@ from src.database.deps import SessionDep
 from src.models.beats import BeatModel, StatusType
 from src.models.beat_pricing import BeatPricingModel
 from src.models.terms_of_use import TermsOfUseModel
+from src.models.tags import TagModel
 from src.schemas.beats import BeatResponse, BeatResponse
 from src.services.AuthService import get_current_user
 from src.dependencies.auth import get_current_user_id
@@ -43,6 +44,7 @@ async def create_beat(
     promotion_status: str = Form("standard"),
     is_free: str = Form("false"),
     terms_of_use: str = Form(None),
+    tags: str = Form(None),
     mp3_file: UploadFile = File(None),
     wav_file: UploadFile = File(None),
 ):
@@ -199,6 +201,33 @@ async def create_beat(
                 print("Ошибка при парсинге terms_of_use")
             except Exception as e:
                 print(f"Ошибка при сохранении terms_of_use: {e}")
+
+        if tags:
+            try:
+                from src.models.tag import TagModel
+                tag_list = [tag.strip() for tag in tags.split(',') if tag.strip()]
+
+                tag_list = list(dict.fromkeys(tag_list))
+
+                if len(tag_list) > 10:
+                    raise HTTPException(400, "Максимум 10 тегов")
+
+                for tag_name in tag_list:
+                    if len(tag_name) > 50:
+                        tag_name = tag_name[:50]
+
+                    tag = TagModel(
+                        beat_id=beat.id,
+                        name=tag_name.lower()
+                    )
+                    session.add(tag)
+
+                await session.flush()
+
+            except HTTPException:
+                raise
+            except Exception as e:
+                print(f"Ошибка при сохранении тегов: {e}")
         
         await session.commit()
         
@@ -208,7 +237,8 @@ async def create_beat(
             .options(
                 selectinload(BeatModel.owner),
                 selectinload(BeatModel.pricings).selectinload(BeatPricingModel.tariff),
-                selectinload(BeatModel.terms_of_use_backref)
+                selectinload(BeatModel.terms_of_use_backref),
+                selectinload(BeatModel.tags)
             )
         )
         beat_with_relations = result.scalar_one()
@@ -271,21 +301,27 @@ async def get_beats(
     skip: int = 0,
     limit: int = 100,
     author_id: Optional[int] = None,
-    promotion_status: Optional[str] = None
+    promotion_status: Optional[str] = None,
+    tag: Optional[str] = Query(None, description="Фильтр по тегу")
 ):
     from sqlalchemy.orm import selectinload
     from src.models.favorite import FavoriteModel
+    from src.models.tags import TagModel
 
     likes_subquery = select(func.count(FavoriteModel.id)).where(FavoriteModel.beat_id == BeatModel.id).scalar_subquery()
 
     query = select(BeatModel, likes_subquery.label('likes_count')).options(
        selectinload(BeatModel.owner),
        selectinload(BeatModel.pricings).joinedload(BeatPricingModel.tariff),
-       selectinload(BeatModel.terms_of_use_backref)
+       selectinload(BeatModel.terms_of_use_backref),
+       selectinload(BeatModel.tags)
     )
 
     if author_id is not None:
         query = query.where(BeatModel.author_id == author_id)
+
+    if tag:
+        query = query.join(BeatModel.tags).where(TagModel.name == tag.lower())
 
     if promotion_status is not None:
         query = query.where(BeatModel.promotion_status == promotion_status)

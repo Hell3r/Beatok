@@ -1,3 +1,4 @@
+from src.models.tags import TagModel
 from sqlalchemy import String, Integer, Float, DateTime, ForeignKey, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.database.database import Base
@@ -53,6 +54,13 @@ class BeatModel(Base):
         "BeatPromotionModel", 
         back_populates="beat",
         cascade="all, delete-orphan"
+    )
+
+    tags: Mapped[List["TagModel"]] = relationship(
+        "TagModel", 
+        back_populates="beat", 
+        cascade="all, delete-orphan",
+        lazy="selectin"
     )
     
     @property

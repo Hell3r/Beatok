@@ -1,7 +1,9 @@
+from src.schemas.tags import TagResponse
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 from src.schemas.beat_pricing import BeatPricingResponseSchema
+
 
 class UserInfo(BaseModel):
     id: int
@@ -61,6 +63,7 @@ class BeatResponse(BaseModel):
     pricings: List[BeatPricingResponseSchema] = []
     audio_fingerprint: Optional[str] = None
     terms_of_use: Optional[TermsOfUseResponse] = None
+    tags: List[TagResponse] = []
     
     model_config = ConfigDict(from_attributes=True)
     
@@ -74,7 +77,6 @@ class BeatResponse(BaseModel):
             }
 
             terms_of_use_data = None
-
             if hasattr(obj, 'terms_of_use_backref') and obj.terms_of_use_backref:
                 terms_list = obj.terms_of_use_backref
                 if terms_list and len(terms_list) > 0:
@@ -86,17 +88,14 @@ class BeatResponse(BaseModel):
                         "music_video_recording": terms_obj.music_video_recording,
                         "release_of_copies": terms_obj.release_of_copies
                     }
-            elif hasattr(obj, 'terms_of_use') and obj.terms_of_use:
-                terms_obj = obj.terms_of_use
-                if terms_obj:
-                    terms_of_use_data = {
-                        "recording_tracks": terms_obj.recording_tracks,
-                        "commercial_perfomance": terms_obj.commercial_perfomance,
-                        "rotation_on_the_radio": terms_obj.rotation_on_the_radio,
-                        "music_video_recording": terms_obj.music_video_recording,
-                        "release_of_copies": terms_obj.release_of_copies
-                    }
-
+            
+            tags_data = []
+            if hasattr(obj, 'tags') and obj.tags:
+                tags_data = [
+                    {"id": tag.id, "name": tag.name}
+                    for tag in obj.tags
+                ]
+            
             data = {
                 "id": obj.id,
                 "name": obj.name,
@@ -125,7 +124,8 @@ class BeatResponse(BaseModel):
                     for pricing in obj.pricings
                 ] if hasattr(obj, 'pricings') else [],
                 "audio_fingerprint": obj.audio_fingerprint,
-                "terms_of_use": terms_of_use_data
+                "terms_of_use": terms_of_use_data,
+                "tags": tags_data
             }
             return cls(**data)
         return super().model_validate(obj)
