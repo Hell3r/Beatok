@@ -125,8 +125,15 @@ const BeatTable: React.FC<BeatTableProps> = ({
       if (!isProfileView && beat.status !== 'available') {
         return false;
       }
-      if (filters.name && !beat.name.toLowerCase().includes(filters.name.toLowerCase())) {
-        return false;
+      if (filters.name) {
+        const searchLower = filters.name.toLowerCase();
+        const nameMatch = beat.name.toLowerCase().includes(searchLower);
+        
+        const tagMatch = beat.tags?.some(tag => 
+          tag.name.toLowerCase().includes(searchLower)
+        );
+
+        if (!nameMatch && !tagMatch) return false;
       }
       if (!isProfileView && filters.author && !getAuthorName(beat).toLowerCase().includes(filters.author.toLowerCase())) {
         return false;

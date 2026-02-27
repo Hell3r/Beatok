@@ -59,7 +59,7 @@ const Filter: React.FC<FilterProps> = ({ filters, onFiltersChange }) => {
   );
 
   return (
-    <div className="bg-neutral-900 rounded-lg p-6 border border-neutral-700">
+    <div className="bg-neutral-900 rounded-lg p-6 border border-neutral-700 select-none">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-white font-semibold text-lg">Фильтры</h3>
         {hasActiveFilters && (
@@ -74,12 +74,14 @@ const Filter: React.FC<FilterProps> = ({ filters, onFiltersChange }) => {
 
       <div className="space-y-4">
         <div>
-          <label className="block text-neutral-400 text-sm mb-2">Название</label>
+          <label className="block text-neutral-400 text-sm mb-2">
+            Поиск по названию или тегу
+          </label>
           <input
             type="text"
             value={filters.name}
             onChange={(e) => handleFilterChange('name', e.target.value)}
-            placeholder="Поиск по названию..."
+            placeholder="Введите название или тег..."
             className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2 text-white placeholder-neutral-500 focus:outline-none focus:border-red-500 transition-colors"
           />
         </div>
@@ -111,7 +113,7 @@ const Filter: React.FC<FilterProps> = ({ filters, onFiltersChange }) => {
           <select
             value={filters.key}
             onChange={(e) => handleFilterChange('key', e.target.value)}
-            className="w-full bg-neutral-800 border cursor-pointer border-neutral-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-red-500 transition-colors"
+            className="w-full select-none bg-neutral-800 border cursor-pointer border-neutral-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-red-500 transition-colors"
           >
             <option className='cursor-pointer' value="">Все тональности</option>
             {musicalKeys.map((key) => (
@@ -127,7 +129,7 @@ const Filter: React.FC<FilterProps> = ({ filters, onFiltersChange }) => {
           <select
             value={filters.genre}
             onChange={(e) => handleFilterChange('genre', e.target.value)}
-            className="w-full bg-neutral-800 border cursor-pointer border-neutral-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-red-500 transition-colors"
+            className="w-full select-none bg-neutral-800 border cursor-pointer border-neutral-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-red-500 transition-colors"
           >
             <option className='cursor-pointer' value="">Все жанры</option>
             {genres.map((genre) => (

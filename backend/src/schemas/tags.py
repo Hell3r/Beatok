@@ -9,7 +9,7 @@ class TagCreate(TagBase):
 
 class TagResponse(TagBase):
     id: int
-    beat_id: int
+    #beat_id: int
     
     model_config = ConfigDict(from_attributes=True)
 

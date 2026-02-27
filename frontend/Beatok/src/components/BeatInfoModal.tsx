@@ -78,6 +78,12 @@ const BeatInfoModal: React.FC<BeatInfoModalProps> = ({ isOpen, onClose, beat }) 
     }
   };
 
+  const getTagName = (tag: any): string => {
+    if (typeof tag === 'string') return tag;
+    if (tag && typeof tag === 'object' && 'name' in tag) return tag.name;
+    return String(tag);
+  };
+
   return (
     <>
       {overlayTransition((style, item) =>
@@ -114,7 +120,7 @@ const BeatInfoModal: React.FC<BeatInfoModalProps> = ({ isOpen, onClose, beat }) 
                 </div>
               </div>
 
-              <div className="p-4">
+              <div className="p-4 max-h-[70vh] overflow-y-auto">
                 {beat && (
                   <div className="space-y-3">
                     <div>
@@ -157,6 +163,22 @@ const BeatInfoModal: React.FC<BeatInfoModalProps> = ({ isOpen, onClose, beat }) 
                         <p className="text-white font-medium text-sm">{formatDuration(beat.duration)}</p>
                       </div>
                     </div>
+
+                    {beat.tags && beat.tags.length > 0 && (
+                      <div>
+                        <h4 className="text-white font-medium mb-2 text-sm">Теги:</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {beat.tags.map((tag, index) => (
+                            <span
+                              key={index}
+                              className="bg-neutral-800 border border-red-600 text-white px-2 py-1 rounded-full text-xs"
+                            >
+                              #{getTagName(tag)}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {beat.terms_of_use && (
                       <div>

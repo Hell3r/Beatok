@@ -1,3 +1,8 @@
+export interface Tag {
+  id: number;
+  name: string;
+}
+
 export interface Beat {
   id: number;
   name: string;
@@ -38,6 +43,7 @@ export interface Beat {
     music_video_recording: boolean;
     release_of_copies: boolean;
   };
+  tags?: Tag[];
 }
 
 export interface BeatPricing {

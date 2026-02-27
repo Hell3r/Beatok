@@ -204,10 +204,10 @@ async def create_beat(
 
         if tags:
             try:
-                from src.models.tag import TagModel
+                from src.models.tags import TagModel
                 tag_list = [tag.strip() for tag in tags.split(',') if tag.strip()]
-
                 tag_list = list(dict.fromkeys(tag_list))
+                print(f"📝 Получены теги: {tag_list}")
 
                 if len(tag_list) > 10:
                     raise HTTPException(400, "Максимум 10 тегов")
@@ -221,8 +221,10 @@ async def create_beat(
                         name=tag_name.lower()
                     )
                     session.add(tag)
+                    print(f"✅ Добавлен тег: {tag_name} для бита {beat.id}")
 
                 await session.flush()
+                print(f"✅ Все теги сохранены для бита {beat.id}")
 
             except HTTPException:
                 raise
@@ -294,7 +296,7 @@ async def create_beat(
 
 
 
-@router.get("/", response_model=List[BeatResponse], summary = "Получить все биты")
+@router.get("/", response_model=List[BeatResponse], summary="Получить все биты")
 @cached(ttl=300)
 async def get_beats(
     session: SessionDep,
@@ -311,20 +313,22 @@ async def get_beats(
     likes_subquery = select(func.count(FavoriteModel.id)).where(FavoriteModel.beat_id == BeatModel.id).scalar_subquery()
 
     query = select(BeatModel, likes_subquery.label('likes_count')).options(
-       selectinload(BeatModel.owner),
-       selectinload(BeatModel.pricings).joinedload(BeatPricingModel.tariff),
-       selectinload(BeatModel.terms_of_use_backref),
-       selectinload(BeatModel.tags)
+        selectinload(BeatModel.owner),
+        selectinload(BeatModel.pricings).joinedload(BeatPricingModel.tariff),
+        selectinload(BeatModel.terms_of_use_backref),
+        selectinload(BeatModel.tags)
     )
 
     if author_id is not None:
         query = query.where(BeatModel.author_id == author_id)
-
-    if tag:
-        query = query.join(BeatModel.tags).where(TagModel.name == tag.lower())
+    else:
+        query = query.where(BeatModel.status == StatusType.AVAILABLE)
 
     if promotion_status is not None:
         query = query.where(BeatModel.promotion_status == promotion_status)
+
+    if tag:
+        query = query.join(BeatModel.tags).where(TagModel.name == tag.lower())
 
     result = await session.execute(
         query
@@ -334,11 +338,13 @@ async def get_beats(
     )
 
     beats_with_likes = result.unique().all()
+    
+    beats = []
     for beat, likes_count in beats_with_likes:
         beat.likes_count = likes_count
-    beats = [beat for beat, _ in beats_with_likes]
+        beats.append(beat)
+    
     return [BeatResponse.model_validate(beat) for beat in beats]
-
 
 @router.get("/top-beatmakers", summary="Получить топ битмейкеров по количеству лайков на их битах")
 @cached(ttl=600)

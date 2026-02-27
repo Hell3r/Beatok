@@ -88,14 +88,14 @@ class BeatResponse(BaseModel):
                         "music_video_recording": terms_obj.music_video_recording,
                         "release_of_copies": terms_obj.release_of_copies
                     }
-            
+
             tags_data = []
             if hasattr(obj, 'tags') and obj.tags:
                 tags_data = [
-                    {"id": tag.id, "name": tag.name}
+                    TagResponse(id=tag.id, name=tag.name)
                     for tag in obj.tags
                 ]
-            
+
             data = {
                 "id": obj.id,
                 "name": obj.name,
