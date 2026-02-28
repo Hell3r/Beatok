@@ -170,7 +170,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => setAddBeatModalOpen(true)}
-                    className="bg-white hover:bg-gray-300 cursor-pointer text-red-600 px-3 py-2 rounded-md font-medium transition-colors duration-200 focus:outline-none"
+                    className="bg-neutral-900 border border-neutral-800 hover:bg-neutral-700 cursor-pointer text-white px-3 py-2 rounded-full font-medium transition-colors duration-200 focus:outline-none"
                     aria-label="Добавить бит"
                   >
                     Добавить бит

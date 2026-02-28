@@ -24,6 +24,8 @@ from src.services.RedisService import redis_service
 from pathlib import Path
 from src.services.rate_limiter import check_rate_limit
 from src.services.rate_limiter import RateLimiter
+from PIL import Image
+from io import BytesIO
 
 
 router = APIRouter(prefix="/beats", tags=["Аудио файлы"])
@@ -135,6 +137,18 @@ async def create_beat(
             cover_content = await cover_file.read()
             if len(cover_content) > 5 * 1024 * 1024:
                 raise HTTPException(400, "Размер обложки не должен превышать 5MB")
+            
+            # Check if cover is square
+            try:
+                image = Image.open(BytesIO(cover_content))
+                width, height = image.size
+                if width != height:
+                    raise HTTPException(400, "Обложка должна быть квадратной")
+            except HTTPException:
+                raise
+            except Exception as e:
+                print(f"Ошибка при проверке обложки: {e}")
+                raise HTTPException(400, "Не удалось проверить обложку")
             
             cover_folder = COVER_STORAGE / str(beat.id)
             cover_folder.mkdir(parents=True, exist_ok=True)

@@ -14,7 +14,7 @@ class PromotionService:
     def __init__(self, db: AsyncSession):
         self.db = db
     
-    PROMOTION_PRICE = 150.0
+    PROMOTION_PRICE = 200.0
     PROMOTION_DURATION_DAYS = 3
     PROMOTION_DESCRIPTION = "Продвижение бита на 3 дня в топе"
     
@@ -54,7 +54,7 @@ class PromotionService:
                     f"на балансе: {user.balance} ₽"
                 )
             
-            user.balance -= 150
+            user.balance -= 200
 
             promotion = BeatPromotionModel(
                 beat_id=beat_id,

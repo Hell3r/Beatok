@@ -253,6 +253,7 @@ const BeatsPage: React.FC = () => {
                   filters={filters}
                   onToggleFavorite={handleToggleFavorite}
                   favoriteBeats={favoriteBeats}
+                  maxColumns={4}
                 />
               </div>
             )}
@@ -282,6 +283,7 @@ const BeatsPage: React.FC = () => {
                       filters={filters}
                       onToggleFavorite={handleToggleFavorite}
                       favoriteBeats={favoriteBeats}
+                      maxColumns={4}
                     />
                   )}
                 </animated.div>

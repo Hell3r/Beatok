@@ -292,7 +292,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                   </svg>
-                  <span className="text-sm">Продвинуть</span>
+                  <span className="text-sm select-none">Продвинуть</span>
                 </button>
               )}
             </div>
@@ -504,7 +504,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
                 >
                   <td className="p-4 text-center">
                     <div 
-                      className="relative w-16 h-16 rounded overflow-hidden mx-auto cursor-pointer group"
+                      className={`relative w-16 h-16 rounded overflow-hidden mx-auto cursor-pointer group ${beat.promotion_status !== 'standard' ? 'p-0.5 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600' : ''}`}
                       onClick={() => onPlay?.(beat)}
                     >
                       {getCoverUrl(beat) ? (

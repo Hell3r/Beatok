@@ -118,8 +118,23 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
         setError('Размер обложки не должен превышать 5MB');
         return;
       }
-      setBeatData({ ...beatData, cover_file: file });
-      setError('');
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        if (img.width !== img.height) {
+          setError('Обложка должна быть квадратной');
+          return;
+        }
+        setBeatData({ ...beatData, cover_file: file });
+        setError('');
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        setError('Не удалось загрузить обложку');
+        return;
+      };
+      img.src = objectUrl;
     }
   };
 
@@ -386,7 +401,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="grid grid-cols-3 gap-6 select-none">
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                       <div>
                         <label className="block text-sm font-medium select-none text-neutral-300 mb-2">
                           Название бита
@@ -411,7 +426,6 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                           onChange={handleCoverChange}
                           className="w-full h-10 p-1 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer select-none"
                         />
-                        <p className="text-xs text-neutral-500 mt-1">JPG, PNG, WEBP или GIF, макс. 5MB</p>
                       </div>
 
                       <div>
@@ -439,7 +453,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                       </div>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                       <div>
                         <label className="block select-none text-sm font-medium text-neutral-300 mb-2">
                           Жанр
@@ -495,7 +509,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                       </div>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="space-y-2">
                       <div className="select-none">
                         <label className="block text-sm font-medium text-neutral-300 mb-2">
                           Условия использования
@@ -564,7 +578,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                         </div>
                       </div>
 
-                      <div className="border-t border-neutral-700 pt-4 select-none">
+                      <div className="border-t border-neutral-700 pt-2 select-none">
                         <label className="block text-sm font-medium text-neutral-300 mb-2">
                           Теги (макс. 10)
                         </label>
@@ -634,10 +648,11 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                       <label htmlFor="is_free" className="text-lg select-none font-medium text-white">
                         Бесплатно
                       </label>
+                      <label className="text-sm ml-6 text-neutral-500 select-none">При добавлении платного бита сервис прибавляет к цене комиссионные 200 р. к стоимости бита.</label>
                     </div>
                     {!beatData.is_free && (
                       <>
-                        <h3 className="text-sm text-white mb-4 select-none">При добавлении платного бита сервис прибавляет к цене комиссионные 200 р. к стоимости бита.</h3>
+                        
                         <div className="grid grid-cols-1 gap-4">
                           {tariffs.map((tariff) => (
                             <div key={tariff.name} className="flex items-center space-x-4">

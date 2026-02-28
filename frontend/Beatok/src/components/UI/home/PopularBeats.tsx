@@ -109,6 +109,7 @@ const PopularBeats: React.FC = () => {
         filters={filters}
         onToggleFavorite={handleToggleFavorite}
         favoriteBeats={favoriteBeats}
+        maxColumns={5}
       />
       <div className="mt-6 text-center">
         <a

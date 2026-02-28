@@ -24,6 +24,7 @@ interface BeatListProps {
   favoriteBeats?: Beat[];
   onDeleteBeat?: (beat: Beat) => void;
   onShowRejectionReason?: (beat: Beat) => void;
+  maxColumns?: number;
 }
 
 const BeatList: React.FC<BeatListProps> = ({
@@ -39,6 +40,7 @@ const BeatList: React.FC<BeatListProps> = ({
   favoriteBeats = [],
   onDeleteBeat,
   onShowRejectionReason,
+  maxColumns = 5,
 }) => {
   const navigate = useNavigate();
   const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
@@ -187,9 +189,15 @@ const BeatList: React.FC<BeatListProps> = ({
     );
   }
 
+  const gridStyle = {
+    display: 'grid',
+    gridTemplateColumns: `repeat(${maxColumns}, minmax(0, 1fr))`,
+    gap: '1.5rem',
+  };
+  
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div style={gridStyle}>
         {trail.map((style, index) => {
           const beat = filteredBeats[index];
           const isOwnBeat = currentUser && getAuthorId(beat) === currentUser.id;
@@ -198,30 +206,59 @@ const BeatList: React.FC<BeatListProps> = ({
             <animated.div key={beat.id} style={style} className="bg-neutral-900 rounded-lg p-4 hover:bg-neutral-800 transition-all duration-300 group border border-neutral-700 relative">
               <div className="mb-3">
                 {coverUrl ? (
-                  <div 
-                    className="relative w-40 h-40 rounded-lg overflow-hidden cursor-pointer group"
-                    onClick={() => onPlay?.(beat)}
-                  >
-                    <img 
-                      src={coverUrl} 
-                      alt="Обложка" 
-                      className="w-full h-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                      }}
-                    />
-                    <div className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 ${currentPlayingBeat?.id === beat.id && isPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                      {currentPlayingBeat?.id === beat.id && isPlaying ? (
-                        <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
-                        </svg>
-                      ) : (
-                        <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M8 5v14l11-7z"/>
-                        </svg>
-                      )}
+                  beat.promotion_status !== 'standard' ? (
+                    <div 
+                      className="relative p-1 bg-gradient-to-r from-yellow-400 via-yellow-400 to-yellow-600 rounded-lg cursor-pointer"
+                      onClick={() => onPlay?.(beat)}
+                    >
+                      <div className="relative w-64 h-64 rounded-lg overflow-hidden group">
+                        <img 
+                          src={coverUrl} 
+                          alt="Обложка" 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                        <div className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 ${currentPlayingBeat?.id === beat.id && isPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                          {currentPlayingBeat?.id === beat.id && isPlaying ? (
+                            <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
+                            </svg>
+                          ) : (
+                            <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z"/>
+                            </svg>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div 
+                      className="relative w-40 h-40 rounded-lg overflow-hidden cursor-pointer group"
+                      onClick={() => onPlay?.(beat)}
+                    >
+                      <img 
+                        src={coverUrl} 
+                        alt="Обложка" 
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                      <div className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 ${currentPlayingBeat?.id === beat.id && isPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                        {currentPlayingBeat?.id === beat.id && isPlaying ? (
+                          <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
+                          </svg>
+                        ) : (
+                          <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z"/>
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                  )
                 ) : (
                   <div 
                     className="w-64 h-64 bg-neutral-800 rounded-lg flex items-center justify-center cursor-pointer group"
@@ -322,20 +359,20 @@ const BeatList: React.FC<BeatListProps> = ({
                 <div className="mb-4">
                   <button
                     onClick={() => setBeatToPromote(beat)}
-                    className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold px-4 py-3 rounded-lg transition-all duration-300 cursor-pointer flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+                    className="w-full select-none bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold px-4 py-3 rounded-lg transition-all duration-300 cursor-pointer flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
                     title="Продвигать бит"
                   >
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                     </svg>
-                    <span>Продвинуть бит • 200 ₽</span>
+                    <span select-none>Продвинуть бит • 200 ₽</span>
                   </button>
                 </div>
               )}
 
               <div className="flex justify-between items-center">
                 <div className="flex space-x-2">
-{isOwnBeat ? (
+                  {isOwnBeat ? (
                     <button
                       onClick={() => onDownload?.(beat)}
                       className="bg-neutral-700 hover:bg-neutral-600 text-white px-6 py-2 rounded-full transition-colors cursor-pointer"
