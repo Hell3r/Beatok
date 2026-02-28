@@ -54,11 +54,12 @@ class BeatResponse(BaseModel):
     rejection_reason: Optional[str] = None
     size: int
     duration: float
+    cover_path: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     likes_count: int = 0
     
-    owner: UserInfo 
+    owner: UserInfo
     
     pricings: List[BeatPricingResponseSchema] = []
     audio_fingerprint: Optional[str] = None
@@ -107,6 +108,7 @@ class BeatResponse(BaseModel):
                 "rejection_reason": obj.rejection_reason,
                 "size": obj.size,
                 "duration": obj.duration,
+                "cover_path": getattr(obj, 'cover_path', None),
                 "created_at": obj.created_at,
                 "updated_at": obj.updated_at,
                 "likes_count": getattr(obj, 'likes_count', 0),

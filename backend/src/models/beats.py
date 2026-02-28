@@ -23,6 +23,7 @@ class BeatModel(Base):
 
     mp3_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     wav_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    cover_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
 
     genre: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     tempo: Mapped[int] = mapped_column(Integer, nullable=False)

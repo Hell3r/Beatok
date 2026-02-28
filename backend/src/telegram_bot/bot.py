@@ -27,7 +27,7 @@ class SupportBot:
             except TelegramError as e:
                 print(f"Failed to send notification to {chat_id}: {e}")
 
-    async def send_beat_moderation_notification(self, beat_data: dict, user_info: dict, audio_path: str = None):
+    async def send_beat_moderation_notification(self, beat_data: dict, user_info: dict, audio_path: str = None, cover_path: str = None):
         if not TelegramConfig.is_configured():
             print("Telegram bot not configured - skipping beat moderation notification")
             return
@@ -62,15 +62,27 @@ class SupportBot:
 
         for chat_id in self.admin_chat_ids:
             try:
-                
+                # Always send text message first (so handlers can edit it later)
                 await self.bot.send_message(
                     chat_id=chat_id,
                     text=message,
                     parse_mode='HTML',
                     reply_markup=reply_markup
                 )
-
                 
+                # Then send cover image if available (as separate message)
+                if cover_path:
+                    try:
+                        with open(cover_path, 'rb') as cover_file:
+                            await self.bot.send_photo(
+                                chat_id=chat_id,
+                                photo=cover_file,
+                                write_timeout=120,
+                                connect_timeout=10
+                            )
+                    except Exception as e:
+                        print(f"Failed to send cover image to {chat_id}: {e}")
+
                 if audio_path:
                     try:
                         with open(audio_path, 'rb') as audio_file:

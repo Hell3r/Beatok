@@ -31,6 +31,9 @@ router = APIRouter(prefix="/beats", tags=["Аудио файлы"])
 AUDIO_STORAGE = Path("audio_storage")
 AUDIO_STORAGE.mkdir(parents=True, exist_ok=True)
 
+COVER_STORAGE = Path("static/covers")
+COVER_STORAGE.mkdir(parents=True, exist_ok=True)
+
 @router.post("/create", response_model=BeatResponse, summary="Добавить файл")
 async def create_beat(
     request: Request,
@@ -47,6 +50,7 @@ async def create_beat(
     tags: str = Form(None),
     mp3_file: UploadFile = File(None),
     wav_file: UploadFile = File(None),
+    cover_file: UploadFile = File(None),
 ):
     await check_rate_limit(request, "beat_create", current_user_id)
     
@@ -121,6 +125,28 @@ async def create_beat(
                 print(f"Ошибка при получении длительности WAV: {e}")
         
         beat.size = total_size
+
+        if cover_file and cover_file.filename:
+            allowed_extensions = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
+            ext = cover_file.filename.lower().split('.')[-1]
+            if f'.{ext}' not in allowed_extensions:
+                raise HTTPException(400, "Обложка должна быть в формате JPG, PNG, WEBP или GIF")
+            
+            cover_content = await cover_file.read()
+            if len(cover_content) > 5 * 1024 * 1024:
+                raise HTTPException(400, "Размер обложки не должен превышать 5MB")
+            
+            cover_folder = COVER_STORAGE / str(beat.id)
+            cover_folder.mkdir(parents=True, exist_ok=True)
+            
+            cover_filename = f"cover.{ext}"
+            cover_path = cover_folder / cover_filename
+            
+            async with aiofiles.open(cover_path, "wb") as f:
+                await f.write(cover_content)
+            
+            beat.cover_path = str(cover_path.relative_to(COVER_STORAGE))
+            print(f"✅ Обложка сохранена: {beat.cover_path}")
 
         if audio_path_for_fingerprint:
             fingerprint, fingerprint_data = await fingerprint_service.extract_fingerprint(
@@ -245,36 +271,40 @@ async def create_beat(
         )
         beat_with_relations = result.scalar_one()
 
-        if is_free.lower() == "true":
-            user_info = {
-                'id': beat_with_relations.owner.id,
-                'username': beat_with_relations.owner.username,
-                'email': beat_with_relations.owner.email
-            }
+        user_info = {
+            'id': beat_with_relations.owner.id,
+            'username': beat_with_relations.owner.username,
+            'email': beat_with_relations.owner.email
+        }
 
-            beat_data = {
-                'id': beat_with_relations.id,
-                'name': beat_with_relations.name,
-                'genre': beat_with_relations.genre,
-                'tempo': beat_with_relations.tempo,
-                'key': beat_with_relations.key,
-                'promotion_status': beat_with_relations.promotion_status
-            }
+        beat_data = {
+            'id': beat_with_relations.id,
+            'name': beat_with_relations.name,
+            'genre': beat_with_relations.genre,
+            'tempo': beat_with_relations.tempo,
+            'key': beat_with_relations.key,
+            'promotion_status': beat_with_relations.promotion_status
+        }
 
-            audio_path = None
-            if beat_with_relations.mp3_path:
-                audio_path = AUDIO_STORAGE / beat_with_relations.mp3_path
-            elif beat_with_relations.wav_path:
-                audio_path = AUDIO_STORAGE / beat_with_relations.wav_path
+        audio_path = None
+        if beat_with_relations.mp3_path:
+            audio_path = AUDIO_STORAGE / beat_with_relations.mp3_path
+        elif beat_with_relations.wav_path:
+            audio_path = AUDIO_STORAGE / beat_with_relations.wav_path
 
-            import asyncio
-            asyncio.create_task(
-                support_bot.send_beat_moderation_notification(
-                    beat_data, 
-                    user_info, 
-                    str(audio_path) if audio_path else None
-                )
+        cover_path = None
+        if beat_with_relations.cover_path:
+            cover_path = COVER_STORAGE / beat_with_relations.cover_path
+
+        import asyncio
+        asyncio.create_task(
+            support_bot.send_beat_moderation_notification(
+                beat_data, 
+                user_info, 
+                str(audio_path) if audio_path else None,
+                str(cover_path) if cover_path else None
             )
+        )
         
         success = await redis_service.delete_pattern("*beats:*")
         if success:

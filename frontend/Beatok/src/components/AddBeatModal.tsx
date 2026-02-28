@@ -36,6 +36,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
     key: '',
     mp3_file: null as File | null,
     wav_file: null as File | null,
+    cover_file: null as File | null,
     pricings: {} as Record<string, string>,
     is_free: false,
     terms_of_use: {
@@ -103,6 +104,23 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
 
   const handleRemoveTag = (tagToRemove: string) => {
     setTags(tags.filter(tag => tag !== tagToRemove));
+  };
+
+  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+      if (!allowedTypes.includes(file.type)) {
+        setError('Обложка должна быть в формате JPG, PNG, WEBP или GIF');
+        return;
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Размер обложки не должен превышать 5MB');
+        return;
+      }
+      setBeatData({ ...beatData, cover_file: file });
+      setError('');
+    }
   };
 
   const modalTransition = useTransition(isOpen, {
@@ -196,6 +214,10 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
         formData.append('wav_file', beatData.wav_file);
       }
 
+      if (beatData.cover_file) {
+        formData.append('cover_file', beatData.cover_file);
+      }
+
       const response = await fetch('http://localhost:8000/beats/create', {
         method: 'POST',
         headers: {
@@ -249,6 +271,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
         key: '',
         mp3_file: null,
         wav_file: null,
+        cover_file: null,
         pricings: {},
         is_free: false,
         terms_of_use: {
@@ -376,6 +399,19 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                           className="w-full h-10 p-2 bg-neutral-800 border border-neutral-600 rounded text-white text-sm focus:outline-none focus:border-red-500 transition-colors"
                           required
                         />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm select-none font-medium text-neutral-300 mb-2">
+                          Обложка
+                        </label>
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          onChange={handleCoverChange}
+                          className="w-full h-10 p-1 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer select-none"
+                        />
+                        <p className="text-xs text-neutral-500 mt-1">JPG, PNG, WEBP или GIF, макс. 5MB</p>
                       </div>
 
                       <div>

@@ -84,6 +84,11 @@ const BeatList: React.FC<BeatListProps> = ({
     return 'http://localhost:8000/static/default_avatar.png';
   };
 
+  const getCoverUrl = (beat: Beat): string | null => {
+    if (!beat.cover_path) return null;
+    return `http://localhost:8000/static/covers/${beat.cover_path}`;
+  };
+
   const handleAuthorClick = (beat: Beat) => {
     const authorId = getAuthorId(beat);
     if (authorId) {
@@ -184,12 +189,50 @@ const BeatList: React.FC<BeatListProps> = ({
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {trail.map((style, index) => {
           const beat = filteredBeats[index];
           const isOwnBeat = currentUser && getAuthorId(beat) === currentUser.id;
+          const coverUrl = getCoverUrl(beat);
           return (
             <animated.div key={beat.id} style={style} className="bg-neutral-900 rounded-lg p-4 hover:bg-neutral-800 transition-all duration-300 group border border-neutral-700 relative">
+              <div className="mb-3">
+                {coverUrl ? (
+                  <div 
+                    className="relative w-40 h-40 rounded-lg overflow-hidden cursor-pointer group"
+                    onClick={() => onPlay?.(beat)}
+                  >
+                    <img 
+                      src={coverUrl} 
+                      alt="Обложка" 
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                    <div className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 ${currentPlayingBeat?.id === beat.id && isPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                      {currentPlayingBeat?.id === beat.id && isPlaying ? (
+                        <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
+                        </svg>
+                      ) : (
+                        <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M8 5v14l11-7z"/>
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div 
+                    className="w-64 h-64 bg-neutral-800 rounded-lg flex items-center justify-center cursor-pointer group"
+                    onClick={() => onPlay?.(beat)}
+                  >
+                    <svg className="w-16 h-16 text-neutral-600" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  </div>
+                )}
+              </div>
               <div className="flex justify-between items-start mb-3">
                 <div className="flex-1">
                   <h3
@@ -292,25 +335,7 @@ const BeatList: React.FC<BeatListProps> = ({
 
               <div className="flex justify-between items-center">
                 <div className="flex space-x-2">
-                  <button
-                    onClick={() => onPlay?.(beat)}
-                    className={`${
-                      currentPlayingBeat?.id === beat.id && isPlaying
-                        ? 'bg-red-600 hover:bg-red-700'
-                        : 'bg-red-600 hover:bg-red-700'
-                    } text-white p-3 rounded-full transition-colors cursor-pointer`}
-                    title={currentPlayingBeat?.id === beat.id && isPlaying ? "Пауза" : "Воспроизвести"}
-                  >
-                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                      {currentPlayingBeat?.id === beat.id && isPlaying ? (
-                        <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
-                      ) : (
-                        <path d="M8 5v14l11-7z"/>
-                      )}
-                    </svg>
-                  </button>
-
-                  {isOwnBeat ? (
+{isOwnBeat ? (
                     <button
                       onClick={() => onDownload?.(beat)}
                       className="bg-neutral-700 hover:bg-neutral-600 text-white px-6 py-2 rounded-full transition-colors cursor-pointer"

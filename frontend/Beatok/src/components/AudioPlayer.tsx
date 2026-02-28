@@ -3,6 +3,11 @@ import { useSpring, animated } from '@react-spring/web';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import { useModal } from '../hooks/useModal';
 
+const getCoverUrl = (beat: any): string | null => {
+  if (!beat?.cover_path) return null;
+  return `http://localhost:8000/static/covers/${beat.cover_path}`;
+};
+
 const AudioPlayer: React.FC = () => {
   const {
     currentBeat,
@@ -25,6 +30,7 @@ const AudioPlayer: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [isDraggingVolume, setIsDraggingVolume] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isHoveringCover, setIsHoveringCover] = useState(false);
 
   const progressBarRef = useRef<HTMLDivElement>(null);
   const volumeBarRef = useRef<HTMLDivElement>(null);
@@ -118,7 +124,6 @@ const AudioPlayer: React.FC = () => {
     config: { tension: 300, friction: 30 },
   });
 
-  // On mobile, show a placeholder when no beat is playing
   if (!currentBeat && isMobile) {
     return (
       <div className="fixed bottom-0 left-0 right-0 bg-neutral-900 border-t border-neutral-700 z-40 pb-safe">
@@ -130,6 +135,8 @@ const AudioPlayer: React.FC = () => {
   }
 
   if (!currentBeat) return null;
+
+  const coverUrl = getCoverUrl(currentBeat);
 
   return (
     <>
@@ -158,9 +165,7 @@ const AudioPlayer: React.FC = () => {
         style={styles}
       >
         {isMobile ? (
-          // Compact Mobile Layout
           <div className="px-2 py-3 bg-gradient-to-t from-neutral-900 via-neutral-900 to-neutral-800">
-            {/* Minimize button */}
             <div className="flex justify-center mb-2">
               <button
                 onClick={() => setIsMinimized(true)}
@@ -172,15 +177,38 @@ const AudioPlayer: React.FC = () => {
               </button>
             </div>
 
-            {/* Track info with compact styling */}
             <div className="flex items-center space-x-2 mb-3">
-              <div className="relative">
-                <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg">
-                  <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z"/>
-                  </svg>
+              <div 
+                className="relative w-10 h-10 flex-shrink-0 rounded-lg overflow-hidden group cursor-pointer"
+                onMouseEnter={() => setIsHoveringCover(true)}
+                onMouseLeave={() => setIsHoveringCover(false)}
+                onClick={togglePlayPause}
+              >
+                {coverUrl ? (
+                  <img
+                    src={coverUrl}
+                    alt="Обложка"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-br from-red-500 to-red-600 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  </div>
+                )}
+                <div className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 ${isHoveringCover || isPlaying ? 'opacity-100' : 'opacity-0'}`}>
+                  {isPlaying ? (
+                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  )}
                 </div>
-                {isPlaying && (
+                {isPlaying && !isHoveringCover && (
                   <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
                 )}
               </div>
@@ -223,7 +251,6 @@ const AudioPlayer: React.FC = () => {
               </button>
             </div>
 
-            {/* Playback controls centered above progress bar */}
             <div className="flex justify-center items-center space-x-4 mb-3">
               <button
                 onClick={previousBeat}
@@ -259,7 +286,6 @@ const AudioPlayer: React.FC = () => {
               </button>
             </div>
 
-            {/* Compact Progress bar */}
             <div className="mb-3">
               <div
                 ref={progressBarRef}
@@ -281,7 +307,6 @@ const AudioPlayer: React.FC = () => {
               </div>
             </div>
 
-            {/* Volume controls at bottom */}
             <div className="flex justify-center">
               <div className="flex items-center space-x-2">
                 <button
@@ -319,7 +344,6 @@ const AudioPlayer: React.FC = () => {
             </div>
           </div>
         ) : (
-          // Desktop Layout (unchanged)
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-center mb-2">
               <button
@@ -333,10 +357,36 @@ const AudioPlayer: React.FC = () => {
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4 flex-1 min-w-0">
-                <div className="flex-shrink-0 w-12 h-12 bg-neutral-800 rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z"/>
-                  </svg>
+                <div 
+                  className="flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden relative group cursor-pointer"
+                  onMouseEnter={() => setIsHoveringCover(true)}
+                  onMouseLeave={() => setIsHoveringCover(false)}
+                  onClick={togglePlayPause}
+                >
+                  {coverUrl ? (
+                    <img
+                      src={coverUrl}
+                      alt="Обложка"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-neutral-800 flex items-center justify-center">
+                      <svg className="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
+                    </div>
+                  )}
+                  <div className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 ${isHoveringCover ? 'opacity-100' : 'opacity-0'}`}>
+                    {isPlaying ? (
+                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
+                    )}
+                  </div>
                 </div>
                 <div className="min-w-0 flex-1">
                   <h4 className="text-white font-semibold truncate">

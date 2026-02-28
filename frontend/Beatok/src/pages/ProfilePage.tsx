@@ -76,11 +76,9 @@ const ProfilePage: React.FC = () => {
   } | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
 
-  const [favoriteBeats, setFavoriteBeats] = useState<Beat[]>([]);
+const [favoriteBeats, setFavoriteBeats] = useState<Beat[]>([]);
   const [favoriteBeatsLoading, setFavoriteBeatsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [currentPlayingBeat, setCurrentPlayingBeat] = useState<Beat | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
 
   const [historyItems, setHistoryItems] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -117,9 +115,9 @@ const rightPanelSpring = useSpring({
     }
   };
 
-  const { playBeat } = useAudioPlayer();
+const { playBeat, currentBeat, isPlaying } = useAudioPlayer();
 
-  const handlePlayBeat = (beat: Beat) => {
+const handlePlayBeat = (beat: Beat) => {
     playBeat(beat);
   };
 
@@ -1064,12 +1062,12 @@ const rightPanelSpring = useSpring({
                               className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2 text-white placeholder-neutral-500 focus:outline-none focus:border-red-500 transition-colors"
                             />
                           </div>
-                          <BeatList
+<BeatList
                             beats={myBeats}
                             loading={beatsLoading}
-                            currentPlayingBeat={currentPlayingBeat}
+                            currentPlayingBeat={currentBeat}
                             isPlaying={isPlaying}
-                            onPlay={!isOwnProfile ? handlePlayBeat : undefined}
+                            onPlay={handlePlayBeat}
                             onDownload={!isOwnProfile ? handleDownloadBeat : undefined}
                             isProfileView={isOwnProfile}
                             filters={filters}
@@ -1080,13 +1078,15 @@ const rightPanelSpring = useSpring({
                           />
                         </>
                       ) : (
-                        <BeatTable
+<BeatTable
                           beats={myBeats}
                           filters={filters}
                           isProfileView={isOwnProfile}
                           hideAuthorColumn={true}
+                          currentPlayingBeat={currentBeat}
+                          isPlaying={isPlaying}
                           onShowRejectionReason={isOwnProfile ? handleShowRejectionReason : undefined}
-                          onPlay={!isOwnProfile ? handlePlayBeat : undefined}
+                          onPlay={handlePlayBeat}
                           onDownload={!isOwnProfile ? handleDownloadBeat : undefined}
                           onDeleteBeat={isOwnProfile ? handleDeleteBeat : undefined}
                           onToggleFavorite={!isOwnProfile ? handleToggleFavorite : undefined}
@@ -1163,10 +1163,10 @@ const rightPanelSpring = useSpring({
                           </p>
                         </div>
                       ) : isMobile ? (
-                        <BeatList
+<BeatList
                           beats={favoriteBeats}
                           loading={favoriteBeatsLoading}
-                          currentPlayingBeat={currentPlayingBeat}
+                          currentPlayingBeat={currentBeat}
                           isPlaying={isPlaying}
                           onPlay={handlePlayBeat}
                           onDownload={handleDownloadBeat}
@@ -1176,11 +1176,13 @@ const rightPanelSpring = useSpring({
                           favoriteBeats={favoriteBeats}
                         />
                       ) : (
-                        <BeatTable
+<BeatTable
                           beats={favoriteBeats}
                           filters={filters}
                           isProfileView={false}
                           hideAuthorColumn={false}
+                          currentPlayingBeat={currentBeat}
+                          isPlaying={isPlaying}
                           onPlay={handlePlayBeat}
                           onDownload={handleDownloadBeat}
                           onToggleFavorite={handleToggleFavorite}

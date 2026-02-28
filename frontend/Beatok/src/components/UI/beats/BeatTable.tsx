@@ -12,6 +12,11 @@ import BeatPromotionModal from '../../BeatPromotionModal';
 import BeatInfoModal from '../../BeatInfoModal';
 import { getCurrentUser } from '../../../utils/getCurrentUser';
 
+const getCoverUrl = (beat: Beat): string | null => {
+  if (!beat.cover_path) return null;
+  return `http://localhost:8000/static/covers/${beat.cover_path}`;
+};
+
 interface BeatTableProps {
   beats: Beat[];
   loading?: boolean;
@@ -278,25 +283,6 @@ const BeatTable: React.FC<BeatTableProps> = ({
               {beat.status === 'available' ? 'Доступен' : beat.status === 'moderated' ? 'На модерации' : 'Отклонён'}
             </span>
             <div className="flex space-x-1">
-              {onPlay && (
-                <button
-                  onClick={() => onPlay(beat)}
-                  className={`hidden md:block ${
-                    currentPlayingBeat?.id === beat.id && isPlaying
-                      ? 'bg-red-600 hover:bg-red-700'
-                      : 'bg-red-600 hover:bg-red-700'
-                  } text-white p-2 rounded-full transition-colors cursor-pointer`}
-                  title={currentPlayingBeat?.id === beat.id && isPlaying ? "Пауза" : "Воспроизвести"}
-                >
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                    {currentPlayingBeat?.id === beat.id && isPlaying ? (
-                      <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
-                    ) : (
-                      <path d="M8 5v14l11-7z"/>
-                    )}
-                  </svg>
-                </button>
-              )}
               {beat.status === 'available' && (
                 <button
                   onClick={() => handlePromoteClick(beat)}
@@ -317,23 +303,6 @@ const BeatTable: React.FC<BeatTableProps> = ({
       return (
         <td className="p-4 text-center">
           <div className="flex justify-center space-x-2">
-            <button
-              onClick={() => onPlay?.(beat)}
-              className={`${
-                currentPlayingBeat?.id === beat.id && isPlaying
-                  ? 'bg-red-600 hover:bg-red-700'
-                  : 'bg-red-600 hover:bg-red-700'
-              } text-white p-3 rounded-full transition-colors cursor-pointer`}
-              title={currentPlayingBeat?.id === beat.id && isPlaying ? "Пауза" : "Воспроизвести"}
-            >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                {currentPlayingBeat?.id === beat.id && isPlaying ? (
-                  <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
-                ) : (
-                  <path d="M8 5v14l11-7z"/>
-                )}
-              </svg>
-            </button>
             {isOwnBeat ? (
               <button
                 onClick={() => onDownload?.(beat)}
@@ -399,6 +368,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
         <table className="w-full">
           <thead>
             <tr className="bg-neutral-900">
+              <th className="p-4 text-center">Обложка</th>
               <th className="p-4 text-center">Название</th>
               {!isProfileView && !hideAuthorColumn && (
                 <th className="p-4 text-center">Автор</th>
@@ -415,6 +385,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
           <tbody>
             {[...Array(5)].map((_, i) => (
               <tr key={i} className="border-b border-neutral-700 animate-pulse">
+                <td className="p-4"><div className="w-10 h-10 bg-neutral-700 rounded mx-auto"></div></td>
                 <td className="p-4"><div className="h-4 bg-neutral-700 rounded mx-auto w-3/4"></div></td>
                 {!isProfileView && !hideAuthorColumn && (
                   <td className="p-4"><div className="h-4 bg-neutral-700 rounded mx-auto w-2/3"></div></td>
@@ -441,6 +412,9 @@ const BeatTable: React.FC<BeatTableProps> = ({
           <table className="w-full">
             <thead>
               <tr className="bg-neutral-900">
+                <th className="p-4 text-center text-white font-semibold">
+                  Обложка
+                </th>
                 <th
                   className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
                   onClick={() => handleSort('name')}
@@ -528,6 +502,37 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   onDoubleClick={() => setExpandedBeatId(expandedBeatId === beat.id ? null : beat.id)}
                   onContextMenu={(e) => handleContextMenu(e, beat)}
                 >
+                  <td className="p-4 text-center">
+                    <div 
+                      className="relative w-16 h-16 rounded overflow-hidden mx-auto cursor-pointer group"
+                      onClick={() => onPlay?.(beat)}
+                    >
+                      {getCoverUrl(beat) ? (
+                        <img
+                          src={getCoverUrl(beat)!}
+                          alt="Обложка"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-neutral-700 flex items-center justify-center">
+                          <svg className="w-5 h-5 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                          </svg>
+                        </div>
+                      )}
+                      <div className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 ${currentPlayingBeat?.id === beat.id && isPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                        {currentPlayingBeat?.id === beat.id && isPlaying ? (
+                          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
+                          </svg>
+                        ) : (
+                          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z"/>
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                  </td>
                   <td className="p-4 text-center">
                     <div
                       className="text-white font-medium group-hover:text-red-400 transition-colors cursor-pointer"

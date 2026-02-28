@@ -13,6 +13,7 @@ from src.models.tarrifs import TariffTemplateModel
 from pathlib import Path
 
 AUDIO_STORAGE = Path("audio_storage")
+COVER_STORAGE = Path("static/covers")
 
 router = APIRouter(prefix = "/v1/pricing", tags = ["Цены битов"])
 
@@ -105,14 +106,23 @@ async def create_pricing(
             }
 
             audio_path = None
+            cover_path = None
             if beat_with_relations.mp3_path:
                 audio_path = AUDIO_STORAGE / beat_with_relations.mp3_path
             elif beat_with_relations.wav_path:
                 audio_path = AUDIO_STORAGE / beat_with_relations.wav_path
+            
+            if beat_with_relations.cover_path:
+                cover_path = COVER_STORAGE / beat_with_relations.cover_path
 
             import asyncio
             asyncio.create_task(
-                support_bot.send_beat_moderation_notification(beat_data, user_info, str(audio_path) if audio_path else None)
+                support_bot.send_beat_moderation_notification(
+                    beat_data, 
+                    user_info, 
+                    str(audio_path) if audio_path else None,
+                    str(cover_path) if cover_path else None
+                )
             )
 
         return pricing
