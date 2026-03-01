@@ -118,7 +118,7 @@ const BeatInfoModal: React.FC<BeatInfoModalProps> = ({ isOpen, onClose, beat }) 
             style={style}
             className="fixed inset-0 flex items-center justify-center z-50 p-4"
           >
-            <div className="bg-neutral-900 select-none rounded-lg w-full max-w-2xl border border-neutral-800 shadow-2xl">
+            <div className="bg-neutral-900 select-none rounded-lg w-full max-w-3xl border border-neutral-800 shadow-2xl">
               <div className="p-4 border-b border-neutral-800">
                 <div className="flex justify-between items-center">
                   <h2 className="text-lg font-bold text-white select-none">
@@ -139,7 +139,6 @@ const BeatInfoModal: React.FC<BeatInfoModalProps> = ({ isOpen, onClose, beat }) 
               <div className="p-4 max-h-[70vh] overflow-y-auto">
                 {beat && (
                   <div className="flex flex-col md:flex-row gap-6">
-                    {/* Column 1 - Cover Image */}
                     <div className="flex-shrink-0">
                       <div 
                         className="relative w-full md:w-48 aspect-square rounded-lg overflow-hidden bg-neutral-800 cursor-pointer group"
@@ -160,7 +159,6 @@ const BeatInfoModal: React.FC<BeatInfoModalProps> = ({ isOpen, onClose, beat }) 
                             </svg>
                           </div>
                         )}
-                        {/* Hover overlay with play/pause button */}
                         <div className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 ${isCurrentBeatPlaying || isHoveringCover ? 'opacity-100' : 'opacity-0'}`}>
                           {isCurrentBeatPlaying ? (
                             <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -175,7 +173,6 @@ const BeatInfoModal: React.FC<BeatInfoModalProps> = ({ isOpen, onClose, beat }) 
                       </div>
                     </div>
 
-                    {/* Column 2 - Main Info */}
                     <div className="flex-1 space-y-3">
                       <div>
                         <h3 className="text-xl font-bold text-white mb-2">
@@ -219,8 +216,7 @@ const BeatInfoModal: React.FC<BeatInfoModalProps> = ({ isOpen, onClose, beat }) 
                       </div>
                     </div>
 
-                    {/* Column 3 - Tags, Terms of Use and Date */}
-                    <div className="flex-shrink-0 w-full md:w-40 space-y-3">
+                    <div className="flex-shrink-0 w-full md:w-50 space-y-3">
                       {beat.tags && beat.tags.length > 0 && (
                         <div>
                           <h4 className="text-white font-medium mb-2 text-sm">Теги:</h4>

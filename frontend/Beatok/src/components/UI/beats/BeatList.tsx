@@ -191,7 +191,7 @@ const BeatList: React.FC<BeatListProps> = ({
 
   const gridStyle = {
     display: 'grid',
-    gridTemplateColumns: `repeat(${maxColumns}, minmax(0, 1fr))`,
+    gridTemplateColumns: `repeat(${maxColumns}, 1fr)`,
     gap: '1.5rem',
   };
   
@@ -203,15 +203,22 @@ const BeatList: React.FC<BeatListProps> = ({
           const isOwnBeat = currentUser && getAuthorId(beat) === currentUser.id;
           const coverUrl = getCoverUrl(beat);
           return (
-            <animated.div key={beat.id} style={style} className="bg-neutral-900 rounded-lg p-4 hover:bg-neutral-800 transition-all duration-300 group border border-neutral-700 relative">
+            <animated.div key={beat.id} style={style} className="w-full bg-neutral-900 rounded-lg p-4 hover:bg-neutral-800 transition-all duration-300 group border border-neutral-700 relative">
               <div className="mb-3">
                 {coverUrl ? (
-                  beat.promotion_status !== 'standard' ? (
+                  <div className="relative inline-block w-full">
+                    {beat.promotion_status !== 'standard' && (
+                      <div className="mb-1">
+                        <svg className="w-5 h-5 mx-auto text-yellow-400 drop-shadow-lg" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
+                        </svg>
+                      </div>
+                    )}
                     <div 
-                      className="relative p-1 bg-gradient-to-r from-yellow-400 via-yellow-400 to-yellow-600 rounded-lg cursor-pointer"
+                      className={`relative rounded-lg overflow-hidden cursor-pointer group ${beat.promotion_status !== 'standard' ? 'p-1 bg-gradient-to-r from-yellow-400 via-yellow-400 to-yellow-600' : ''} ${beat.promotion_status === 'standard' ? 'mt-6' : ''}`}
                       onClick={() => onPlay?.(beat)}
                     >
-                      <div className="relative w-64 h-64 rounded-lg overflow-hidden group">
+                      <div className="relative w-full aspect-square rounded-lg overflow-hidden group">
                         <img 
                           src={coverUrl} 
                           alt="Обложка" 
@@ -233,35 +240,10 @@ const BeatList: React.FC<BeatListProps> = ({
                         </div>
                       </div>
                     </div>
-                  ) : (
-                    <div 
-                      className="relative w-40 h-40 rounded-lg overflow-hidden cursor-pointer group"
-                      onClick={() => onPlay?.(beat)}
-                    >
-                      <img 
-                        src={coverUrl} 
-                        alt="Обложка" 
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                      <div className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 ${currentPlayingBeat?.id === beat.id && isPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                        {currentPlayingBeat?.id === beat.id && isPlaying ? (
-                          <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
-                          </svg>
-                        ) : (
-                          <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M8 5v14l11-7z"/>
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                  )
+                  </div>
                 ) : (
                   <div 
-                    className="w-64 h-64 bg-neutral-800 rounded-lg flex items-center justify-center cursor-pointer group"
+                    className="w-full aspect-square bg-neutral-800 rounded-lg flex items-center justify-center cursor-pointer group"
                     onClick={() => onPlay?.(beat)}
                   >
                     <svg className="w-16 h-16 text-neutral-600" fill="currentColor" viewBox="0 0 24 24">
@@ -282,7 +264,11 @@ const BeatList: React.FC<BeatListProps> = ({
                   >
                     {truncateText(beat.name, 25)}
                   </h3>
-                  <div className="flex items-center space-x-2">
+                  <div 
+                    className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => handleAuthorClick(beat)}
+                    title={`Перейти в профиль ${getAuthorName(beat)}`}
+                  >
                     <img
                       src={getAuthorAvatar(beat)}
                       alt="Аватар автора"
@@ -292,9 +278,7 @@ const BeatList: React.FC<BeatListProps> = ({
                       }}
                     />
                     <p
-                      className="text-neutral-400 text-sm truncate cursor-pointer hover:text-red-400 transition-colors"
-                      onClick={() => handleAuthorClick(beat)}
-                      title={`Перейти в профиль ${getAuthorName(beat)}`}
+                      className="text-neutral-400 text-sm truncate hover:text-red-400 transition-colors"
                     >
                       by {getAuthorName(beat)}
                     </p>

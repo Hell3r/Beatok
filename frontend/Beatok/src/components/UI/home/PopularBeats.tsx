@@ -92,7 +92,7 @@ const PopularBeats: React.FC = () => {
 
   return (
     <div className="bg-neutral-925 p-6 w-full">
-      <div className="container mx-auto px-4 py-4">
+      <div className="w-full px-4 py-4">
         <div className="text-center justify-center">
           <div className="text-3xl font-bold text-white mb-2">Популярные биты</div>
           <div className="text-gray-300">Выбери подходящий бит для своего трека среди самых качественных.</div>

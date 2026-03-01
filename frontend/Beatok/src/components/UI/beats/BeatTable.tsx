@@ -503,8 +503,15 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   onContextMenu={(e) => handleContextMenu(e, beat)}
                 >
                   <td className="p-4 text-center">
+                    {beat.promotion_status !== 'standard' && (
+                      <div className="mb-1">
+                        <svg className="w-5 h-5 mx-auto text-yellow-400 drop-shadow-lg" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
+                        </svg>
+                      </div>
+                    )}
                     <div 
-                      className={`relative w-16 h-16 rounded overflow-hidden mx-auto cursor-pointer group ${beat.promotion_status !== 'standard' ? 'p-0.5 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600' : ''}`}
+                      className={`relative w-16 h-16 rounded overflow-hidden mx-auto cursor-pointer group ${beat.promotion_status !== 'standard' ? 'p-0.5 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600' : ''} ${beat.promotion_status === 'standard' ? 'mt-1' : ''}`}
                       onClick={() => onPlay?.(beat)}
                     >
                       {getCoverUrl(beat) ? (
@@ -567,7 +574,11 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   </td>
                   {!isProfileView && !hideAuthorColumn && (
                     <td className="p-4 text-neutral-300 text-center">
-                      <div className="flex items-center justify-center space-x-2">
+                      <div 
+                        className="flex items-center justify-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => handleAuthorClick(beat)}
+                        title={`Перейти к профилю ${getAuthorName(beat)}`}
+                      >
                         <img
                           src={getAuthorAvatar(beat)}
                           alt="Аватар автора"
@@ -577,9 +588,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
                           }}
                         />
                         <span
-                          className="cursor-pointer hover:text-red-400 transition-colors"
-                          onClick={() => handleAuthorClick(beat)}
-                          title={`Перейти к профилю ${getAuthorName(beat)}`}
+                          className="hover:text-red-400 transition-colors"
                         >
                           {truncateText(getAuthorName(beat), 15)}
                         </span>

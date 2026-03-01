@@ -86,25 +86,25 @@ const FeaturedBeats: React.FC = () => {
   }
 
   return (
-    <div className="bg-neutral-925 py-12">
-      <div className="container mx-auto px-4">
+    <div className="bg-neutral-925 p-6 w-full">
+      <div className="w-full px-4">
         <div className="text-center mb-8 select-none">
           <h2 className="text-3xl font-bold text-white mb-2">В центре внимания</h2>
           <p className="text-gray-300">Особые биты от наших лучших продюсеров</p>
           <hr className="text-red-500 my-4 mx-auto border max-w-200" />
         </div>
-        <BeatList
-          beats={featuredBeats}
-          loading={loading}
-          currentPlayingBeat={currentBeat}
-          isPlaying={isPlaying}
-          onPlay={handlePlay}
-          filters={filters}
-          onToggleFavorite={handleToggleFavorite}
-          favoriteBeats={favoriteBeats}
-          maxColumns={5}
-        />
       </div>
+      <BeatList
+        beats={featuredBeats}
+        loading={loading}
+        currentPlayingBeat={currentBeat}
+        isPlaying={isPlaying}
+        onPlay={handlePlay}
+        filters={filters}
+        onToggleFavorite={handleToggleFavorite}
+        favoriteBeats={favoriteBeats}
+        maxColumns={5}
+      />
     </div>
   );
 };

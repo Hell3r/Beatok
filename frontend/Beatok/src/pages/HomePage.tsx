@@ -65,22 +65,18 @@ const HomePage: React.FC = () => {
 
             <HorizontalLine />
 
-            <div className="bg-neutral-925 select-none">
-                <div className="container mx-auto max-w-full space-y-8">
-                    <PopularBeats />
-                </div>
+            <div className="bg-neutral-925 select-none w-full">
+                <PopularBeats />
 
                 <div className="w-full select-none">
                     <InverseHorizontalLine />
                     <CallToAction />
                     <HorizontalLine />
                 </div>
-                <div className="container mx-auto max-w-full space-y-8">
-                    <TopBeatmakers />
-                </div>
-                    <HorizontalLine />
-                    <SecuritySection />
-                    <HorizontalLine />
+                <TopBeatmakers />
+                <HorizontalLine />
+                <SecuritySection />
+                <HorizontalLine />
                 <div className="w-full select-none">
                     <Steps/>
                 </div>
