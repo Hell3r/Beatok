@@ -295,7 +295,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
               <div className="p-6 border-b border-neutral-800">
                 <div className="flex justify-between items-start">
                   <div>
+<<<<<<< HEAD
                     <h2 className="text-xl font-bold text-white">
+=======
+                    <h2 className="text-xl font-bold text-white select-none">
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                       {mode === 'login' ? 'Вход' : mode === 'register' ? 'Регистрация' : mode === 'forgotPassword' ? 'Восстановление пароля' : mode === 'forgotPasswordSuccess' ? 'Письмо отправлено' : 'Подтверждение Email'}
                     </h2>
                   </div>
@@ -353,7 +357,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                         <button
                           type="submit"
                           disabled={loading}
+<<<<<<< HEAD
                           className="w-full cursor-pointer bg-red-600 hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+=======
+                          className="w-full select-none cursor-pointer bg-red-600 hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                         >
                           {loading ? 'Вход...' : 'Войти'}
                         </button>
@@ -442,7 +450,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                         <button
                           type="submit"
                           disabled={loading}
+<<<<<<< HEAD
                           className="w-full bg-red-600 cursor-pointer hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+=======
+                          className="w-full select-none bg-red-600 cursor-pointer hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                         >
                           {loading ? 'Регистрация...' : 'Зарегистрироваться'}
                         </button>
@@ -560,7 +572,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                         setMode(mode === 'login' ? 'register' : 'login');
                         setError('');
                       }}
+<<<<<<< HEAD
                       className="text-red-400  cursor-pointer hover:text-red-300 font-medium transition-colors duration-200"
+=======
+                      className="text-red-400 select-none cursor-pointer hover:text-red-300 font-medium transition-colors duration-200"
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                     >
                       {mode === 'login' ? 'Зарегистрироваться' : 'Войти'}
                     </button>

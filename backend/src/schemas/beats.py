@@ -1,3 +1,4 @@
+from src.schemas.tags import TagResponse
 from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
@@ -17,8 +18,29 @@ class BeatBase(BaseModel):
     status: str = "active"
     
 
+class TermsOfUseCreate(BaseModel):
+    recording_tracks: bool = False
+    commercial_perfomance: bool = False
+    rotation_on_the_radio: bool = False
+    music_video_recording: bool = False
+    release_of_copies: bool = False
+
+class TermsOfUseResponse(BaseModel):
+    recording_tracks: bool = False
+    commercial_perfomance: bool = False
+    rotation_on_the_radio: bool = False
+    music_video_recording: bool = False
+    release_of_copies: bool = False
+    
+    model_config = ConfigDict(from_attributes=True)
+
 class BeatCreate(BeatBase):
-    pass
+    terms_of_use: Optional[TermsOfUseCreate] = None
+
+class BeatFingerprintInfo(BaseModel):
+    fingerprint: str 
+    timings: List[Dict[str, Any]]
+    method: str = Field(default="64bit_4x16")
 
 class BeatFingerprintInfo(BaseModel):
     fingerprint: str 
@@ -36,14 +58,17 @@ class BeatResponse(BaseModel):
     rejection_reason: Optional[str] = None
     size: int
     duration: float
+    cover_path: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     likes_count: int = 0
     
-    owner: UserInfo 
+    owner: UserInfo
     
     pricings: List[BeatPricingResponseSchema] = []
     audio_fingerprint: Optional[str] = None
+    terms_of_use: Optional[TermsOfUseResponse] = None
+    tags: List[TagResponse] = []
     
     model_config = ConfigDict(from_attributes=True)
     
@@ -55,7 +80,27 @@ class BeatResponse(BaseModel):
                 "username": obj.owner.username,
                 "avatar_path": obj.owner.avatar_path
             }
-            
+
+            terms_of_use_data = None
+            if hasattr(obj, 'terms_of_use_backref') and obj.terms_of_use_backref:
+                terms_list = obj.terms_of_use_backref
+                if terms_list and len(terms_list) > 0:
+                    terms_obj = terms_list[0]
+                    terms_of_use_data = {
+                        "recording_tracks": terms_obj.recording_tracks,
+                        "commercial_perfomance": terms_obj.commercial_perfomance,
+                        "rotation_on_the_radio": terms_obj.rotation_on_the_radio,
+                        "music_video_recording": terms_obj.music_video_recording,
+                        "release_of_copies": terms_obj.release_of_copies
+                    }
+
+            tags_data = []
+            if hasattr(obj, 'tags') and obj.tags:
+                tags_data = [
+                    TagResponse(id=tag.id, name=tag.name)
+                    for tag in obj.tags
+                ]
+
             data = {
                 "id": obj.id,
                 "name": obj.name,
@@ -67,6 +112,7 @@ class BeatResponse(BaseModel):
                 "rejection_reason": obj.rejection_reason,
                 "size": obj.size,
                 "duration": obj.duration,
+                "cover_path": getattr(obj, 'cover_path', None),
                 "created_at": obj.created_at,
                 "updated_at": obj.updated_at,
                 "likes_count": getattr(obj, 'likes_count', 0),
@@ -83,7 +129,9 @@ class BeatResponse(BaseModel):
                     }
                     for pricing in obj.pricings
                 ] if hasattr(obj, 'pricings') else [],
-                "audio_fingerprint": obj.audio_fingerprint
+                "audio_fingerprint": obj.audio_fingerprint,
+                "terms_of_use": terms_of_use_data,
+                "tags": tags_data
             }
             return cls(**data)
         return super().model_validate(obj)

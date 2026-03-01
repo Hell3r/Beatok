@@ -2,7 +2,7 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query, Dep
 from typing import Optional, List
 from typing_extensions import Annotated
 from sqlalchemy import select, func
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 import os
 import shutil
 import json
@@ -11,7 +11,9 @@ from mutagen import File as MutagenFile
 from pathlib import Path
 from src.database.deps import SessionDep
 from src.models.beats import BeatModel, StatusType
-from src.models.beat_bricing import BeatPricingModel
+from src.models.beat_pricing import BeatPricingModel
+from src.models.terms_of_use import TermsOfUseModel
+from src.models.tags import TagModel
 from src.schemas.beats import BeatResponse, BeatResponse
 from src.services.AuthService import get_current_user
 from src.dependencies.auth import get_current_user_id
@@ -22,12 +24,17 @@ from src.services.RedisService import redis_service
 from pathlib import Path
 from src.services.rate_limiter import check_rate_limit
 from src.services.rate_limiter import RateLimiter
+from PIL import Image
+from io import BytesIO
 
 
 router = APIRouter(prefix="/beats", tags=["Аудио файлы"])
 
 AUDIO_STORAGE = Path("audio_storage")
 AUDIO_STORAGE.mkdir(parents=True, exist_ok=True)
+
+COVER_STORAGE = Path("static/covers")
+COVER_STORAGE.mkdir(parents=True, exist_ok=True)
 
 @router.post("/create", response_model=BeatResponse, summary="Добавить файл")
 async def create_beat(
@@ -41,8 +48,11 @@ async def create_beat(
     key: str = Form(...),
     promotion_status: str = Form("standard"),
     is_free: str = Form("false"),
+    terms_of_use: str = Form(None),
+    tags: str = Form(None),
     mp3_file: UploadFile = File(None),
     wav_file: UploadFile = File(None),
+    cover_file: UploadFile = File(None),
 ):
     await check_rate_limit(request, "beat_create", current_user_id)
     
@@ -118,6 +128,40 @@ async def create_beat(
         
         beat.size = total_size
 
+        if cover_file and cover_file.filename:
+            allowed_extensions = {'.jpg', '.jpeg', '.png', '.webp', '.gif'}
+            ext = cover_file.filename.lower().split('.')[-1]
+            if f'.{ext}' not in allowed_extensions:
+                raise HTTPException(400, "Обложка должна быть в формате JPG, PNG, WEBP или GIF")
+            
+            cover_content = await cover_file.read()
+            if len(cover_content) > 5 * 1024 * 1024:
+                raise HTTPException(400, "Размер обложки не должен превышать 5MB")
+            
+            # Check if cover is square
+            try:
+                image = Image.open(BytesIO(cover_content))
+                width, height = image.size
+                if width != height:
+                    raise HTTPException(400, "Обложка должна быть квадратной")
+            except HTTPException:
+                raise
+            except Exception as e:
+                print(f"Ошибка при проверке обложки: {e}")
+                raise HTTPException(400, "Не удалось проверить обложку")
+            
+            cover_folder = COVER_STORAGE / str(beat.id)
+            cover_folder.mkdir(parents=True, exist_ok=True)
+            
+            cover_filename = f"cover.{ext}"
+            cover_path = cover_folder / cover_filename
+            
+            async with aiofiles.open(cover_path, "wb") as f:
+                await f.write(cover_content)
+            
+            beat.cover_path = str(cover_path.relative_to(COVER_STORAGE))
+            print(f"✅ Обложка сохранена: {beat.cover_path}")
+
         if audio_path_for_fingerprint:
             fingerprint, fingerprint_data = await fingerprint_service.extract_fingerprint(
                 audio_path_for_fingerprint
@@ -176,6 +220,56 @@ async def create_beat(
                 
                 beat.audio_fingerprint = fingerprint
                 beat.audio_fingerprint_timings = json.dumps(fingerprint_data["timings"])
+
+        if terms_of_use:
+            try:
+                from src.models.terms_of_use import TermsOfUseModel
+                terms_data = json.loads(terms_of_use)
+                
+                terms_of_use_model = TermsOfUseModel(
+                    beat_id=beat.id,
+                    recording_tracks=terms_data.get('recording_tracks', False),
+                    commercial_perfomance=terms_data.get('commercial_perfomance', False),
+                    rotation_on_the_radio=terms_data.get('rotation_on_the_radio', False),
+                    music_video_recording=terms_data.get('music_video_recording', False),
+                    release_of_copies=terms_data.get('release_of_copies', False)
+                )
+                print(terms_data)
+                session.add(terms_of_use_model)
+                await session.flush()
+            except json.JSONDecodeError:
+                print("Ошибка при парсинге terms_of_use")
+            except Exception as e:
+                print(f"Ошибка при сохранении terms_of_use: {e}")
+
+        if tags:
+            try:
+                from src.models.tags import TagModel
+                tag_list = [tag.strip() for tag in tags.split(',') if tag.strip()]
+                tag_list = list(dict.fromkeys(tag_list))
+                print(f"📝 Получены теги: {tag_list}")
+
+                if len(tag_list) > 10:
+                    raise HTTPException(400, "Максимум 10 тегов")
+
+                for tag_name in tag_list:
+                    if len(tag_name) > 50:
+                        tag_name = tag_name[:50]
+
+                    tag = TagModel(
+                        beat_id=beat.id,
+                        name=tag_name.lower()
+                    )
+                    session.add(tag)
+                    print(f"✅ Добавлен тег: {tag_name} для бита {beat.id}")
+
+                await session.flush()
+                print(f"✅ Все теги сохранены для бита {beat.id}")
+
+            except HTTPException:
+                raise
+            except Exception as e:
+                print(f"Ошибка при сохранении тегов: {e}")
         
         await session.commit()
         
@@ -184,41 +278,47 @@ async def create_beat(
             .where(BeatModel.id == beat.id)
             .options(
                 selectinload(BeatModel.owner),
-                selectinload(BeatModel.pricings).selectinload(BeatPricingModel.tariff)
+                selectinload(BeatModel.pricings).selectinload(BeatPricingModel.tariff),
+                selectinload(BeatModel.terms_of_use_backref),
+                selectinload(BeatModel.tags)
             )
         )
         beat_with_relations = result.scalar_one()
 
-        if is_free.lower() == "true":
-            user_info = {
-                'id': beat_with_relations.owner.id,
-                'username': beat_with_relations.owner.username,
-                'email': beat_with_relations.owner.email
-            }
+        user_info = {
+            'id': beat_with_relations.owner.id,
+            'username': beat_with_relations.owner.username,
+            'email': beat_with_relations.owner.email
+        }
 
-            beat_data = {
-                'id': beat_with_relations.id,
-                'name': beat_with_relations.name,
-                'genre': beat_with_relations.genre,
-                'tempo': beat_with_relations.tempo,
-                'key': beat_with_relations.key,
-                'promotion_status': beat_with_relations.promotion_status
-            }
+        beat_data = {
+            'id': beat_with_relations.id,
+            'name': beat_with_relations.name,
+            'genre': beat_with_relations.genre,
+            'tempo': beat_with_relations.tempo,
+            'key': beat_with_relations.key,
+            'promotion_status': beat_with_relations.promotion_status
+        }
 
-            audio_path = None
-            if beat_with_relations.mp3_path:
-                audio_path = AUDIO_STORAGE / beat_with_relations.mp3_path
-            elif beat_with_relations.wav_path:
-                audio_path = AUDIO_STORAGE / beat_with_relations.wav_path
+        audio_path = None
+        if beat_with_relations.mp3_path:
+            audio_path = AUDIO_STORAGE / beat_with_relations.mp3_path
+        elif beat_with_relations.wav_path:
+            audio_path = AUDIO_STORAGE / beat_with_relations.wav_path
 
-            import asyncio
-            asyncio.create_task(
-                support_bot.send_beat_moderation_notification(
-                    beat_data, 
-                    user_info, 
-                    str(audio_path) if audio_path else None
-                )
+        cover_path = None
+        if beat_with_relations.cover_path:
+            cover_path = COVER_STORAGE / beat_with_relations.cover_path
+
+        import asyncio
+        asyncio.create_task(
+            support_bot.send_beat_moderation_notification(
+                beat_data, 
+                user_info, 
+                str(audio_path) if audio_path else None,
+                str(cover_path) if cover_path else None
             )
+        )
         
         success = await redis_service.delete_pattern("*beats:*")
         if success:
@@ -240,30 +340,39 @@ async def create_beat(
 
 
 
-@router.get("/", response_model=List[BeatResponse], summary = "Получить все биты")
+@router.get("/", response_model=List[BeatResponse], summary="Получить все биты")
 @cached(ttl=300)
 async def get_beats(
     session: SessionDep,
     skip: int = 0,
     limit: int = 100,
     author_id: Optional[int] = None,
-    promotion_status: Optional[str] = None
+    promotion_status: Optional[str] = None,
+    tag: Optional[str] = Query(None, description="Фильтр по тегу")
 ):
     from sqlalchemy.orm import selectinload
     from src.models.favorite import FavoriteModel
+    from src.models.tags import TagModel
 
     likes_subquery = select(func.count(FavoriteModel.id)).where(FavoriteModel.beat_id == BeatModel.id).scalar_subquery()
 
     query = select(BeatModel, likes_subquery.label('likes_count')).options(
         selectinload(BeatModel.owner),
-        selectinload(BeatModel.pricings).joinedload(BeatPricingModel.tariff)
+        selectinload(BeatModel.pricings).joinedload(BeatPricingModel.tariff),
+        selectinload(BeatModel.terms_of_use_backref),
+        selectinload(BeatModel.tags)
     )
 
     if author_id is not None:
         query = query.where(BeatModel.author_id == author_id)
+    else:
+        query = query.where(BeatModel.status == StatusType.AVAILABLE)
 
     if promotion_status is not None:
         query = query.where(BeatModel.promotion_status == promotion_status)
+
+    if tag:
+        query = query.join(BeatModel.tags).where(TagModel.name == tag.lower())
 
     result = await session.execute(
         query
@@ -273,11 +382,13 @@ async def get_beats(
     )
 
     beats_with_likes = result.unique().all()
+    
+    beats = []
     for beat, likes_count in beats_with_likes:
         beat.likes_count = likes_count
-    beats = [beat for beat, _ in beats_with_likes]
+        beats.append(beat)
+    
     return [BeatResponse.model_validate(beat) for beat in beats]
-
 
 @router.get("/top-beatmakers", summary="Получить топ битмейкеров по количеству лайков на их битах")
 @cached(ttl=600)
@@ -289,7 +400,6 @@ async def get_top_beatmakers(
     from src.models.users import UsersModel
     from src.models.favorite import FavoriteModel
 
-    # Subquery to calculate total likes per author
     total_likes_subquery = select(
         BeatModel.author_id,
         func.sum(
@@ -384,7 +494,10 @@ async def get_beat(
     
     result = await session.execute(
         select(BeatModel)
-        .options(selectinload(BeatModel.owner))
+        .options(
+            selectinload(BeatModel.owner),
+            selectinload(BeatModel.terms_of_use_backref)
+        )
         .where(BeatModel.id == beat_id)
     )
     
@@ -429,7 +542,7 @@ async def stream_beat(
             old_count = author.download_count
             author.download_count = 1 if author.download_count is None else author.download_count + 1
             await session.commit()
-            await session.refresh(author)  # Обновляем чтобы увидеть изменения
+            await session.refresh(author)
             print(f"🔍 Download count updated: {old_count} -> {author.download_count}")
 
     from fastapi.responses import FileResponse
@@ -621,14 +734,12 @@ async def toggle_favorite(
     from src.models.favorite import FavoriteModel
     from src.models.beats import BeatModel
 
-    # Проверяем, существует ли бит
     result = await session.execute(select(BeatModel).where(BeatModel.id == beat_id))
     beat = result.scalar_one_or_none()
 
     if not beat:
         raise HTTPException(404, "Бит не найден")
 
-    # Проверяем, есть ли уже в избранном
     favorite_result = await session.execute(
         select(FavoriteModel).where(
             FavoriteModel.user_id == current_user_id,
@@ -638,12 +749,10 @@ async def toggle_favorite(
     existing_favorite = favorite_result.scalar_one_or_none()
 
     if existing_favorite:
-        # Удаляем из избранного
         await session.delete(existing_favorite)
         await session.commit()
         return {"message": "Бит удален из избранного", "action": "removed"}
     else:
-        # Добавляем в избранное
         favorite = FavoriteModel(
             user_id=current_user_id,
             beat_id=beat_id

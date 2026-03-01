@@ -9,8 +9,19 @@ import ContextMenu from '../ContextMenu';
 import DeleteBeatModal from '../../DeleteBeatModal';
 import BeatPurchaseModal from '../../BeatPurchaseModal';
 import BeatPromotionModal from '../../BeatPromotionModal';
+<<<<<<< HEAD
 import { getCurrentUser } from '../../../utils/getCurrentUser';
 
+=======
+import BeatInfoModal from '../../BeatInfoModal';
+import { getCurrentUser } from '../../../utils/getCurrentUser';
+
+const getCoverUrl = (beat: Beat): string | null => {
+  if (!beat.cover_path) return null;
+  return `http://localhost:8000/static/covers/${beat.cover_path}`;
+};
+
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
 interface BeatTableProps {
   beats: Beat[];
   loading?: boolean;
@@ -53,6 +64,11 @@ const BeatTable: React.FC<BeatTableProps> = ({
   const [beatToPurchase, setBeatToPurchase] = useState<Beat | null>(null);
   const [promotionModalOpen, setPromotionModalOpen] = useState(false);
   const [beatToPromote, setBeatToPromote] = useState<Beat | null>(null);
+<<<<<<< HEAD
+=======
+  const [infoModalOpen, setInfoModalOpen] = useState(false);
+  const [beatToShowInfo, setBeatToShowInfo] = useState<Beat | null>(null);
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
 
   const isFree = (beat: Beat): boolean => {
     if (!beat.pricings || beat.pricings.length === 0) return true;
@@ -122,8 +138,20 @@ const BeatTable: React.FC<BeatTableProps> = ({
       if (!isProfileView && beat.status !== 'available') {
         return false;
       }
+<<<<<<< HEAD
       if (filters.name && !beat.name.toLowerCase().includes(filters.name.toLowerCase())) {
         return false;
+=======
+      if (filters.name) {
+        const searchLower = filters.name.toLowerCase();
+        const nameMatch = beat.name.toLowerCase().includes(searchLower);
+        
+        const tagMatch = beat.tags?.some(tag => 
+          tag.name.toLowerCase().includes(searchLower)
+        );
+
+        if (!nameMatch && !tagMatch) return false;
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
       }
       if (!isProfileView && filters.author && !getAuthorName(beat).toLowerCase().includes(filters.author.toLowerCase())) {
         return false;
@@ -261,13 +289,18 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   : beat.status === 'denied'
                   ? 'bg-red-600 text-white hover:bg-red-700'
                   : 'bg-red-600 text-white'
+<<<<<<< HEAD
               }`}
+=======
+              } ${beat.status === 'denied' ? 'cursor-pointer' : ''}`}
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
               onClick={() => beat.status === 'denied' && beat.rejection_reason && onShowRejectionReason?.(beat)}
               title={beat.status === 'denied' && beat.rejection_reason ? 'Нажмите для просмотра причины' : ''}
             >
               {beat.status === 'available' ? 'Доступен' : beat.status === 'moderated' ? 'На модерации' : 'Отклонён'}
             </span>
             <div className="flex space-x-1">
+<<<<<<< HEAD
               {onPlay && (
                 <button
                   onClick={() => onPlay(beat)}
@@ -287,6 +320,8 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   </svg>
                 </button>
               )}
+=======
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
               {beat.status === 'available' && (
                 <button
                   onClick={() => handlePromoteClick(beat)}
@@ -296,7 +331,11 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                   </svg>
+<<<<<<< HEAD
                   <span className="text-sm">Продвинуть</span>
+=======
+                  <span className="text-sm select-none">Продвинуть</span>
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                 </button>
               )}
             </div>
@@ -307,6 +346,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
       return (
         <td className="p-4 text-center">
           <div className="flex justify-center space-x-2">
+<<<<<<< HEAD
             <button
               onClick={() => onPlay?.(beat)}
               className={`${
@@ -324,6 +364,8 @@ const BeatTable: React.FC<BeatTableProps> = ({
                 )}
               </svg>
             </button>
+=======
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
             {isOwnBeat ? (
               <button
                 onClick={() => onDownload?.(beat)}
@@ -389,6 +431,10 @@ const BeatTable: React.FC<BeatTableProps> = ({
         <table className="w-full">
           <thead>
             <tr className="bg-neutral-900">
+<<<<<<< HEAD
+=======
+              <th className="p-4 text-center">Обложка</th>
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
               <th className="p-4 text-center">Название</th>
               {!isProfileView && !hideAuthorColumn && (
                 <th className="p-4 text-center">Автор</th>
@@ -405,6 +451,10 @@ const BeatTable: React.FC<BeatTableProps> = ({
           <tbody>
             {[...Array(5)].map((_, i) => (
               <tr key={i} className="border-b border-neutral-700 animate-pulse">
+<<<<<<< HEAD
+=======
+                <td className="p-4"><div className="w-10 h-10 bg-neutral-700 rounded mx-auto"></div></td>
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                 <td className="p-4"><div className="h-4 bg-neutral-700 rounded mx-auto w-3/4"></div></td>
                 {!isProfileView && !hideAuthorColumn && (
                   <td className="p-4"><div className="h-4 bg-neutral-700 rounded mx-auto w-2/3"></div></td>
@@ -431,6 +481,12 @@ const BeatTable: React.FC<BeatTableProps> = ({
           <table className="w-full">
             <thead>
               <tr className="bg-neutral-900">
+<<<<<<< HEAD
+=======
+                <th className="p-4 text-center text-white font-semibold">
+                  Обложка
+                </th>
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                 <th
                   className="p-4 text-center text-white font-semibold cursor-pointer hover:bg-neutral-800 transition-colors"
                   onClick={() => handleSort('name')}
@@ -514,14 +570,66 @@ const BeatTable: React.FC<BeatTableProps> = ({
               {sortedBeats.map((beat) => (
                 <tr
                   key={beat.id}
+<<<<<<< HEAD
                   className="border-b border-neutral-800 hover:bg-neutral-800 transition-all duration-300 group"
+=======
+                  className={`border-b border-neutral-800 hover:bg-neutral-800 transition-all duration-300 group ${beat.status === 'denied' ? 'cursor-select' : ''}`}
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                   onDoubleClick={() => setExpandedBeatId(expandedBeatId === beat.id ? null : beat.id)}
                   onContextMenu={(e) => handleContextMenu(e, beat)}
                 >
                   <td className="p-4 text-center">
+<<<<<<< HEAD
                     <div
                       className="text-white font-medium group-hover:text-red-400 transition-colors cursor-help mx-auto"
                       title={beat.name}
+=======
+                    {beat.promotion_status !== 'standard' && (
+                      <div className="mb-1">
+                        <svg className="w-5 h-5 mx-auto text-yellow-400 drop-shadow-lg" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
+                        </svg>
+                      </div>
+                    )}
+                    <div 
+                      className={`relative w-16 h-16 rounded overflow-hidden mx-auto cursor-pointer group ${beat.promotion_status !== 'standard' ? 'p-0.5 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600' : ''} ${beat.promotion_status === 'standard' ? 'mt-1' : ''}`}
+                      onClick={() => onPlay?.(beat)}
+                    >
+                      {getCoverUrl(beat) ? (
+                        <img
+                          src={getCoverUrl(beat)!}
+                          alt="Обложка"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-neutral-700 flex items-center justify-center">
+                          <svg className="w-5 h-5 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                          </svg>
+                        </div>
+                      )}
+                      <div className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 ${currentPlayingBeat?.id === beat.id && isPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                        {currentPlayingBeat?.id === beat.id && isPlaying ? (
+                          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
+                          </svg>
+                        ) : (
+                          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z"/>
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="p-4 text-center">
+                    <div
+                      className="text-white font-medium group-hover:text-red-400 transition-colors cursor-pointer"
+                      title={beat.name}
+                      onClick={() => {
+                        setBeatToShowInfo(beat);
+                        setInfoModalOpen(true);
+                      }}
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                     >
                       {truncateText(beat.name, 25)}
                     </div>
@@ -548,7 +656,15 @@ const BeatTable: React.FC<BeatTableProps> = ({
                   </td>
                   {!isProfileView && !hideAuthorColumn && (
                     <td className="p-4 text-neutral-300 text-center">
+<<<<<<< HEAD
                       <div className="flex items-center justify-center space-x-2">
+=======
+                      <div 
+                        className="flex items-center justify-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() => handleAuthorClick(beat)}
+                        title={`Перейти к профилю ${getAuthorName(beat)}`}
+                      >
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                         <img
                           src={getAuthorAvatar(beat)}
                           alt="Аватар автора"
@@ -558,9 +674,13 @@ const BeatTable: React.FC<BeatTableProps> = ({
                           }}
                         />
                         <span
+<<<<<<< HEAD
                           className="cursor-pointer hover:text-red-400 transition-colors"
                           onClick={() => handleAuthorClick(beat)}
                           title={`Перейти к профилю ${getAuthorName(beat)}`}
+=======
+                          className="hover:text-red-400 transition-colors"
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                         >
                           {truncateText(getAuthorName(beat), 15)}
                         </span>
@@ -634,6 +754,15 @@ const BeatTable: React.FC<BeatTableProps> = ({
         beat={beatToPromote}
         onPromote={handlePromoteConfirm}
       />
+<<<<<<< HEAD
+=======
+
+      <BeatInfoModal
+        isOpen={infoModalOpen}
+        onClose={() => setInfoModalOpen(false)}
+        beat={beatToShowInfo}
+      />
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
     </>
   );
 };

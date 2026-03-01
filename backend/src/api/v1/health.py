@@ -3,7 +3,7 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 from src.database.database import engine, get_session, Base
 from src.models.users import UsersModel
-from src.models.beat_bricing import BeatPricingModel
+from src.models.beat_pricing import BeatPricingModel
 from src.models.beats import BeatModel
 from src.models.tarrifs import TariffTemplateModel
 from src.models.email_verification import EmailVerificationModel
@@ -53,12 +53,12 @@ async def db_check(db: Session = Depends(get_session)):
             "message": f"Database connection failed: {str(e)}"
         }
 
-@router.post('/setup_db', tags=["Проверка Бэкенда"], summary= "Инициализация БД")
-async def setup_db():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.run_sync(Base.metadata.create_all)
-        return {"message": "Database setup successfully"}
+#@router.post('/setup_db', tags=["Проверка Бэкенда"], summary= "Инициализация БД")
+#async def setup_db():
+#    async with engine.begin() as conn:
+#        await conn.run_sync(Base.metadata.drop_all)
+#        await conn.run_sync(Base.metadata.create_all)
+#        return {"message": "Database setup successfully"}
     
     
     

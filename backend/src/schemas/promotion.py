@@ -22,6 +22,6 @@ class PromoteBeatResponse(BaseModel):
         from_attributes = True
 
 class PromotionInfo(BaseModel):
-    price: float = Field(150.0, description="Стоимость продвижения")
+    price: float = Field(200.0, description="Стоимость продвижения")
     duration_days: int = Field(3, description="Длительность продвижения")
     description: str = Field("Продвижение бита на 3 дня в топе", description="Описание услуги")

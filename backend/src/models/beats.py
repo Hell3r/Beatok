@@ -1,3 +1,4 @@
+from src.models.tags import TagModel
 from sqlalchemy import String, Integer, Float, DateTime, ForeignKey, Enum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.database.database import Base
@@ -22,6 +23,7 @@ class BeatModel(Base):
 
     mp3_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     wav_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    cover_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
 
     genre: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     tempo: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -55,6 +57,13 @@ class BeatModel(Base):
         cascade="all, delete-orphan"
     )
     
+    tags: Mapped[List["TagModel"]] = relationship(
+        "TagModel", 
+        back_populates="beat", 
+        cascade="all, delete-orphan",
+        lazy="selectin"
+    )
+    
     @property
     def is_promoted(self) -> bool:
         return self.promotion_status == "promoted"
@@ -79,7 +88,11 @@ class BeatModel(Base):
         promotion = self.active_promotion
         return promotion.days_remaining if promotion else 0
     
-    
+    @property
+    def terms_of_use(self):
+        if self.terms_of_use_backref and len(self.terms_of_use_backref) > 0:
+            return self.terms_of_use_backref[0]
+        return None
     
     
     def __repr__(self) -> str:

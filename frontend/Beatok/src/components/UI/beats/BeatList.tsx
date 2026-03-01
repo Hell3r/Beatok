@@ -9,6 +9,10 @@ import { getCurrentUser } from '../../../utils/getCurrentUser';
 import type { Filters } from './Filter';
 import BeatPurchaseModal from '../../BeatPurchaseModal';
 import BeatPromotionModal from '../../BeatPromotionModal';
+<<<<<<< HEAD
+=======
+import BeatInfoModal from '../../BeatInfoModal';
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
 
 interface BeatListProps {
   beats: Beat[];
@@ -23,6 +27,10 @@ interface BeatListProps {
   favoriteBeats?: Beat[];
   onDeleteBeat?: (beat: Beat) => void;
   onShowRejectionReason?: (beat: Beat) => void;
+<<<<<<< HEAD
+=======
+  maxColumns?: number;
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
 }
 
 const BeatList: React.FC<BeatListProps> = ({
@@ -38,12 +46,21 @@ const BeatList: React.FC<BeatListProps> = ({
   favoriteBeats = [],
   onDeleteBeat,
   onShowRejectionReason,
+<<<<<<< HEAD
+=======
+  maxColumns = 5,
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
 }) => {
   const navigate = useNavigate();
   const [purchaseModalOpen, setPurchaseModalOpen] = useState(false);
   const [beatToPurchase, setBeatToPurchase] = useState<Beat | null>(null);
   const [promotionModalOpen, setPromotionModalOpen] = useState(false);
   const [beatToPromote, setBeatToPromote] = useState<Beat | null>(null);
+<<<<<<< HEAD
+=======
+  const [infoModalOpen, setInfoModalOpen] = useState(false);
+  const [beatToShowInfo, setBeatToShowInfo] = useState<Beat | null>(null);
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
   const currentUser = getCurrentUser();
 
   const isFree = (beat: Beat): boolean => {
@@ -81,6 +98,14 @@ const BeatList: React.FC<BeatListProps> = ({
     return 'http://localhost:8000/static/default_avatar.png';
   };
 
+<<<<<<< HEAD
+=======
+  const getCoverUrl = (beat: Beat): string | null => {
+    if (!beat.cover_path) return null;
+    return `http://localhost:8000/static/covers/${beat.cover_path}`;
+  };
+
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
   const handleAuthorClick = (beat: Beat) => {
     const authorId = getAuthorId(beat);
     if (authorId) {
@@ -100,8 +125,20 @@ const BeatList: React.FC<BeatListProps> = ({
       if (!isProfileView && beat.status !== 'available') {
         return false;
       }
+<<<<<<< HEAD
       if (filters.name && !beat.name.toLowerCase().includes(filters.name.toLowerCase())) {
         return false;
+=======
+      if (filters.name) {
+        const searchLower = filters.name.toLowerCase();
+        const nameMatch = beat.name.toLowerCase().includes(searchLower);
+        
+        const tagMatch = beat.tags?.some(tag => 
+          tag.name.toLowerCase().includes(searchLower)
+        );
+
+        if (!nameMatch && !tagMatch) return false;
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
       }
       if (filters.author && !getAuthorName(beat).toLowerCase().includes(filters.author.toLowerCase())) {
         return false;
@@ -172,6 +209,7 @@ const BeatList: React.FC<BeatListProps> = ({
     );
   }
 
+<<<<<<< HEAD
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
@@ -189,6 +227,88 @@ const BeatList: React.FC<BeatListProps> = ({
                     {truncateText(beat.name, 25)}
                   </h3>
                   <div className="flex items-center space-x-2">
+=======
+  const gridStyle = {
+    display: 'grid',
+    gridTemplateColumns: `repeat(${maxColumns}, 1fr)`,
+    gap: '1.5rem',
+  };
+  
+  return (
+    <>
+      <div style={gridStyle}>
+        {trail.map((style, index) => {
+          const beat = filteredBeats[index];
+          const isOwnBeat = currentUser && getAuthorId(beat) === currentUser.id;
+          const coverUrl = getCoverUrl(beat);
+          return (
+            <animated.div key={beat.id} style={style} className="w-full bg-neutral-900 rounded-lg p-4 hover:bg-neutral-800 transition-all duration-300 group border border-neutral-700 relative">
+              <div className="mb-3">
+                {coverUrl ? (
+                  <div className="relative inline-block w-full">
+                    {beat.promotion_status !== 'standard' && (
+                      <div className="mb-1">
+                        <svg className="w-5 h-5 mx-auto text-yellow-400 drop-shadow-lg" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
+                        </svg>
+                      </div>
+                    )}
+                    <div 
+                      className={`relative rounded-lg overflow-hidden cursor-pointer group ${beat.promotion_status !== 'standard' ? 'p-1 bg-gradient-to-r from-yellow-400 via-yellow-400 to-yellow-600' : ''} ${beat.promotion_status === 'standard' ? 'mt-6' : ''}`}
+                      onClick={() => onPlay?.(beat)}
+                    >
+                      <div className="relative w-full aspect-square rounded-lg overflow-hidden group">
+                        <img 
+                          src={coverUrl} 
+                          alt="Обложка" 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                        />
+                        <div className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 ${currentPlayingBeat?.id === beat.id && isPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                          {currentPlayingBeat?.id === beat.id && isPlaying ? (
+                            <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
+                            </svg>
+                          ) : (
+                            <svg className="w-16 h-16 text-white" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z"/>
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div 
+                    className="w-full aspect-square bg-neutral-800 rounded-lg flex items-center justify-center cursor-pointer group"
+                    onClick={() => onPlay?.(beat)}
+                  >
+                    <svg className="w-16 h-16 text-neutral-600" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-between items-start mb-3">
+                <div className="flex-1">
+                  <h3
+                    className="text-white font-semibold text-lg group-hover:text-red-400 transition-colors cursor-pointer"
+                    title={beat.name}
+                    onClick={() => {
+                      setBeatToShowInfo(beat);
+                      setInfoModalOpen(true);
+                    }}
+                  >
+                    {truncateText(beat.name, 25)}
+                  </h3>
+                  <div 
+                    className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => handleAuthorClick(beat)}
+                    title={`Перейти в профиль ${getAuthorName(beat)}`}
+                  >
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                     <img
                       src={getAuthorAvatar(beat)}
                       alt="Аватар автора"
@@ -198,9 +318,13 @@ const BeatList: React.FC<BeatListProps> = ({
                       }}
                     />
                     <p
+<<<<<<< HEAD
                       className="text-neutral-400 text-sm truncate cursor-pointer hover:text-red-400 transition-colors"
                       onClick={() => handleAuthorClick(beat)}
                       title={`Перейти в профиль ${getAuthorName(beat)}`}
+=======
+                      className="text-neutral-400 text-sm truncate hover:text-red-400 transition-colors"
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                     >
                       by {getAuthorName(beat)}
                     </p>
@@ -218,7 +342,11 @@ const BeatList: React.FC<BeatListProps> = ({
                           : beat.status === 'denied'
                           ? 'bg-red-600 text-white hover:bg-red-700'
                           : 'bg-red-600 text-white'
+<<<<<<< HEAD
                       }`}
+=======
+                      } ${beat.status === 'denied' ? 'cursor-pointer' : ''}`}
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                       onClick={() => beat.status === 'denied' && beat.rejection_reason && onShowRejectionReason?.(beat)}
                       title={beat.status === 'denied' && beat.rejection_reason ? 'Нажмите для просмотра причины' : ''}
                     >
@@ -261,24 +389,36 @@ const BeatList: React.FC<BeatListProps> = ({
                 </div>
               </div>
 
+<<<<<<< HEAD
               {/* Promote button - positioned prominently */}
+=======
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
               {isProfileView && beat.status === 'available' && (
                 <div className="mb-4">
                   <button
                     onClick={() => setBeatToPromote(beat)}
+<<<<<<< HEAD
                     className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold px-4 py-3 rounded-lg transition-all duration-300 cursor-pointer flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+=======
+                    className="w-full select-none bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold px-4 py-3 rounded-lg transition-all duration-300 cursor-pointer flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                     title="Продвигать бит"
                   >
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
                     </svg>
+<<<<<<< HEAD
                     <span>Продвинуть бит • 200 ₽</span>
+=======
+                    <span select-none>Продвинуть бит • 200 ₽</span>
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                   </button>
                 </div>
               )}
 
               <div className="flex justify-between items-center">
                 <div className="flex space-x-2">
+<<<<<<< HEAD
                   <button
                     onClick={() => onPlay?.(beat)}
                     className={`${
@@ -297,6 +437,8 @@ const BeatList: React.FC<BeatListProps> = ({
                     </svg>
                   </button>
 
+=======
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                   {isOwnBeat ? (
                     <button
                       onClick={() => onDownload?.(beat)}
@@ -374,8 +516,21 @@ const BeatList: React.FC<BeatListProps> = ({
         beat={beatToPromote}
         onPromote={(beatId) => console.log('Promoting beat:', beatId)}
       />
+<<<<<<< HEAD
+=======
+
+      <BeatInfoModal
+        isOpen={infoModalOpen}
+        onClose={() => setInfoModalOpen(false)}
+        beat={beatToShowInfo}
+      />
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
     </>
   );
 };
 
+<<<<<<< HEAD
 export default BeatList;
+=======
+export default BeatList;
+>>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced

@@ -8,7 +8,7 @@ from src.database.deps import SessionDep
 from src.schemas.favorite import FavoriteCreate, FavoriteResponse, FavoriteListResponse
 from src.models.favorite import FavoriteModel
 from src.models.beats import BeatModel
-from src.models.beat_bricing import BeatPricingModel
+from src.models.beat_pricing import BeatPricingModel
 from sqlalchemy.orm import joinedload, selectinload
 
 

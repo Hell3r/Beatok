@@ -8,7 +8,7 @@ from typing import List
 from src.models.purchase import PurchaseModel
 from src.models.users import UsersModel
 from src.models.beats import BeatModel, StatusType
-from src.models.beat_bricing import BeatPricingModel
+from src.models.beat_pricing import BeatPricingModel
 from src.models.tarrifs import TariffTemplateModel, TariffType
 from src.services.BalanceService import BalanceService
 
