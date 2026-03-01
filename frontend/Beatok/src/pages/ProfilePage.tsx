@@ -76,17 +76,9 @@ const ProfilePage: React.FC = () => {
   } | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
 
-<<<<<<< HEAD
-  const [favoriteBeats, setFavoriteBeats] = useState<Beat[]>([]);
-  const [favoriteBeatsLoading, setFavoriteBeatsLoading] = useState(false);
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [currentPlayingBeat, setCurrentPlayingBeat] = useState<Beat | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-=======
 const [favoriteBeats, setFavoriteBeats] = useState<Beat[]>([]);
   const [favoriteBeatsLoading, setFavoriteBeatsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
->>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
 
   const [historyItems, setHistoryItems] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
@@ -123,15 +115,9 @@ const rightPanelSpring = useSpring({
     }
   };
 
-<<<<<<< HEAD
-  const { playBeat } = useAudioPlayer();
-
-  const handlePlayBeat = (beat: Beat) => {
-=======
 const { playBeat, currentBeat, isPlaying } = useAudioPlayer();
 
 const handlePlayBeat = (beat: Beat) => {
->>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
     playBeat(beat);
   };
 
@@ -1076,21 +1062,12 @@ const handlePlayBeat = (beat: Beat) => {
                               className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2 text-white placeholder-neutral-500 focus:outline-none focus:border-red-500 transition-colors"
                             />
                           </div>
-<<<<<<< HEAD
-                          <BeatList
-                            beats={myBeats}
-                            loading={beatsLoading}
-                            currentPlayingBeat={currentPlayingBeat}
-                            isPlaying={isPlaying}
-                            onPlay={!isOwnProfile ? handlePlayBeat : undefined}
-=======
 <BeatList
                             beats={myBeats}
                             loading={beatsLoading}
                             currentPlayingBeat={currentBeat}
                             isPlaying={isPlaying}
                             onPlay={handlePlayBeat}
->>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                             onDownload={!isOwnProfile ? handleDownloadBeat : undefined}
                             isProfileView={isOwnProfile}
                             filters={filters}
@@ -1101,24 +1078,15 @@ const handlePlayBeat = (beat: Beat) => {
                           />
                         </>
                       ) : (
-<<<<<<< HEAD
-                        <BeatTable
-=======
 <BeatTable
->>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                           beats={myBeats}
                           filters={filters}
                           isProfileView={isOwnProfile}
                           hideAuthorColumn={true}
-<<<<<<< HEAD
-                          onShowRejectionReason={isOwnProfile ? handleShowRejectionReason : undefined}
-                          onPlay={!isOwnProfile ? handlePlayBeat : undefined}
-=======
                           currentPlayingBeat={currentBeat}
                           isPlaying={isPlaying}
                           onShowRejectionReason={isOwnProfile ? handleShowRejectionReason : undefined}
                           onPlay={handlePlayBeat}
->>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                           onDownload={!isOwnProfile ? handleDownloadBeat : undefined}
                           onDeleteBeat={isOwnProfile ? handleDeleteBeat : undefined}
                           onToggleFavorite={!isOwnProfile ? handleToggleFavorite : undefined}
@@ -1195,17 +1163,10 @@ const handlePlayBeat = (beat: Beat) => {
                           </p>
                         </div>
                       ) : isMobile ? (
-<<<<<<< HEAD
-                        <BeatList
-                          beats={favoriteBeats}
-                          loading={favoriteBeatsLoading}
-                          currentPlayingBeat={currentPlayingBeat}
-=======
 <BeatList
                           beats={favoriteBeats}
                           loading={favoriteBeatsLoading}
                           currentPlayingBeat={currentBeat}
->>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                           isPlaying={isPlaying}
                           onPlay={handlePlayBeat}
                           onDownload={handleDownloadBeat}
@@ -1215,20 +1176,13 @@ const handlePlayBeat = (beat: Beat) => {
                           favoriteBeats={favoriteBeats}
                         />
                       ) : (
-<<<<<<< HEAD
-                        <BeatTable
-=======
 <BeatTable
->>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                           beats={favoriteBeats}
                           filters={filters}
                           isProfileView={false}
                           hideAuthorColumn={false}
-<<<<<<< HEAD
-=======
                           currentPlayingBeat={currentBeat}
                           isPlaying={isPlaying}
->>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                           onPlay={handlePlayBeat}
                           onDownload={handleDownloadBeat}
                           onToggleFavorite={handleToggleFavorite}

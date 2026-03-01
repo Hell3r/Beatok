@@ -109,44 +109,12 @@ const TopBeatmakers: React.FC = () => {
           </div>
         </button>
 
-<<<<<<< HEAD
-        <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 transition-all duration-300 ${
-=======
         <div className={`grid grid-cols-5 gap-6 transition-all duration-300 ${
->>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
           isTransitioning ? 'opacity-50' : 'opacity-100'
         }`}>
           {visibleBeatmakers.map((beatmaker, index) => (
             <div
               key={`${beatmaker.user_id}-${currentIndex}`}
-<<<<<<< HEAD
-              className="bg-neutral-800 rounded-lg p-6 hover:bg-neutral-700 transition-all duration-300 cursor-pointer group hover:shadow-2xl hover:shadow-red-500/20"
-              onClick={() => window.location.href = `/profile/${beatmaker.user_id}`}
-            >
-              <div className="flex items-center space-x-3">
-                <div className="relative">
-                  <img
-                    src={`${getAvatarUrl(beatmaker.user_id, beatmaker.avatar_path)}?t=${avatarKey}`}
-                    alt={beatmaker.username}
-                    className="w-20 h-20 rounded-full object-cover transition-transform duration-300 border-2 border-transparent"
-                    onError={(e) => {
-                      e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png'
-                    }}
-                  />
-                  <div className="absolute -top-1 -right-1 w-6 h-6 bg-red-600 rounded-full flex items-center justify-center text-white text-xs font-bold transition-transform duration-300 shadow-lg">
-                    {(currentIndex + index) % beatmakers.length + 1}
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-white font-semibold truncate group-hover:text-red-400 transition-colors duration-300">
-                    {beatmaker.username}
-                  </h3>
-                  <p className="text-neutral-400 text-sm group-hover:text-neutral-300 transition-colors duration-300">
-                    {beatmaker.beat_count} бит{beatmaker.beat_count !== 1 ? 'ов' : ''}
-                  </p>
-                </div>
-              </div>
-=======
               className="bg-neutral-900 rounded-lg overflow-hidden hover:bg-neutral-800 transition-all duration-300 cursor-pointer group border border-neutral-700 relative hover:shadow-2xl hover:shadow-red-500/20"
               onClick={() => window.location.href = `/profile/${beatmaker.user_id}`}
             >
@@ -174,7 +142,6 @@ const TopBeatmakers: React.FC = () => {
                   {beatmaker.beat_count} бит{beatmaker.beat_count !== 1 ? 'ов' : ''}
                 </p>
               </div>
->>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
             </div>
           ))}
         </div>

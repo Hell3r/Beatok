@@ -97,20 +97,6 @@ const BeatmakersPage: React.FC = () => {
                         <p className="text-neutral-400 text-lg">Битмейкеры не найдены</p>
                     </div>
                 ) : (
-<<<<<<< HEAD
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                        {filteredBeatmakers.map((beatmaker) => (
-                            <div
-                                key={beatmaker.id}
-                                className="bg-neutral-800 rounded-lg p-6 hover:bg-neutral-700 transition-all duration-300 cursor-pointer group hover:shadow-2xl hover:shadow-red-500/20"
-                                onClick={() => window.location.href = `/profile/${beatmaker.id}`}
-                            >
-                                <div className="flex items-center space-x-4">
-                                    <img
-                                        src={`${getAvatarUrl(beatmaker.id, beatmaker.avatar_path)}?t=${avatarKey}`}
-                                        alt={beatmaker.username}
-                                        className="w-16 h-16 rounded-full object-cover group-hover:scale-110 transition-transform duration-200"
-=======
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
                         {filteredBeatmakers.map((beatmaker) => (
                             <div
@@ -123,19 +109,10 @@ const BeatmakersPage: React.FC = () => {
                                         src={`${getAvatarUrl(beatmaker.id, beatmaker.avatar_path)}?t=${avatarKey}`}
                                         alt={beatmaker.username}
                                         className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
->>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                                         onError={(e) => {
                                             e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
                                         }}
                                     />
-<<<<<<< HEAD
-                                    <div className="flex-1 min-w-0">
-                                        <h3 className="text-white font-semibold truncate group-hover:text-red-400 transition-colors duration-300">{beatmaker.username}</h3>
-                                        <p className="text-neutral-400 text-sm group-hover:text-neutral-300 transition-colors duration-300">
-                                            {beatmaker.beat_count} бит{beatmaker.beat_count !== 1 ? 'ов' : ''}
-                                        </p>
-                                    </div>
-=======
                                     <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 via-transparent to-transparent"></div>
                                 </div>
                                 
@@ -146,7 +123,6 @@ const BeatmakersPage: React.FC = () => {
                                     <p className="text-neutral-400 text-sm group-hover:text-neutral-300 transition-colors duration-300 mt-1">
                                         {beatmaker.beat_count} бит{beatmaker.beat_count !== 1 ? 'ов' : ''}
                                     </p>
->>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
                                 </div>
                             </div>
                         ))}

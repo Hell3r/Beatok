@@ -1,21 +1,15 @@
-<<<<<<< HEAD
-=======
 export interface Tag {
   id: number;
   name: string;
 }
 
->>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
 export interface Beat {
   id: number;
   name: string;
   author_id: number;
   mp3_path?: string;
   wav_path?: string;
-<<<<<<< HEAD
-=======
   cover_path?: string;
->>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
   genre: string;
   tempo: number;
   key: string;
@@ -43,8 +37,6 @@ export interface Beat {
     avatar_path?: string;
   };
   pricings?: BeatPricing[];
-<<<<<<< HEAD
-=======
   terms_of_use?: {
     recording_tracks: boolean;
     commercial_perfomance: boolean;
@@ -53,7 +45,6 @@ export interface Beat {
     release_of_copies: boolean;
   };
   tags?: Tag[];
->>>>>>> b93147bfd45a5b514323ad6f3ceb1df508dc4ced
 }
 
 export interface BeatPricing {

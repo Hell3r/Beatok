@@ -13,6 +13,8 @@ from src.models.payment import PaymentModel
 from src.models.balance import UserBalanceModel
 from src.models.favorite import FavoriteModel
 from src.models.purchase import PurchaseModel
+from src.models.tags import TagModel
+from src.models.terms_of_use import TermsOfUseModel
 from src.services.EmailService import email_service
 from src.dependencies.auth import get_current_admin_user
 from src.database.deps import SessionDep
