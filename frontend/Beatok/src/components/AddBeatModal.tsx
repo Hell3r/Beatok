@@ -362,9 +362,9 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
         item && (
           <animated.div
             style={style}
-            className="fixed inset-0 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 flex items-center justify-center z-50 p-4 oveyflow-y-none"
           >
-            <div className="bg-neutral-900 rounded-lg w-full max-w-5xl max-h-[95vh] border border-neutral-800 shadow-2xl overflow-y-auto">
+            <div className="bg-neutral-900 rounded-lg w-full max-w-6xl max-h-[95vh] border border-neutral-800 shadow-2xl overflow-y-none">
               <div className="p-6 border-b border-neutral-800">
                 <div className="flex justify-between items-start">
                   <div>
@@ -399,7 +399,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                   </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form onSubmit={handleSubmit} className="space-y-2">
                   <div className="grid grid-cols-3 gap-6 select-none">
                     <div className="space-y-2">
                       <div>
@@ -583,33 +583,41 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                           Теги (макс. 10)
                         </label>
 
-                        <div className="flex flex-wrap gap-2 mb-3 min-h-[32px]">
-                          {tags.map((tag, index) => (
-                            <div
-                              key={index}
-                              className="bg-neutral-800 border border-red-600 text-white px-2 py-1 rounded-full text-xs flex items-center gap-1 group hover:bg-neutral-700 transition-colors"
-                            >
-                              <span>#{tag}</span>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveTag(tag)}
-                                className="text-neutral-400 hover:text-red-500 transition-colors focus:outline-none cursor-pointer"
+                        <div 
+                          className="overflow-y-auto pr-1 scrollbar-thin scrollbar-thumb-red-600 scrollbar-track-neutral-800"
+                          style={{ 
+                            maxHeight: tags.length === 0 ? '32px' : tags.length <= 3 ? 'auto' : '96px',
+                            minHeight: tags.length === 0 ? '32px' : 'auto'
+                          }}
+                        >
+                          <div className="flex flex-wrap gap-2">
+                            {tags.map((tag, index) => (
+                              <div
+                                key={index}
+                                className="bg-neutral-800 border border-red-600 text-white px-2 py-1 rounded-full text-xs flex items-center gap-1 group hover:bg-neutral-700 transition-colors"
                               >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                </svg>
-                              </button>
-                            </div>
-                          ))}
-                          
-                          {tags.length === 0 && (
-                            <span className="text-xs text-neutral-500 italic">
-                              Теги не добавлены
-                            </span>
-                          )}
-                        </div>
+                                <span>#{tag}</span>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveTag(tag)}
+                                  className="text-neutral-400 hover:text-red-500 transition-colors focus:outline-none cursor-pointer"
+                                >
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </div>
+                            ))}
 
-                        <div className="flex gap-2 select-none">
+                            {tags.length === 0 && (
+                              <span className="text-xs text-neutral-500 italic">
+                                Теги не добавлены
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                          
+                        <div className="flex gap-2 select-none mt-2">
                           <input
                             type="text"
                             value={tagInput}
@@ -628,7 +636,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                             +
                           </button>
                         </div>
-                        
+                          
                         <div className="mt-2 text-xs text-neutral-500">
                           {tags.length}/10 тегов
                         </div>
@@ -692,12 +700,6 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                   </div>
 
                 </form>
-
-                <div className="mt-4 text-center">
-                  <p className="text-neutral-400 select-none text-sm">
-                    * - обязательные поля
-                  </p>
-                </div>
               </div>
             </div>
           </animated.div>

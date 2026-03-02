@@ -549,7 +549,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
                         setInfoModalOpen(true);
                       }}
                     >
-                      {truncateText(beat.name, 25)}
+                      {truncateText(beat.name, 55)}
                     </div>
                     <div className="hidden md:flex items-center justify-center space-x-1 mt-1">
                       {isProfileView && beat.promotion_status !== 'standard' && (

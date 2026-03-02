@@ -34,8 +34,15 @@ const Footer: React.FC = () => {
     }
   };
 
+  const getCurrentYear = () => {
+    const currentDate = new Date;
+    const currentYear = currentDate.getFullYear()
+    
+    return currentYear
+  }
+
   return (
-    <footer className="bg-neutral-950 border-t w-full border-neutral-700 py-16">
+    <footer className="bg-neutral-950 border-t w-full border-neutral-700 py-16 mt-8">
       <div className="container mx-auto px-4">
         <div className="flex flex-col items-center space-y-8">
           <div className="flex flex-wrap justify-center space-x-6">
@@ -115,7 +122,7 @@ const Footer: React.FC = () => {
         </div>
         <div className="text-center mt-8 mb-20">
           <p className="text-gray-400 text-sm">
-            © BEATOK 2025 - Все права защищены
+            © BEATOK {getCurrentYear()}  - Все права защищены
           </p>
         </div>
       </div>

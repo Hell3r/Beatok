@@ -225,7 +225,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error('Ошибка регистрации');
+        throw new Error('Ошибка регистрации. Имя не должно содержать пробелов.');
       }
 
       setVerificationEmail(registerData.email);

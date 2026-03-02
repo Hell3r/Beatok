@@ -106,16 +106,13 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) => {
             style={style}
             className="fixed inset-0 flex items-center justify-center z-50 p-4"
           >
-            <div className="bg-neutral-900 rounded-lg w-full max-w-md border border-neutral-800 shadow-2xl">
+            <div className="bg-neutral-900 rounded-lg w-full max-w-md border border-neutral-800 shadow-2xl select-none">
               <div className="p-6 border-b border-neutral-800">
                 <div className="flex justify-between items-start">
                   <div>
                     <h2 className="text-xl font-bold text-white select-none">
                       Пополнить баланс
                     </h2>
-                    <p className="text-sm text-neutral-400 mt-1">
-                      Введите сумму для пополнения
-                    </p>
                   </div>
                   <button
                     onClick={onClose}

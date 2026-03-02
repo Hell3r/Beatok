@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, validator
 from decimal import Decimal
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 from src.models.withdrawal import WithdrawalStatus
 
 
@@ -52,4 +52,4 @@ class WithdrawalHistoryResponse(BaseModel):
     total: int = Field(..., description="Общее количество")
     offset: int = Field(..., description="Смещение")
     limit: int = Field(..., description="Количество на странице")
-    items: list[WithdrawalStatusResponse] = Field(..., description="Список выводов")
+    items: List[WithdrawalStatusResponse] = Field(..., description="Список выводов")

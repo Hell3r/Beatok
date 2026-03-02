@@ -136,7 +136,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, curr
         item && (
           <animated.div
             style={style}
-            className="fixed inset-0 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 flex items-center justify-center z-50 p-4 select-none"
           >
             <div className="bg-neutral-900 rounded-lg w-full max-w-md border border-neutral-800 shadow-2xl">
               <div className="p-6 border-b border-neutral-800">
@@ -145,9 +145,6 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, curr
                     <h2 className="text-xl font-bold text-white select-none">
                       Вывод средств
                     </h2>
-                    <p className="text-sm text-neutral-400 mt-1">
-                      Введите сумму и реквизиты карты
-                    </p>
                   </div>
                   <button
                     onClick={onClose}

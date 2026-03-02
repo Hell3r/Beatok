@@ -160,7 +160,21 @@ const BeatList: React.FC<BeatListProps> = ({
     });
   }, [beats, filters, isProfileView]);
 
-  const trail = useTrail(filteredBeats.length, {
+  const sortedBeats = useMemo(() => {
+    return [...filteredBeats].sort((a, b) => {
+      const aIsPromoted = a.promotion_status !== 'standard';
+      const bIsPromoted = b.promotion_status !== 'standard';
+      
+      if (aIsPromoted && !bIsPromoted) return -1;
+      if (!aIsPromoted && bIsPromoted) return 1;
+      
+      const dateA = new Date(a.created_at).getTime();
+      const dateB = new Date(b.created_at).getTime();
+      return dateB - dateA;
+    });
+  }, [filteredBeats]);
+
+  const trail = useTrail(sortedBeats.length, {
     from: { opacity: 0 },
     to: { opacity: 1 },
     config: { duration: 300 },
@@ -199,11 +213,12 @@ const BeatList: React.FC<BeatListProps> = ({
     <>
       <div style={gridStyle}>
         {trail.map((style, index) => {
-          const beat = filteredBeats[index];
+          const beat = sortedBeats[index];
           const isOwnBeat = currentUser && getAuthorId(beat) === currentUser.id;
           const coverUrl = getCoverUrl(beat);
           return (
             <animated.div key={beat.id} style={style} className="w-full bg-neutral-900 rounded-lg p-4 hover:bg-neutral-800 transition-all duration-300 group border border-neutral-700 relative">
+              {/* ... остальной код карточки без изменений ... */}
               <div className="mb-3">
                 {coverUrl ? (
                   <div className="relative inline-block w-full">
@@ -262,7 +277,7 @@ const BeatList: React.FC<BeatListProps> = ({
                       setInfoModalOpen(true);
                     }}
                   >
-                    {truncateText(beat.name, 25)}
+                    {truncateText(beat.name, 45)}
                   </h3>
                   <div 
                     className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"

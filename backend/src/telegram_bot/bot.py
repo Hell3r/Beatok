@@ -62,7 +62,6 @@ class SupportBot:
 
         for chat_id in self.admin_chat_ids:
             try:
-                # Always send text message first (so handlers can edit it later)
                 await self.bot.send_message(
                     chat_id=chat_id,
                     text=message,
@@ -70,15 +69,14 @@ class SupportBot:
                     reply_markup=reply_markup
                 )
                 
-                # Then send cover image if available (as separate message)
                 if cover_path:
                     try:
                         with open(cover_path, 'rb') as cover_file:
                             await self.bot.send_photo(
                                 chat_id=chat_id,
                                 photo=cover_file,
-                                write_timeout=120,
-                                connect_timeout=10
+                                write_timeout=6000,
+                                connect_timeout=180
                             )
                     except Exception as e:
                         print(f"Failed to send cover image to {chat_id}: {e}")
@@ -91,8 +89,8 @@ class SupportBot:
                                 audio=audio_file,
                                 title=f"Бит: {beat_data['name']}",
                                 performer=user_info.get('username', 'Unknown'),
-                                write_timeout=120,
-                                connect_timeout=10
+                                write_timeout=6000,
+                                connect_timeout=180
                             )
                     except Exception as e:
                         print(f"Failed to send audio file to {chat_id}: {e}")
