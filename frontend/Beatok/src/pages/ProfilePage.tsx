@@ -9,6 +9,8 @@ import AuthModal from '../components/AuthModal';
 import BeatTable from '../components/UI/beats/BeatTable';
 import BeatList from '../components/UI/beats/BeatList';
 import RejectionReasonModal from '../components/RejectionReasonModal';
+import DepositModal from '../components/DepositModal';
+import WithdrawalModal from '../components/WithdrawalModal';
 import { useNotificationContext } from '../components/NotificationProvider';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import type { Beat } from '../types/Beat';
@@ -67,6 +69,8 @@ const ProfilePage: React.FC = () => {
     maxPrice: '',
   });
   const [rejectionModalOpen, setRejectionModalOpen] = useState(false);
+  const [depositModalOpen, setDepositModalOpen] = useState(false);
+  const [withdrawalModalOpen, setWithdrawalModalOpen] = useState(false);
   const [selectedBeat, setSelectedBeat] = useState<Beat | null>(null);
   const [userStats, setUserStats] = useState<{
     beats_count: number;
@@ -1005,13 +1009,13 @@ const handlePlayBeat = (beat: Beat) => {
                           </div>
                           <div className="flex space-x-4">
                             <button
-                              onClick={() => showError('Функция пополнения баланса будет реализована позже')}
+                              onClick={() => setDepositModalOpen(true)}
                               className="flex-1 bg-white hover:bg-gray-300 text-red-600 px-4 py-2 select-none cursor-pointer rounded-lg transition-colors"
                             >
                               Пополнить
                             </button>
                             <button
-                              onClick={() => showError('Функция вывода средств будет реализована позже')}
+                              onClick={() => setWithdrawalModalOpen(true)}
                               className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 select-none cursor-pointer rounded-lg transition-colors"
                             >
                               Вывести
@@ -1261,6 +1265,17 @@ const handlePlayBeat = (beat: Beat) => {
         isOpen={rejectionModalOpen}
         onClose={() => setRejectionModalOpen(false)}
         beat={selectedBeat}
+      />
+
+      <DepositModal
+        isOpen={depositModalOpen}
+        onClose={() => setDepositModalOpen(false)}
+      />
+
+      <WithdrawalModal
+        isOpen={withdrawalModalOpen}
+        onClose={() => setWithdrawalModalOpen(false)}
+        currentBalance={user?.balance || 0}
       />
     </>
   );

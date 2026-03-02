@@ -1,4 +1,3 @@
-# src/services/TPayService.py
 import logging
 import uuid
 import httpx
@@ -21,14 +20,12 @@ class TPayService:
     def __init__(self, db: AsyncSession):
         self.db = db
         self.balance_service = BalanceService(db)
-        
-        # Настройки из .env
+
         self.terminal_key = settings.TPAY_TERMINAL_KEY
         self.password = settings.TPAY_PASSWORD
         self.api_url = "https://securepay.tinkoff.ru/v2"
-        
-        # URL для редиректов - ведут на наши страницы
-        self.callback_url = f"https://c99ce6198e6b7e.lhr.life/pay/callback"
+
+        self.callback_url = f"http://127.0.0.1:8000/pay/callback"
         
         logger.info(f"✅ T-Pay service initialized. Terminal: {self.terminal_key[:8]}...")
         logger.info(f"   Success URL: {self.callback_url}")
@@ -42,31 +39,26 @@ class TPayService:
     ) -> Dict[str, Any]:
         
         try:
-            # Валидация
             if amount < Decimal('10.00'):
                 raise ValueError("Минимальная сумма пополнения 10 ₽")
             if amount > Decimal('100000.00'):
                 raise ValueError("Максимальная сумма пополнения 100 000 ₽")
-            
-            # Уникальный ID заказа
+
             order_id = f"BEATOK_{user_id}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:6]}"
-            
-            # Данные для T-Pay API
+
             payload = {
                 "TerminalKey": self.terminal_key,
-                "Amount": int(amount * 100),  # В копейках!
+                "Amount": int(amount * 100),
                 "OrderId": order_id,
                 "Description": description or f"Пополнение баланса Beatok",
                 "SuccessURL": self.callback_url
             }
-            
-            # Генерируем токен (обязательно!)
+
             payload["Token"] = self._generate_token(payload)
             
             logger.info(f"📤 Sending request to T-Pay: OrderId={order_id}, Amount={amount}")
             logger.debug(f"Payload: {payload}")
-            
-            # Отправляем запрос
+
             async with httpx.AsyncClient() as client:
                 response = await client.post(
                     f"{self.api_url}/Init",
@@ -83,8 +75,7 @@ class TPayService:
                 error_details = result.get("Details", "")
                 logger.error(f"❌ T-Pay Init failed: {error_msg} {error_details}")
                 raise ValueError(f"Ошибка T-Pay: {error_msg}")
-            
-            # Сохраняем платеж в БД
+
             payment = PaymentModel(
                 user_id=user_id,
                 amount=amount,
@@ -129,27 +120,81 @@ class TPayService:
             logger.error(f"❌ T-Pay create error: {e}", exc_info=True)
             raise ValueError(f"Ошибка создания платежа: {str(e)}")
     
-    # ========== 2. ПОЛУЧЕНИЕ СТАТУСА ИЗ БД ==========
+    
+    async def check_payment_status(self, tpay_payment_id: str) -> Dict[str, Any]:
+        payload = {
+            "TerminalKey": self.terminal_key,
+            "PaymentId": int(tpay_payment_id)
+        }
+        payload["Token"] = self._generate_token(payload)
+        
+        logger.info(f"📤 Checking T-Pay status: PaymentId={tpay_payment_id}")
+        
+        async with httpx.AsyncClient() as client:
+            response = await client.post(f"{self.api_url}/GetState", json=payload, timeout=30)
+            response.raise_for_status()
+            result = response.json()
+        
+        logger.info(f"📥 T-Pay GetState response: {result}")
+        return result
+    
+    async def check_and_update_payment(self, tpay_payment_id: str) -> Dict[str, Any]:
+        api_result = await self.check_payment_status(tpay_payment_id)
+        
+        result = await self.db.execute(
+            select(PaymentModel).where(PaymentModel.tpay_payment_id == str(tpay_payment_id))
+        )
+        payment = result.scalar_one_or_none()
+        
+        if not payment:
+            raise ValueError("Платеж не найден")
+        
+        tpay_status = api_result.get("Status", "")
+        
+        if tpay_status in ["AUTHORIZED", "CONFIRMED"]:
+            if payment.status != PaymentStatus.SUCCEEDED:
+                payment.status = PaymentStatus.SUCCEEDED
+                payment.paid_at = datetime.utcnow()
+                
+                user = await self.db.get(UsersModel, payment.user_id)
+                if user:
+                    balance_to_deposit = payment.amount
+                    amount_with_commission = balance_to_deposit * Decimal(0.975)
+                    await self.balance_service.deposit(
+                        user_id=user.id,
+                        amount=amount_with_commission,
+                        description=f"Пополнение через T-Pay #{tpay_payment_id}"
+                    )
+                    logger.info(f"💰 Balance +{amount_with_commission} RUB for user {user.id}")
+                await self.db.commit()
+                logger.info(f"✅ Payment confirmed and balance deposited: {tpay_payment_id}")
+            else:
+                logger.info(f"⚠️ Balance already deposited for payment: {tpay_payment_id}")
+                
+                await self.db.commit()
+                
+                await self.db.commit()
+                logger.info(f"✅ Payment confirmed: {tpay_payment_id}")
+        
+        elif tpay_status in ["REJECTED", "CANCELED"]:
+            if payment.status != PaymentStatus.FAILED:
+                payment.status = PaymentStatus.FAILED
+                await self.db.commit()
+        
+        return {
+            "id": payment.id,
+            "amount": float(payment.amount),
+            "status": payment.status.value,
+            "tpay_status": tpay_status,
+            "created_at": payment.created_at,
+            "paid_at": payment.paid_at
+        }
     
     async def get_payment_status(
         self, 
         payment_id: int, 
         user_id: Optional[int] = None
     ) -> Dict[str, Any]:
-        """
-        Получить статус платежа ИЗ БАЗЫ ДАННЫХ
-        
-        НИКАКИХ ЗАПРОСОВ К T-Pay API!
-        Статус обновляется при редиректе на страницу успеха.
-        
-        Args:
-            payment_id: ID платежа в нашей БД
-            user_id: ID пользователя (для проверки принадлежности)
-            
-        Returns:
-            Dict со статусом, суммой, датами
-        """
-        # Ищем платеж
         query = select(PaymentModel).where(PaymentModel.id == payment_id)
         
         if user_id:
@@ -161,7 +206,6 @@ class TPayService:
         if not payment:
             raise ValueError("Платеж не найден")
         
-        # Возвращаем статус из БД
         return {
             "id": payment.id,
             "amount": float(payment.amount),
@@ -171,7 +215,6 @@ class TPayService:
             "tpay_payment_id": payment.tpay_payment_id
         }
     
-    # ========== 3. ИСТОРИЯ ПЛАТЕЖЕЙ ==========
     
     async def get_user_payments(
         self, 
@@ -179,17 +222,7 @@ class TPayService:
         limit: int = 50,
         offset: int = 0
     ) -> List[Dict[str, Any]]:
-        """
-        Получить историю платежей пользователя
-        
-        Args:
-            user_id: ID пользователя
-            limit: Количество записей
-            offset: Смещение
-            
-        Returns:
-            List[Dict] с платежами
-        """
+
         result = await self.db.execute(
             select(PaymentModel)
             .where(PaymentModel.user_id == user_id)
@@ -213,25 +246,8 @@ class TPayService:
             for p in payments
         ]
     
-    # ========== 4. ГЕНЕРАЦИЯ ТОКЕНА ==========
     
     def _generate_token(self, params: Dict[str, Any]) -> str:
-        """
-        Генерация токена для T-Pay по спецификации:
-        
-        1. Берем ТОЛЬКО корневые параметры (без вложенных объектов)
-        2. Добавляем Password из настроек
-        3. Сортируем ключи по алфавиту
-        4. Конкатенируем ТОЛЬКО значения (без ключей!)
-        5. SHA-256 хеш
-        
-        Args:
-            params: Параметры запроса
-            
-        Returns:
-            Токен для T-Pay API
-        """
-        # Только корневые параметры (исключаем Token, вложенные объекты, None)
         root_params = {}
         for key, value in params.items():
             if (key != "Token" and 
@@ -239,21 +255,21 @@ class TPayService:
                 not isinstance(value, (dict, list, set))):
                 root_params[key] = str(value)
         
-        # Добавляем пароль
+
         root_params["Password"] = self.password
         
-        # Сортируем по ключу (алфавитный порядок)
+
         sorted_keys = sorted(root_params.keys())
         
-        # Конкатенируем ТОЛЬКО значения
+
         values_string = ""
         for key in sorted_keys:
             values_string += root_params[key]
         
-        # SHA-256 хеш
+
         token = hashlib.sha256(values_string.encode('utf-8')).hexdigest()
         
-        # Логируем в debug режиме
+
         if settings.DEBUG:
             logger.debug(f"Token generation:")
             logger.debug(f"  Params: {root_params}")
@@ -263,34 +279,19 @@ class TPayService:
         
         return token
     
-    # ========== 5. ПРОВЕРКА ПОДПИСИ ВЕБХУКА (ЗАПАСНОЙ ВАРИАНТ) ==========
     
     def _verify_webhook_signature(self, webhook_data: Dict[str, Any]) -> bool:
-        """
-        Проверка подписи вебхука от T-Pay
-        
-        T-Банк отправляет Token в теле вебхука.
-        Нужно удалить Token, сгенерировать заново и сравнить.
-        
-        Args:
-            webhook_data: Данные вебхука
-            
-        Returns:
-            True если подпись валидна
-        """
+
         received_token = webhook_data.pop("Token", None)
         
         if not received_token:
             logger.warning("No Token in webhook")
             return False
-        
-        # Генерируем токен из данных вебхука
+
         calculated_token = self._generate_token(webhook_data)
-        
-        # Восстанавливаем Token обратно
+
         webhook_data["Token"] = received_token
-        
-        # Сравниваем
+
         is_valid = calculated_token == received_token
         
         if not is_valid:
@@ -298,27 +299,12 @@ class TPayService:
         
         return is_valid
     
-    # ========== 6. ОБРАБОТКА ВЕБХУКА (ЗАПАСНОЙ ВАРИАНТ) ==========
     
     async def handle_webhook(self, webhook_data: Dict[str, Any]) -> bool:
-        """
-        Обработка вебхука от T-Pay
-        
-        В текущей реализации НЕ ИСПОЛЬЗУЕТСЯ,
-        так как мы полагаемся на редирект пользователя.
-        
-        Оставлено для совместимости и возможного использования в будущем.
-        
-        Args:
-            webhook_data: Данные вебхука
-            
-        Returns:
-            True если обработка успешна
-        """
+
         try:
             logger.info(f"📥 T-Pay webhook received: {webhook_data.get('PaymentId')}")
-            
-            # Проверяем подпись
+
             if not self._verify_webhook_signature(webhook_data):
                 logger.error("Invalid webhook signature")
                 return False
@@ -329,8 +315,7 @@ class TPayService:
             if not payment_id or not status:
                 logger.error("Missing PaymentId or Status in webhook")
                 return False
-            
-            # Ищем платеж в БД
+
             result = await self.db.execute(
                 select(PaymentModel).where(
                     PaymentModel.tpay_payment_id == str(payment_id)
@@ -341,15 +326,13 @@ class TPayService:
             if not payment:
                 logger.error(f"Payment not found: {payment_id}")
                 return False
-            
-            # Обновляем статус
+
             old_status = payment.status.value
             
             if status == "CONFIRMED":
                 payment.status = PaymentStatus.SUCCEEDED
                 payment.paid_at = datetime.utcnow()
-                
-                # Пополняем баланс
+
                 user = await self.db.get(UsersModel, payment.user_id)
                 if user:
                     await self.balance_service.deposit(

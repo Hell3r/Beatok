@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from datetime import datetime
 from pathlib import Path
 import logging
-
+from decimal import Decimal
 from src.database.database import get_session
 from src.models.payment import PaymentModel, PaymentStatus
 from src.models.users import UsersModel
@@ -17,55 +17,44 @@ templates = Jinja2Templates(directory=Path(__file__).parent.parent.parent / "tem
 router = APIRouter(prefix="/pay", tags=["Страницы оплаты"])
 
 
-@router.get("/callback")
+@router.api_route("/callback", methods=["GET", "POST"], summary = "Страница оплаты (успешно / неуспешно)")
 async def tpay_callback(
     request: Request,
     session: AsyncSession = Depends(get_session)
 ):
 
-    logger.info(f"сырая дата:{data}")
-    try:
-        data = await request.json()
-    except:
-        form = await request.form()
-        data = dict(form)
+    data = {}
     
-    logger.info(f"📥 T-Pay callback: {data}")
-    
-    payment_id = data.get("PaymentId")
-    status = data.get("Status")
-    
-    if not payment_id:
-        return JSONResponse({"error": "No PaymentId"}, 400)
-    
-    # Ищем платеж
+
     from sqlalchemy import select
+    from src.services.TPayService import TPayService
+    
     result = await session.execute(
-        select(PaymentModel).where(PaymentModel.tpay_payment_id == str(payment_id))
+        select(PaymentModel)
+        .where(PaymentModel.status == PaymentStatus.PENDING)
+        .order_by(PaymentModel.created_at.desc())
+        .limit(1)
     )
     payment = result.scalar_one_or_none()
     
     if not payment:
-        logger.error(f"Payment not found: {payment_id}")
-        return JSONResponse({"error": "Payment not found"}, 404)
+        logger.error("❌ No pending payments found")
+        return JSONResponse({"error": "No pending payment found"}, 404)
     
-    # Обрабатываем статус
-    if status == "CONFIRMED":
-        payment.status = PaymentStatus.SUCCEEDED
-        payment.paid_at = datetime.utcnow()
-        
-        # Начисляем баланс
-        user = await session.get(UsersModel, payment.user_id)
-        if user:
-            balance_service = BalanceService(session)
-            await balance_service.deposit(
-                user_id=user.id,
-                amount=payment.amount,
-                description=f"Пополнение через T-Pay #{payment.tpay_payment_id}"
-            )
-            logger.info(f"💰 Balance +{payment.amount} for user {user.id}")
-        
-        await session.commit()
+    logger.info(f"📥 Found pending payment: {payment.tpay_payment_id}")
+    
+    tpay_service = TPayService(session)
+    try:
+        result = await tpay_service.check_and_update_payment(payment.tpay_payment_id)
+        logger.info(f"✅ Payment check result: {result}")
+        payment = await session.get(PaymentModel, payment.id)
+    except Exception as e:
+        logger.error(f"❌ Error checking payment: {e}")
+    
+    payment_id = payment.tpay_payment_id
+    status = payment.status.value
+
+    if status == "succeeded":
 
         html = f"""
         <!DOCTYPE html>
@@ -79,103 +68,84 @@ async def tpay_callback(
                     margin: 0;
                     padding: 0;
                     box-sizing: border-box;
+                    user-select: none;
                 }}
                 
                 body {{
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    background-color: #0a0a0a;
+                    font-family: Arial, sans-serif;
+                    color: white;
+                    min-height: 100vh;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    min-height: 100vh;
-                    padding: 20px;
                 }}
                 
                 .card {{
-                    background: white;
-                    border-radius: 24px;
-                    padding: 48px;
-                    max-width: 520px;
                     width: 100%;
-                    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+                    max-width: 520px;
+                    padding: 48px;
                     text-align: center;
-                    animation: slideIn 0.5s ease;
                 }}
                 
-                @keyframes slideIn {{
-                    from {{
-                        opacity: 0;
-                        transform: translateY(30px);
-                    }}
-                    to {{
-                        opacity: 1;
-                        transform: translateY(0);
-                    }}
-                }}
-                
-                .success-icon {{
-                    width: 96px;
-                    height: 96px;
-                    background: #28a745;
+                .icon {{
+                    width: 80px;
+                    height: 80px;
+                    background-color: #dc2626;
                     border-radius: 50%;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    margin: 0 auto 32px;
-                    animation: scaleIn 0.5s ease 0.2s both;
-                    box-shadow: 0 10px 30px rgba(40, 167, 69, 0.3);
+                    margin: 0 auto 24px auto;
                 }}
                 
-                @keyframes scaleIn {{
-                    from {{
-                        transform: scale(0);
-                    }}
-                    to {{
-                        transform: scale(1);
-                    }}
+                .icon svg {{
+                    width: 40px;
+                    height: 40px;
+                    color: white;
                 }}
                 
-                .success-icon svg {{
-                    width: 48px;
-                    height: 48px;
-                    fill: white;
+                .icon.success {{
+                    background-color: #22c55e;
+                }}
+                
+                .icon.failed {{
+                    background-color: #dc2626;
                 }}
                 
                 h1 {{
-                    color: #333;
-                    font-size: 32px;
+                    color: white;
+                    font-weight: bold;
+                    font-size: 1.875rem;
                     margin-bottom: 16px;
-                    font-weight: 700;
                 }}
                 
                 .amount {{
-                    font-size: 56px;
-                    font-weight: 800;
-                    color: #28a745;
+                    font-size: 3rem;
+                    font-weight: bold;
+                    color: #22c55e;
                     margin: 24px 0;
-                    line-height: 1;
                 }}
                 
                 .amount span {{
-                    font-size: 24px;
-                    font-weight: 400;
-                    color: #666;
+                    font-size: 1.5rem;
+                    color: #888;
                 }}
                 
                 .details {{
-                    background: #f8f9fa;
-                    border-radius: 16px;
-                    padding: 24px;
-                    margin: 32px 0;
+                    background-color: #171717;
+                    border-radius: 12px;
+                    padding: 20px;
+                    margin: 24px 0;
                     text-align: left;
                 }}
                 
                 .detail-row {{
                     display: flex;
                     justify-content: space-between;
-                    margin-bottom: 12px;
-                    color: #666;
-                    font-size: 15px;
+                    margin-bottom: 8px;
+                    color: #a3a3a3;
+                    font-size: 0.875rem;
                 }}
                 
                 .detail-row:last-child {{
@@ -183,103 +153,61 @@ async def tpay_callback(
                 }}
                 
                 .label {{
-                    font-weight: 600;
-                    color: #333;
-                }}
-                
-                .timer-container {{
-                    background: #e3f2fd;
-                    border-radius: 12px;
-                    padding: 20px;
-                    margin: 24px 0;
+                    color: #737373;
                 }}
                 
                 .timer-text {{
-                    font-size: 18px;
-                    font-weight: 600;
-                    color: #1976d2;
-                    margin-bottom: 12px;
-                }}
-                
-                .progress-bar {{
-                    width: 100%;
-                    height: 8px;
-                    background: #bbdefb;
-                    border-radius: 4px;
-                    overflow: hidden;
-                }}
-                
-                .progress-fill {{
-                    width: 100%;
-                    height: 100%;
-                    background: #1976d2;
-                    animation: shrink 5s linear forwards;
-                    transform-origin: left;
-                }}
-                
-                @keyframes shrink {{
-                    from {{
-                        transform: scaleX(1);
-                    }}
-                    to {{
-                        transform: scaleX(0);
-                    }}
-                }}
-                
-                .button {{
-                    display: inline-block;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    color: white;
-                    text-decoration: none;
-                    padding: 16px 32px;
-                    border-radius: 12px;
-                    font-weight: 600;
-                    font-size: 16px;
-                    transition: all 0.3s;
-                    margin-top: 16px;
-                    border: none;
-                    cursor: pointer;
-                    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-                }}
-                
-                .button:hover {{
-                    transform: translateY(-2px);
-                    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-                }}
-                
-                .info-text {{
-                    color: #999;
-                    font-size: 14px;
+                    color: #a3a3a3;
+                    font-size: 0.875rem;
                     margin-top: 24px;
                 }}
                 
-                @media (max-width: 480px) {{
-                    .card {{
-                        padding: 32px 20px;
-                    }}
-                    
-                    h1 {{
-                        font-size: 24px;
-                    }}
-                    
-                    .amount {{
-                        font-size: 42px;
-                    }}
+                .button {{
+                    background-color: #dc2626;
+                    color: white;
+                    border: none;
+                    padding: 12px 24px;
+                    border-radius: 6px;
+                    font-weight: 500;
+                    font-size: 1rem;
+                    cursor: pointer;
+                    transition: background-color 0.2s ease;
+                    margin: 8px;
+                }}
+                
+                .button:hover {{
+                    background-color: #b91c1c;
+                }}
+                
+                .button.secondary {{
+                    background-color: #262626;
+                }}
+                
+                .button.secondary:hover {{
+                    background-color: #404040;
+                }}
+                
+                .reasons {{
+                    color: #a3a3a3;
+                    text-align: left;
+                    margin-top: 12px;
+                    padding-left: 20px;
+                    line-height: 1.8;
                 }}
             </style>
         </head>
         <body>
             <div class="card">
-                <div class="success-icon">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                <div class="icon success">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
                     </svg>
                 </div>
                 
-                <h1>✅ Оплата прошла успешно!</h1>
+                <h1>Оплата прошла успешно!</h1>
                 
                 <div class="amount">
-                    {payment.amount:.2f} <span>₽</span>
+                    {round(payment.amount * Decimal(0.975), 2)} <span>₽</span>
                 </div>
                 
                 <div class="details">
@@ -297,21 +225,12 @@ async def tpay_callback(
                     </div>
                 </div>
                 
-                <div class="timer-container">
-                    <div class="timer-text">
-                        ⏳ Перенаправление через <span id="seconds">5</span> секунд
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill"></div>
-                    </div>
-                </div>
-                
                 <button onclick="redirectNow()" class="button">
-                    Перейти сейчас →
+                    Перейти в профиль
                 </button>
                 
-                <div class="info-text">
-                    ✨ Средства уже зачислены на баланс
+                <div class="timer-text">
+                    Перенаправление через <span id="seconds">5</span> секунд
                 </div>
             </div>
             
@@ -320,7 +239,7 @@ async def tpay_callback(
                 const timerElement = document.getElementById('seconds');
                 
                 function redirectNow() {{
-                    window.location.href = '{settings.FRONTEND_URL}/profile?tab=balance';
+                    window.location.href = 'http://localhost:5173';
                 }}
                 
                 function updateTimer() {{
@@ -342,12 +261,9 @@ async def tpay_callback(
         """
         return HTMLResponse(content=html)
         
-    elif status in ["REJECTED", "CANCELED", "REFUNDED", "DEADLINE_EXPIRED"]:
-        payment.status = PaymentStatus.FAILED
-        await session.commit()
-        logger.info(f"❌ Payment failed: {payment_id} - {status}")
-        
-        # Страница ошибки с таймером
+    elif status in ["failed", "expired", "pending"]:
+        logger.info(f"❌ Payment failed: {payment_id}")
+
         html = f"""
         <!DOCTYPE html>
         <html lang="ru">
@@ -364,7 +280,7 @@ async def tpay_callback(
                 
                 body {{
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+                    background-color: #0a0a0a;
                     display: flex;
                     align-items: center;
                     justify-content: center;
@@ -467,7 +383,7 @@ async def tpay_callback(
                 
                 .button {{
                     display: inline-block;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                    background-color: #0a0a0a;
                     color: white;
                     text-decoration: none;
                     padding: 16px 32px;
@@ -492,41 +408,34 @@ async def tpay_callback(
         </head>
         <body>
             <div class="card">
-                <div class="failed-icon">
-                    <svg viewBox="0 0 24 24">
-                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+                <div class="icon failed">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </div>
                 
-                <h1>❌ Оплата не прошла</h1>
-                
-                <div class="message">
-                    Платёж #{payment.id} не был завершён
-                </div>
+                <h1>Оплата не прошла</h1>
                 
                 <div class="details">
-                    <strong>Возможные причины:</strong>
+                    <strong style="color: #a3a3a3;">Возможные причины:</strong>
                     <ul class="reasons">
-                        <li>❌ Недостаточно средств на карте</li>
-                        <li>🛑 Отмена платежа пользователем</li>
-                        <li>🔒 Техническая ошибка</li>
-                        <li>⏰ Истекло время оплаты</li>
+                        <li>Недостаточно средств на карте</li>
+                        <li>Отмена платежа пользователем</li>
+                        <li>Техническая ошибка</li>
+                        <li>Истекло время оплаты</li>
                     </ul>
                 </div>
                 
-                <div class="timer-container">
-                    <div class="timer-text">
-                        ⏳ Возврат через <span id="seconds">5</span> секунд
-                    </div>
-                </div>
+                <button onclick="redirectRetry()" class="button">
+                    Попробовать снова
+                </button>
                 
-                <div>
-                    <button onclick="redirectRetry()" class="button">
-                        Попробовать снова
-                    </button>
-                    <button onclick="redirectHome()" class="button secondary">
-                        На главную
-                    </button>
+                <button onclick="redirectHome()" class="button secondary">
+                    На главную
+                </button>
+                
+                <div class="timer-text">
+                    Перенаправление через <span id="seconds">5</span> секунд
                 </div>
             </div>
             
@@ -562,21 +471,3 @@ async def tpay_callback(
         return HTMLResponse(content=html)
     
     return JSONResponse({"status": "OK"})
-
-
-@router.get("/success")
-async def payment_success_redirect(
-    payment_id: int,
-    session: AsyncSession = Depends(get_session)
-):
-    from fastapi.responses import RedirectResponse
-    return RedirectResponse(url=f"{settings.FRONTEND_URL}/payment/success?payment_id={payment_id}")
-
-
-@router.get("/failed")
-async def payment_failed_redirect(
-    payment_id: int,
-    session: AsyncSession = Depends(get_session)
-):
-    from fastapi.responses import RedirectResponse
-    return RedirectResponse(url=f"{settings.FRONTEND_URL}/payment/failed?payment_id={payment_id}")

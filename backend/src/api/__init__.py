@@ -14,6 +14,7 @@ from src.api.v1.purchase import router as purchase_router
 from src.api.v1.download import router as download_router
 from src.api.v1.promotion import router as promotion_router
 from src.api.v1.payment_pages import router as pages_router
+from src.api.v1.withdrawals import router as withdrawal_router
 
 main_router = APIRouter()
 
@@ -32,3 +33,4 @@ main_router.include_router(purchase_router)
 main_router.include_router(download_router)
 main_router.include_router(promotion_router)
 main_router.include_router(pages_router)
+main_router.include_router(withdrawal_router)

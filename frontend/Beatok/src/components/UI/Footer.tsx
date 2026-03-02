@@ -19,6 +19,11 @@ const Footer: React.FC = () => {
     { href: '/support', label: 'FAQ' },
   ];
 
+  const legalItems: NavItem[] = [
+    { href: '/terms', label: 'Пользовательское соглашение' },
+    { href: '/privacy', label: 'Политика конфиденциальности' },
+  ];
+
   const handleCopyEmail = async () => {
     const email = 'beatok_service@mail.ru';
     try {
@@ -96,6 +101,17 @@ const Footer: React.FC = () => {
               </div>
             </a>
           </div>
+        </div>
+        <div className="flex flex-wrap justify-center space-x-6 mt-4">
+          {legalItems.map((item) => (
+            <a
+              key={item.href}
+              href={item.href}
+              className="text-gray-500 hover:text-gray-400 transition-colors duration-200 text-sm"
+            >
+              {item.label}
+            </a>
+          ))}
         </div>
         <div className="text-center mt-8 mb-20">
           <p className="text-gray-400 text-sm">

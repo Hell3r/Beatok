@@ -25,6 +25,7 @@ class UsersModel(Base):
 
     
     payments = relationship("PaymentModel", back_populates="user", lazy="selectin")
+    withdrawals = relationship("WithdrawalModel", back_populates = "user", lazy = "selectin")
     active_promos = relationship("UserPromoCodeModel", back_populates="user", lazy="selectin")
     balance_operations = relationship("UserBalanceModel", back_populates="user", lazy="selectin")
     requests: Mapped[List["RequestsModel"]] = relationship("RequestsModel", back_populates="user")

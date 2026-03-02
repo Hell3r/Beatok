@@ -5,7 +5,6 @@ import logging
 logger = logging.getLogger(__name__)
 
 def setup_yookassa():
-    """Настройка SDK ЮKassa"""
     try:
         Configuration.account_id = settings.YOOKASSA_SHOP_ID
         Configuration.secret_key = settings.YOOKASSA_SECRET_KEY
@@ -19,7 +18,6 @@ def setup_yookassa():
         return False
 
 def validate_config():
-    """Проверка конфигурации"""
     errors = []
     
     if not settings.YOOKASSA_SHOP_ID:
@@ -42,6 +40,4 @@ def validate_config():
     
     logger.info("✅ Configuration validated")
     return True
-
-# Автоматическая настройка при импорте
 setup_yookassa()

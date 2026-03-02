@@ -48,6 +48,8 @@ class BalanceService:
         self.db.add(operation)
         await self.db.flush()
         
+        await self.db.commit()
+        
         logger.info(f"BALANCE_DEPOSIT: User {user_id} deposited {amount} RUB")
         
         return balance_after
@@ -73,6 +75,8 @@ class BalanceService:
         
         self.db.add(operation)
         await self.db.flush()
+        
+        await self.db.commit()
         
         logger.info(f"BALANCE_BONUS: User {user_id} got bonus {amount} RUB")
         
