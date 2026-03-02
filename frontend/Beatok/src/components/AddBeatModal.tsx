@@ -427,23 +427,6 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                         )}
                       </div>
 
-                      <div>
-                        <label className="block text-sm select-none font-medium text-neutral-300 mb-2">
-                          Аудио файл (MP3 или WAV)
-                        </label>
-                        <input
-                          type="file"
-                          accept=".mp3,.wav,audio/mpeg,audio/wav"
-                          onChange={handleAudioChange}
-                          className="w-full h-10 p-1 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer select-none"
-                          required
-                        />
-                        {beatData.audio_file && (
-                          <p className="text-xs text-green-500 mt-1">
-                            ✓ Аудиофайл загружен: {beatData.audio_file.name}
-                          </p>
-                        )}
-                      </div>
                     </div>
 
                     <div className="space-y-2">

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Query, Depends, Request
 from typing import Optional, List
 from typing_extensions import Annotated
-from sqlalchemy import select, func
+from sqlalchemy import select, func, update
 from sqlalchemy.orm import selectinload, joinedload
 import os
 import shutil
@@ -440,6 +440,29 @@ async def get_all_beatmakers(
         for row in beatmakers
     ]
 
+@router.get("/moderation", response_model=List[BeatResponse], summary="Получить биты на модерации")
+async def get_beats_for_moderation(
+    session: SessionDep,
+    skip: int = 0,
+    limit: int = 100
+):
+    result = await session.execute(
+        select(BeatModel)
+        .options(
+            selectinload(BeatModel.owner),
+            selectinload(BeatModel.pricings).selectinload(BeatPricingModel.tariff),
+            selectinload(BeatModel.terms_of_use_backref),
+            selectinload(BeatModel.tags)
+        )
+        .where(BeatModel.status == StatusType.MODERATED)
+        .offset(skip)
+        .limit(limit)
+        .order_by(BeatModel.created_at.desc())
+    )
+    
+    beats = result.scalars().all()
+    return [BeatResponse.model_validate(beat) for beat in beats]
+
 @router.get("/{beat_id}", response_model=BeatResponse)
 async def get_beat(
     beat_id: int,
@@ -709,3 +732,106 @@ async def increment_download_count(
             }
 
     return {"success": True, "message": "Автор не может увеличить свой счетчик"}
+
+
+@router.get("/moderation", response_model=List[BeatResponse], summary="Получить биты на модерации")
+async def get_beats_for_moderation(
+    session: SessionDep,
+    skip: int = 0,
+    limit: int = 100
+):
+    result = await session.execute(
+        select(BeatModel)
+        .options(
+            selectinload(BeatModel.owner),
+            selectinload(BeatModel.pricings).selectinload(BeatPricingModel.tariff),
+            selectinload(BeatModel.terms_of_use_backref),
+            selectinload(BeatModel.tags)
+        )
+        .where(BeatModel.status == StatusType.MODERATED)
+        .offset(skip)
+        .limit(limit)
+        .order_by(BeatModel.created_at.desc())
+    )
+    
+    beats = result.scalars().all()
+    return [BeatResponse.model_validate(beat) for beat in beats]
+
+
+@router.post("/{beat_id}/approve", summary="Одобрить бит")
+async def approve_beat(
+    beat_id: int,
+    session: SessionDep,
+    current_user_id: Annotated[int, Depends(get_current_user_id)]
+):
+    from src.models.users import UsersModel
+    
+    user_result = await session.execute(
+        select(UsersModel).where(UsersModel.id == current_user_id)
+    )
+    user = user_result.scalar_one_or_none()
+    
+    if not user or user.role != 'admin':
+        raise HTTPException(status_code=403, detail="Нет доступа")
+    
+    result = await session.execute(
+        select(BeatModel).where(BeatModel.id == beat_id)
+    )
+    beat = result.scalar_one_or_none()
+    
+    if not beat:
+        raise HTTPException(status_code=404, detail="Бит не найден")
+    
+    if beat.status != StatusType.MODERATED:
+        raise HTTPException(status_code=400, detail="Бит уже был обработан")
+    
+    await session.execute(
+        update(BeatPricingModel)
+        .where(
+            BeatPricingModel.beat_id == beat_id,
+            BeatPricingModel.tariff_name.in_(['leasing', 'exclusive'])
+        )
+        .values(price=BeatPricingModel.price + 200)
+    )
+    
+    beat.status = StatusType.AVAILABLE
+    await session.commit()
+    await redis_service.delete_pattern("*beats*")
+    
+    return {"success": True, "message": f"Бит '{beat.name}' одобрен и опубликован"}
+
+
+@router.post("/{beat_id}/reject", summary="Отклонить бит")
+async def reject_beat(
+    beat_id: int,
+    session: SessionDep,
+    current_user_id: Annotated[int, Depends(get_current_user_id)],
+    reason: str = Form(..., description="Причина отклонения")
+):
+    from src.models.users import UsersModel
+    
+    user_result = await session.execute(
+        select(UsersModel).where(UsersModel.id == current_user_id)
+    )
+    user = user_result.scalar_one_or_none()
+    
+    if not user or user.role != 'admin':
+        raise HTTPException(status_code=403, detail="Нет доступа")
+    
+    result = await session.execute(
+        select(BeatModel).where(BeatModel.id == beat_id)
+    )
+    beat = result.scalar_one_or_none()
+    
+    if not beat:
+        raise HTTPException(status_code=404, detail="Бит не найден")
+    
+    if beat.status != StatusType.MODERATED:
+        raise HTTPException(status_code=400, detail="Бит уже был обработан")
+    
+    beat.status = StatusType.DENIED
+    beat.rejection_reason = reason
+    await session.commit()
+    await redis_service.delete_pattern("*beats*")
+    
+    return {"success": True, "message": f"Бит '{beat.name}' отклонен", "reason": reason}

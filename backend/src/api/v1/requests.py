@@ -114,7 +114,36 @@ async def get_request_by_id(
     if not request:
         raise HTTPException(status_code=404, detail="Заявка не найдена")
 
-    if request.user_id != current_user.id and not current_user.is_admin:
+    if request.user_id != current_user.id and current_user.role != 'admin':
         raise HTTPException(status_code=403, detail="Нет доступа к этой заявке")
+    
+    return request
+
+
+@router.patch("/{request_id}", response_model=RequestsResponse, summary="Обновить статус заявки")
+async def update_request_status(
+    request_id: int,
+    session: SessionDep,
+    status: str = Form(..., description="Новый статус заявки"),
+    current_user: UsersModel = Depends(get_current_user)
+):
+    if current_user.role != 'admin':
+        raise HTTPException(status_code=403, detail="Нет доступа")
+    
+    result = await session.execute(
+        select(RequestsModel).where(RequestsModel.id == request_id)
+    )
+    request = result.scalar_one_or_none()
+    
+    if not request:
+        raise HTTPException(status_code=404, detail="Заявка не найдена")
+    
+    valid_statuses = ["pending", "in_progress", "resolved", "closed"]
+    if status not in valid_statuses:
+        raise HTTPException(status_code=400, detail=f"Некорректный статус. Допустимые значения: {', '.join(valid_statuses)}")
+    
+    request.status = status
+    await session.commit()
+    await session.refresh(request)
     
     return request

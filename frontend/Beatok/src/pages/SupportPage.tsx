@@ -76,7 +76,7 @@ const SupportPage: React.FC = () => {
                         <h2 className="text-white text-xl font-semibold mb-3">Сообщение отправлено!</h2>
                     </div>
                     <div className='flex justify-center'>
-                        <p className="text-neutral-400">Мы получили ваше обращение и ответим в ближайшее время.</p>
+                        <p className="text-neutral-400">Мы получили Ваше обращение и ответим Вам на почту в ближайшее время.</p>
                     </div>
                     </div>
                 <div className='flex justify-center'>
