@@ -17,7 +17,6 @@ class BeatBase(BaseModel):
     promotion_status: str = "standard"
     status: str = "active"
     
-
 class TermsOfUseCreate(BaseModel):
     recording_tracks: bool = False
     commercial_perfomance: bool = False
@@ -42,11 +41,6 @@ class BeatFingerprintInfo(BaseModel):
     timings: List[Dict[str, Any]]
     method: str = Field(default="64bit_4x16")
 
-class BeatFingerprintInfo(BaseModel):
-    fingerprint: str 
-    timings: List[Dict[str, Any]]
-    method: str = Field(default="64bit_4x16")
-
 class BeatResponse(BaseModel):
     id: int
     name: str
@@ -59,6 +53,7 @@ class BeatResponse(BaseModel):
     size: int
     duration: float
     cover_path: Optional[str] = None
+    audio_file_path: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     likes_count: int = 0
@@ -113,6 +108,7 @@ class BeatResponse(BaseModel):
                 "size": obj.size,
                 "duration": obj.duration,
                 "cover_path": getattr(obj, 'cover_path', None),
+                "audio_file_path": getattr(obj, 'audio_file_path', None),
                 "created_at": obj.created_at,
                 "updated_at": obj.updated_at,
                 "likes_count": getattr(obj, 'likes_count', 0),

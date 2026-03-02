@@ -15,7 +15,7 @@ import AboutPage from './pages/AboutPage';
 import Error404 from './pages/errors/404';
 import BeatmakersPage from './pages/BeatmakersPage';
 import ForumPage from './pages/ForumPage';
-import AdminSwaggerPage from './pages/AdminSwaggerPage';
+import Admin from './pages/Admin';
 import SupportPage from './pages/SupportPage';
 import EmailChange from './pages/success/EmailChange';
 import PasswordResetPage from './pages/PasswordResetPage';
@@ -66,7 +66,7 @@ const App: React.FC = () => {
                 <Routes>
                   <Route path="/" element={<HomePage />} />
 
-                  <Route path="/admin" element={<AdminSwaggerPage />} />
+                  <Route path="/admin" element={<Admin />} />
                   <Route path="/profile" element={isUserAuthenticated ? <PageLayoutWithFooter><ProfilePage /></PageLayoutWithFooter> : <PageLayout><ProfilePage /></PageLayout>} />
                   <Route path="/profile/:id" element={isUserAuthenticated ? <PageLayoutWithFooter><ProfilePage /></PageLayoutWithFooter> : <PageLayout><ProfilePage /></PageLayout>} />
                   <Route path="/beats" element={<PageLayoutWithFooter><BeatsPage /></PageLayoutWithFooter>} />

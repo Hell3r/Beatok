@@ -62,9 +62,7 @@ const BeatList: React.FC<BeatListProps> = ({
     if (beat.owner?.username) return beat.owner.username;
     if (beat.author?.username) return beat.author.username;
     if (beat.user?.username) return beat.user.username;
-
     if (beat.author_id) return `Пользователь ${beat.author_id}`;
-
     return 'Неизвестно';
   };
 
@@ -78,11 +76,9 @@ const BeatList: React.FC<BeatListProps> = ({
   const getAuthorAvatar = (beat: Beat): string => {
     const authorId = getAuthorId(beat);
     if (!authorId) return 'http://localhost:8000/static/default_avatar.png';
-
     if (beat.owner?.avatar_path) return getAvatarUrl(authorId, beat.owner.avatar_path);
     if (beat.author?.avatar_path) return getAvatarUrl(authorId, beat.author.avatar_path);
     if (beat.user?.avatar_path) return getAvatarUrl(authorId, beat.user.avatar_path);
-
     return 'http://localhost:8000/static/default_avatar.png';
   };
 
@@ -113,11 +109,9 @@ const BeatList: React.FC<BeatListProps> = ({
       if (filters.name) {
         const searchLower = filters.name.toLowerCase();
         const nameMatch = beat.name.toLowerCase().includes(searchLower);
-        
         const tagMatch = beat.tags?.some(tag => 
           tag.name.toLowerCase().includes(searchLower)
         );
-
         if (!nameMatch && !tagMatch) return false;
       }
       if (filters.author && !getAuthorName(beat).toLowerCase().includes(filters.author.toLowerCase())) {
@@ -132,22 +126,18 @@ const BeatList: React.FC<BeatListProps> = ({
       if (filters.key && beat.key !== filters.key) {
         return false;
       }
-
       if (!isProfileView && filters.freeOnly) {
         const isBeatFree = isFree(beat);
         if (!isBeatFree) return false;
       }
-
       if (!isProfileView && !filters.freeOnly) {
         const beatMinPrice = getBeatMinPrice(beat);
-
         if (filters.minPrice) {
           const minPrice = parseFloat(filters.minPrice);
           if (beatMinPrice === null || beatMinPrice < minPrice) {
             return false;
           }
         }
-
         if (filters.maxPrice) {
           const maxPrice = parseFloat(filters.maxPrice);
           if (beatMinPrice === null || beatMinPrice > maxPrice) {
@@ -155,7 +145,6 @@ const BeatList: React.FC<BeatListProps> = ({
           }
         }
       }
-
       return true;
     });
   }, [beats, filters, isProfileView]);
@@ -164,10 +153,8 @@ const BeatList: React.FC<BeatListProps> = ({
     return [...filteredBeats].sort((a, b) => {
       const aIsPromoted = a.promotion_status !== 'standard';
       const bIsPromoted = b.promotion_status !== 'standard';
-      
       if (aIsPromoted && !bIsPromoted) return -1;
       if (!aIsPromoted && bIsPromoted) return 1;
-      
       const dateA = new Date(a.created_at).getTime();
       const dateB = new Date(b.created_at).getTime();
       return dateB - dateA;
@@ -179,6 +166,11 @@ const BeatList: React.FC<BeatListProps> = ({
     to: { opacity: 1 },
     config: { duration: 300 },
   });
+
+  const getAudioFormat = (beat: Beat): string => {
+    if (!beat.audio_file_path) return '';
+    return beat.audio_file_path.split('.').pop()?.toUpperCase() || '';
+  };
 
   if (loading) {
     return (
@@ -216,9 +208,9 @@ const BeatList: React.FC<BeatListProps> = ({
           const beat = sortedBeats[index];
           const isOwnBeat = currentUser && getAuthorId(beat) === currentUser.id;
           const coverUrl = getCoverUrl(beat);
+          const audioFormat = getAudioFormat(beat);
           return (
             <animated.div key={beat.id} style={style} className="w-full bg-neutral-900 rounded-lg p-4 hover:bg-neutral-800 transition-all duration-300 group border border-neutral-700 relative">
-              {/* ... остальной код карточки без изменений ... */}
               <div className="mb-3">
                 {coverUrl ? (
                   <div className="relative inline-block w-full">
@@ -277,7 +269,7 @@ const BeatList: React.FC<BeatListProps> = ({
                       setInfoModalOpen(true);
                     }}
                   >
-                    {truncateText(beat.name, 45)}
+                    {truncateText(beat.name, 16)}
                   </h3>
                   <div 
                     className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
@@ -292,9 +284,7 @@ const BeatList: React.FC<BeatListProps> = ({
                         e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
                       }}
                     />
-                    <p
-                      className="text-neutral-400 text-sm truncate hover:text-red-400 transition-colors"
-                    >
+                    <p className="text-neutral-400 text-sm truncate hover:text-red-400 transition-colors">
                       by {getAuthorName(beat)}
                     </p>
                   </div>
@@ -324,16 +314,6 @@ const BeatList: React.FC<BeatListProps> = ({
                         ? 'bg-red-600 text-white'
                         : 'bg-yellow-600 text-black'
                     }`}>
-                    </span>
-                  )}
-                  {beat.wav_path && (
-                    <span className="text-xs bg-blue-600 text-white px-2 py-1 rounded-full" title="Доступен WAV (высокое качество)">
-                      WAV
-                    </span>
-                  )}
-                  {!beat.wav_path && beat.mp3_path && (
-                    <span className="text-xs bg-green-600 text-white px-2 py-1 rounded-full" title="MP3">
-                      MP3
                     </span>
                   )}
                 </div>

@@ -7,8 +7,7 @@ export interface Beat {
   id: number;
   name: string;
   author_id: number;
-  mp3_path?: string;
-  wav_path?: string;
+  audio_file_path?: string;
   cover_path?: string;
   genre: string;
   tempo: number;

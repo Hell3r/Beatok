@@ -17,6 +17,11 @@ const getCoverUrl = (beat: Beat): string | null => {
   return `http://localhost:8000/static/covers/${beat.cover_path}`;
 };
 
+const getAudioFormat = (beat: Beat): string => {
+  if (!beat.audio_file_path) return '';
+  return beat.audio_file_path.split('.').pop()?.toUpperCase() || '';
+};
+
 interface BeatTableProps {
   beats: Beat[];
   loading?: boolean;
@@ -87,11 +92,9 @@ const BeatTable: React.FC<BeatTableProps> = ({
   const getAuthorAvatar = (beat: Beat): string => {
     const authorId = getAuthorId(beat);
     if (!authorId) return 'http://localhost:8000/static/default_avatar.png';
-
     if (beat.owner?.avatar_path) return getAvatarUrl(authorId, beat.owner.avatar_path);
     if (beat.author?.avatar_path) return getAvatarUrl(authorId, beat.author.avatar_path);
     if (beat.user?.avatar_path) return getAvatarUrl(authorId, beat.user.avatar_path);
-
     return 'http://localhost:8000/static/default_avatar.png';
   };
 
@@ -133,11 +136,9 @@ const BeatTable: React.FC<BeatTableProps> = ({
       if (filters.name) {
         const searchLower = filters.name.toLowerCase();
         const nameMatch = beat.name.toLowerCase().includes(searchLower);
-        
         const tagMatch = beat.tags?.some(tag => 
           tag.name.toLowerCase().includes(searchLower)
         );
-
         if (!nameMatch && !tagMatch) return false;
       }
       if (!isProfileView && filters.author && !getAuthorName(beat).toLowerCase().includes(filters.author.toLowerCase())) {
@@ -152,22 +153,18 @@ const BeatTable: React.FC<BeatTableProps> = ({
       if (filters.key && beat.key !== filters.key) {
         return false;
       }
-
       if (!isProfileView && filters.freeOnly) {
         const isBeatFree = isFree(beat);
         if (!isBeatFree) return false;
       }
-
       if (!isProfileView && !filters.freeOnly) {
         const beatMinPrice = getBeatMinPrice(beat);
-
         if (filters.minPrice) {
           const minPrice = parseFloat(filters.minPrice);
           if (beatMinPrice === null || beatMinPrice < minPrice) {
             return false;
           }
         }
-
         if (filters.maxPrice) {
           const maxPrice = parseFloat(filters.maxPrice);
           if (beatMinPrice === null || beatMinPrice > maxPrice) {
@@ -175,7 +172,6 @@ const BeatTable: React.FC<BeatTableProps> = ({
           }
         }
       }
-
       return true;
     });
   }, [beats, filters, isProfileView]);
@@ -184,12 +180,10 @@ const BeatTable: React.FC<BeatTableProps> = ({
     return [...filteredBeats].sort((a, b) => {
       let aValue = a[sortField];
       let bValue = b[sortField];
-
       if (sortField === 'created_at' || sortField === 'updated_at') {
         aValue = new Date(aValue as string).getTime();
         bValue = new Date(bValue as string).getTime();
       }
-
       if ((aValue ?? Number.MIN_SAFE_INTEGER) < (bValue ?? Number.MIN_SAFE_INTEGER))
           return sortDirection === 'asc' ? -1 : 1;
       if ((aValue ?? Number.MIN_SAFE_INTEGER) > (bValue ?? Number.MIN_SAFE_INTEGER))
@@ -214,7 +208,6 @@ const BeatTable: React.FC<BeatTableProps> = ({
 
   const handleContextMenu = (e: React.MouseEvent, beat: Beat) => {
     if (!isProfileView) return;
-
     e.preventDefault();
     setContextMenu({
       x: e.clientX,
@@ -495,129 +488,128 @@ const BeatTable: React.FC<BeatTableProps> = ({
               </tr>
             </thead>
             <tbody>
-              {sortedBeats.map((beat) => (
-                <tr
-                  key={beat.id}
-                  className={`border-b border-neutral-800 hover:bg-neutral-800 transition-all duration-300 group ${beat.status === 'denied' ? 'cursor-select' : ''}`}
-                  onDoubleClick={() => setExpandedBeatId(expandedBeatId === beat.id ? null : beat.id)}
-                  onContextMenu={(e) => handleContextMenu(e, beat)}
-                >
-                  <td className="p-4 text-center">
-                    {beat.promotion_status !== 'standard' && (
-                      <div className="mb-1">
-                        <svg className="w-5 h-5 mx-auto text-yellow-400 drop-shadow-lg" viewBox="0 0 24 24" fill="currentColor">
-                          <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
-                        </svg>
-                      </div>
-                    )}
-                    <div 
-                      className={`relative w-16 h-16 rounded overflow-hidden mx-auto cursor-pointer group ${beat.promotion_status !== 'standard' ? 'p-0.5 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600' : ''} ${beat.promotion_status === 'standard' ? 'mt-1' : ''}`}
-                      onClick={() => onPlay?.(beat)}
-                    >
-                      {getCoverUrl(beat) ? (
-                        <img
-                          src={getCoverUrl(beat)!}
-                          alt="Обложка"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-neutral-700 flex items-center justify-center">
-                          <svg className="w-5 h-5 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+              {sortedBeats.map((beat) => {
+                const coverUrl = getCoverUrl(beat);
+                const audioFormat = getAudioFormat(beat);
+                return (
+                  <tr
+                    key={beat.id}
+                    className={`border-b border-neutral-800 hover:bg-neutral-800 transition-all duration-300 group ${beat.status === 'denied' ? 'cursor-select' : ''}`}
+                    onDoubleClick={() => setExpandedBeatId(expandedBeatId === beat.id ? null : beat.id)}
+                    onContextMenu={(e) => handleContextMenu(e, beat)}
+                  >
+                    <td className="p-4 text-center">
+                      {beat.promotion_status !== 'standard' && (
+                        <div className="mb-1">
+                          <svg className="w-5 h-5 mx-auto text-yellow-400 drop-shadow-lg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
                           </svg>
                         </div>
                       )}
-                      <div className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 ${currentPlayingBeat?.id === beat.id && isPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
-                        {currentPlayingBeat?.id === beat.id && isPlaying ? (
-                          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
-                          </svg>
-                        ) : (
-                          <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M8 5v14l11-7z"/>
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                  </td>
-                  <td className="p-4 text-center">
-                    <div
-                      className="text-white font-medium group-hover:text-red-400 transition-colors cursor-pointer"
-                      title={beat.name}
-                      onClick={() => {
-                        setBeatToShowInfo(beat);
-                        setInfoModalOpen(true);
-                      }}
-                    >
-                      {truncateText(beat.name, 55)}
-                    </div>
-                    <div className="hidden md:flex items-center justify-center space-x-1 mt-1">
-                      {isProfileView && beat.promotion_status !== 'standard' && (
-                        <span className={`text-xs px-1 rounded select-none ${
-                          beat.promotion_status === 'featured'
-                            ? 'bg-red-600 text-white'
-                            : 'bg-yellow-500 text-black'
-                        }`}>
-                        </span>
-                      )}
-                      {beat.wav_path && (
-                        <span className="text-xs bg-blue-600 text-white px-1 rounded" title="Доступен WAV (высокое качество)">
-                          WAV
-                        </span>
-                      )}
-                      {!beat.wav_path && beat.mp3_path && (
-                        <span className="text-xs bg-green-600 text-white px-1 rounded" title="MP3">
-                          MP3
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  {!isProfileView && !hideAuthorColumn && (
-                    <td className="p-4 text-neutral-300 text-center">
                       <div 
-                        className="flex items-center justify-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
-                        onClick={() => handleAuthorClick(beat)}
-                        title={`Перейти к профилю ${getAuthorName(beat)}`}
+                        className={`relative w-16 h-16 rounded overflow-hidden mx-auto cursor-pointer group ${beat.promotion_status !== 'standard' ? 'p-0.5 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600' : ''} ${beat.promotion_status === 'standard' ? 'mt-1' : ''}`}
+                        onClick={() => onPlay?.(beat)}
                       >
-                        <img
-                          src={getAuthorAvatar(beat)}
-                          alt="Аватар автора"
-                          className="w-6 h-6 rounded-full object-cover"
-                          onError={(e) => {
-                            e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
-                          }}
-                        />
-                        <span
-                          className="hover:text-red-400 transition-colors"
-                        >
-                          {truncateText(getAuthorName(beat), 15)}
-                        </span>
+                        {coverUrl ? (
+                          <img
+                            src={coverUrl}
+                            alt="Обложка"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-neutral-700 flex items-center justify-center">
+                            <svg className="w-5 h-5 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                            </svg>
+                          </div>
+                        )}
+                        <div className={`absolute inset-0 bg-black/50 flex items-center justify-center transition-opacity duration-200 ${currentPlayingBeat?.id === beat.id && isPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                          {currentPlayingBeat?.id === beat.id && isPlaying ? (
+                            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M6 4h4v16H6zm8 0h4v16h-4z"/>
+                            </svg>
+                          ) : (
+                            <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                              <path d="M8 5v14l11-7z"/>
+                            </svg>
+                          )}
+                        </div>
                       </div>
                     </td>
-                  )}
-                  <td className="p-4 text-center">
-                    <span className="bg-neutral-700 text-neutral-300 px-3 py-2 rounded text-sm min-w-[80px] inline-block">
-                      {beat.genre}
-                    </span>
-                  </td>
-                  <td className="p-4 text-neutral-300 font-mono text-center">
-                    {beat.tempo} BPM
-                  </td>
-                  <td className="p-4 text-neutral-300 font-mono text-center">
-                    {beat.key}
-                  </td>
-                  <td className="p-4 text-neutral-300 text-center">
-                    {formatDuration(beat.duration)}
-                  </td>
-                  <td className="p-4 text-neutral-300 text-sm hidden md:table-cell text-center">
-                    {formatFileSize(beat.size)}
-                  </td>
-                  <td className="p-4 text-neutral-400 text-sm hidden md:table-cell text-center">
-                    {formatDate(beat.created_at)}
-                  </td>
-                  {renderActions(beat)}
-                </tr>
-              ))}
+                    <td className="p-4 text-center">
+                      <div
+                        className="text-white font-medium group-hover:text-red-400 transition-colors cursor-pointer"
+                        title={beat.name}
+                        onClick={() => {
+                          setBeatToShowInfo(beat);
+                          setInfoModalOpen(true);
+                        }}
+                      >
+                        {truncateText(beat.name, 20)}
+                      </div>
+                      <div className="hidden md:flex items-center justify-center space-x-1 mt-1">
+                        {isProfileView && beat.promotion_status !== 'standard' && (
+                          <span className={`text-xs px-1 rounded select-none ${
+                            beat.promotion_status === 'featured'
+                              ? 'bg-red-600 text-white'
+                              : 'bg-yellow-500 text-black'
+                          }`}>
+                          </span>
+                        )}
+                        {audioFormat && (
+                          <span className={`text-xs px-1 rounded ${
+                            audioFormat === 'WAV' ? 'bg-blue-600 text-white' : 'bg-green-600 text-white'
+                          }`} title={`Доступен ${audioFormat}`}>
+                            {audioFormat}
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    {!isProfileView && !hideAuthorColumn && (
+                      <td className="p-4 text-neutral-300 text-center">
+                        <div 
+                          className="flex items-center justify-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => handleAuthorClick(beat)}
+                          title={`Перейти к профилю ${getAuthorName(beat)}`}
+                        >
+                          <img
+                            src={getAuthorAvatar(beat)}
+                            alt="Аватар автора"
+                            className="w-6 h-6 rounded-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
+                            }}
+                          />
+                          <span className="hover:text-red-400 transition-colors">
+                            {truncateText(getAuthorName(beat), 15)}
+                          </span>
+                        </div>
+                      </td>
+                    )}
+                    <td className="p-4 text-center">
+                      <span className="bg-neutral-700 text-neutral-300 px-3 py-2 rounded text-sm min-w-[80px] inline-block">
+                        {beat.genre}
+                      </span>
+                    </td>
+                    <td className="p-4 text-neutral-300 font-mono text-center">
+                      {beat.tempo} BPM
+                    </td>
+                    <td className="p-4 text-neutral-300 font-mono text-center">
+                      {beat.key}
+                    </td>
+                    <td className="p-4 text-neutral-300 text-center">
+                      {formatDuration(beat.duration)}
+                    </td>
+                    <td className="p-4 text-neutral-300 text-sm hidden md:table-cell text-center">
+                      {formatFileSize(beat.size)}
+                    </td>
+                    <td className="p-4 text-neutral-400 text-sm hidden md:table-cell text-center">
+                      {formatDate(beat.created_at)}
+                    </td>
+                    {renderActions(beat)}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

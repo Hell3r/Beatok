@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import type { User } from '../types/auth';
 
-const AdminSwaggerPage: React.FC = () => {
+const Admin: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
@@ -14,6 +14,9 @@ const AdminSwaggerPage: React.FC = () => {
       }
     }
   }, []);
+
+
+
 
   if (!currentUser || currentUser.role !== 'admin') {
     return (
@@ -29,17 +32,10 @@ const AdminSwaggerPage: React.FC = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="bg-neutral-800 rounded-lg p-4">
-        <iframe
-          src="http://localhost:8000/docs"
-          title="Swagger UI"
-          width="100%"
-          height="800"
-          style={{ border: 'none', borderRadius: '8px' }}
-          allowFullScreen
-        />
+        админка
       </div>
     </div>
   );
 };
 
-export default AdminSwaggerPage;
+export default Admin;

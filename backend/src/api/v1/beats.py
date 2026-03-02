@@ -14,19 +14,16 @@ from src.models.beats import BeatModel, StatusType
 from src.models.beat_pricing import BeatPricingModel
 from src.models.terms_of_use import TermsOfUseModel
 from src.models.tags import TagModel
-from src.schemas.beats import BeatResponse, BeatResponse
-from src.services.AuthService import get_current_user
+from src.schemas.beats import BeatResponse
 from src.dependencies.auth import get_current_user_id
 from src.dependencies.services import AudioFingerprintServiceDep
 from src.telegram_bot.bot import support_bot
 from src.core.cache import cached
 from src.services.RedisService import redis_service
-from pathlib import Path
 from src.services.rate_limiter import check_rate_limit
 from src.services.rate_limiter import RateLimiter
 from PIL import Image
 from io import BytesIO
-
 
 router = APIRouter(prefix="/beats", tags=["Аудио файлы"])
 
@@ -36,7 +33,7 @@ AUDIO_STORAGE.mkdir(parents=True, exist_ok=True)
 COVER_STORAGE = Path("static/covers")
 COVER_STORAGE.mkdir(parents=True, exist_ok=True)
 
-@router.post("/create", response_model=BeatResponse, summary="Добавить файл")
+@router.post("/create", response_model=BeatResponse)
 async def create_beat(
     request: Request,
     session: SessionDep,
@@ -50,19 +47,12 @@ async def create_beat(
     is_free: str = Form("false"),
     terms_of_use: str = Form(None),
     tags: str = Form(None),
-    mp3_file: UploadFile = File(None),
-    wav_file: UploadFile = File(None),
+    audio_file: UploadFile = File(None),
     cover_file: UploadFile = File(None),
 ):
     await check_rate_limit(request, "beat_create", current_user_id)
-    
-    if mp3_file and mp3_file.filename and not mp3_file.filename.lower().endswith('.mp3'):
-        raise HTTPException(400, "MP3 файл должен иметь расширение .mp3")
-    
-    if wav_file and wav_file.filename and not wav_file.filename.lower().endswith('.wav'):
-        raise HTTPException(400, "WAV файл должен иметь расширение .wav")
 
-    if not mp3_file and not wav_file:
+    if not audio_file:
         raise HTTPException(400, "Необходимо загрузить MP3 или WAV файл")
 
     beat = BeatModel(
@@ -73,8 +63,8 @@ async def create_beat(
         key=key,
         promotion_status=promotion_status,
         status=StatusType.MODERATED,
-        mp3_path=None,
-        wav_path=None,
+        audio_file_path=None,
+        cover_path=None,
         size=0,
         duration=0.0,
         audio_fingerprint=None,
@@ -89,42 +79,33 @@ async def create_beat(
     
     try:
         rate_limiter = RateLimiter()
-        new_count = await rate_limiter.increment_daily_beat_counter(current_user_id)
+        await rate_limiter.increment_daily_beat_counter(current_user_id)
         beat_folder = AUDIO_STORAGE / "beats" / str(beat.id)
         beat_folder.mkdir(parents=True, exist_ok=True)
         total_size = 0
-
-        if mp3_file and mp3_file.filename:
-            mp3_path = beat_folder / "audio.mp3"
-            content = await mp3_file.read()
-            async with aiofiles.open(mp3_path, "wb") as f:
-                await f.write(content)
-            beat.mp3_path = str(mp3_path.relative_to(AUDIO_STORAGE))
-            total_size += len(content)
-            audio_path_for_fingerprint = mp3_path
-            
-            try:
-                audio = MutagenFile(mp3_path)
-                if audio is not None and hasattr(audio, 'info'):
-                    beat.duration = round(audio.info.length, 2)
-            except Exception as e:
-                print(f"Ошибка при получении длительности MP3: {e}")
                 
-        if wav_file and wav_file.filename:
-            wav_path = beat_folder / "audio.wav"
-            content = await wav_file.read()
-            async with aiofiles.open(wav_path, "wb") as f:
+        if audio_file and audio_file.filename:
+            file_ext = audio_file.filename.split('.')[-1].lower()
+            if file_ext not in ['mp3', 'wav']:
+                raise HTTPException(400, "Аудиофайл должен быть в формате MP3 или WAV")
+            
+            audio_filename = f"audio.{file_ext}"
+            audio_path = beat_folder / audio_filename
+            
+            content = await audio_file.read()
+            async with aiofiles.open(audio_path, "wb") as f:
                 await f.write(content)
-            beat.wav_path = str(wav_path.relative_to(AUDIO_STORAGE))
+            
+            beat.audio_file_path = str(audio_path.relative_to(AUDIO_STORAGE))
             total_size += len(content)
-            audio_path_for_fingerprint = wav_path
+            audio_path_for_fingerprint = audio_path
 
             try:
-                audio = MutagenFile(wav_path)
+                audio = MutagenFile(audio_path)
                 if audio is not None and hasattr(audio, 'info'):
                     beat.duration = round(audio.info.length, 2)
-            except Exception as e:
-                print(f"Ошибка при получении длительности WAV: {e}")
+            except Exception:
+                pass
         
         beat.size = total_size
 
@@ -138,7 +119,6 @@ async def create_beat(
             if len(cover_content) > 5 * 1024 * 1024:
                 raise HTTPException(400, "Размер обложки не должен превышать 5MB")
             
-            # Check if cover is square
             try:
                 image = Image.open(BytesIO(cover_content))
                 width, height = image.size
@@ -146,8 +126,7 @@ async def create_beat(
                     raise HTTPException(400, "Обложка должна быть квадратной")
             except HTTPException:
                 raise
-            except Exception as e:
-                print(f"Ошибка при проверке обложки: {e}")
+            except Exception:
                 raise HTTPException(400, "Не удалось проверить обложку")
             
             cover_folder = COVER_STORAGE / str(beat.id)
@@ -160,7 +139,6 @@ async def create_beat(
                 await f.write(cover_content)
             
             beat.cover_path = str(cover_path.relative_to(COVER_STORAGE))
-            print(f"✅ Обложка сохранена: {beat.cover_path}")
 
         if audio_path_for_fingerprint:
             fingerprint, fingerprint_data = await fingerprint_service.extract_fingerprint(
@@ -168,62 +146,59 @@ async def create_beat(
             )
             
             if fingerprint != "0" * 16:
-                if True:
-                    from sqlalchemy import or_
-                    result = await session.execute(
-                        select(BeatModel)
-                        .where(BeatModel.audio_fingerprint.isnot(None))
-                        .where(BeatModel.id != beat.id)
-                        .where(
-                            or_(
-                                BeatModel.status == StatusType.AVAILABLE,
-                                BeatModel.status == StatusType.MODERATED
-                            )
+                from sqlalchemy import or_
+                result = await session.execute(
+                    select(BeatModel)
+                    .where(BeatModel.audio_fingerprint.isnot(None))
+                    .where(BeatModel.id != beat.id)
+                    .where(
+                        or_(
+                            BeatModel.status == StatusType.AVAILABLE,
+                            BeatModel.status == StatusType.MODERATED
                         )
-                        .options(selectinload(BeatModel.owner))
                     )
-                    existing_beats = result.scalars().all()
+                    .options(selectinload(BeatModel.owner))
+                )
+                existing_beats = result.scalars().all()
+                
+                duplicates = []
+                for existing_beat in existing_beats:
+                    is_match, similarity = fingerprint_service.compare_fingerprints(
+                        fingerprint,
+                        existing_beat.audio_fingerprint
+                    )
                     
-                    duplicates = []
-                    for existing_beat in existing_beats:
-                        is_match, similarity = fingerprint_service.compare_fingerprints(
-                            fingerprint,
-                            existing_beat.audio_fingerprint
-                        )
+                    if is_match:
+                        duplicates.append({
+                            'beat_id': existing_beat.id,
+                            'beat_name': existing_beat.name,
+                            'author': existing_beat.owner.username if existing_beat.owner else 'Unknown',
+                            'author_id': existing_beat.author_id,
+                            'similarity': round(similarity, 4)
+                        })
                         
-                        if is_match:
-                            duplicates.append({
-                                'beat_id': existing_beat.id,
-                                'beat_name': existing_beat.name,
-                                'author': existing_beat.owner.username if existing_beat.owner else 'Unknown',
-                                'author_id': existing_beat.author_id,
-                                'similarity': round(similarity, 4)
-                            })
-                            
-                    if duplicates:
-                        duplicates.sort(key=lambda x: x['similarity'], reverse=True)
-                        
-                        if beat_folder.exists():
-                            import shutil
-                            shutil.rmtree(beat_folder, ignore_errors=True)
-                        
-                        await session.rollback()
+                if duplicates:
+                    duplicates.sort(key=lambda x: x['similarity'], reverse=True)
                     
-                        raise HTTPException(
-                            status_code=409, 
-                            detail={
-                                "error": "duplicate_audio_found",
-                                "message": "Жулик не воруй",
-                                "duplicate_count": len(duplicates)
-                            }
-                        )
+                    if beat_folder.exists():
+                        shutil.rmtree(beat_folder, ignore_errors=True)
+                    
+                    await session.rollback()
+                
+                    raise HTTPException(
+                        status_code=409, 
+                        detail={
+                            "error": "duplicate_audio_found",
+                            "message": "Жулик не воруй",
+                            "duplicate_count": len(duplicates)
+                        }
+                    )
                 
                 beat.audio_fingerprint = fingerprint
                 beat.audio_fingerprint_timings = json.dumps(fingerprint_data["timings"])
 
         if terms_of_use:
             try:
-                from src.models.terms_of_use import TermsOfUseModel
                 terms_data = json.loads(terms_of_use)
                 
                 terms_of_use_model = TermsOfUseModel(
@@ -234,20 +209,17 @@ async def create_beat(
                     music_video_recording=terms_data.get('music_video_recording', False),
                     release_of_copies=terms_data.get('release_of_copies', False)
                 )
-                print(terms_data)
                 session.add(terms_of_use_model)
                 await session.flush()
             except json.JSONDecodeError:
-                print("Ошибка при парсинге terms_of_use")
-            except Exception as e:
-                print(f"Ошибка при сохранении terms_of_use: {e}")
+                pass
+            except Exception:
+                pass
 
         if tags:
             try:
-                from src.models.tags import TagModel
                 tag_list = [tag.strip() for tag in tags.split(',') if tag.strip()]
                 tag_list = list(dict.fromkeys(tag_list))
-                print(f"📝 Получены теги: {tag_list}")
 
                 if len(tag_list) > 10:
                     raise HTTPException(400, "Максимум 10 тегов")
@@ -261,15 +233,13 @@ async def create_beat(
                         name=tag_name.lower()
                     )
                     session.add(tag)
-                    print(f"✅ Добавлен тег: {tag_name} для бита {beat.id}")
 
                 await session.flush()
-                print(f"✅ Все теги сохранены для бита {beat.id}")
 
             except HTTPException:
                 raise
-            except Exception as e:
-                print(f"Ошибка при сохранении тегов: {e}")
+            except Exception:
+                pass
         
         await session.commit()
         
@@ -301,10 +271,8 @@ async def create_beat(
         }
 
         audio_path = None
-        if beat_with_relations.mp3_path:
-            audio_path = AUDIO_STORAGE / beat_with_relations.mp3_path
-        elif beat_with_relations.wav_path:
-            audio_path = AUDIO_STORAGE / beat_with_relations.wav_path
+        if beat_with_relations.audio_file_path:
+            audio_path = AUDIO_STORAGE / beat_with_relations.audio_file_path
 
         cover_path = None
         if beat_with_relations.cover_path:
@@ -320,27 +288,20 @@ async def create_beat(
             )
         )
         
-        success = await redis_service.delete_pattern("*beats:*")
-        if success:
-            print("Кеш успешно очищен")
-        else:
-            print("Не удалось очистить кеш")
+        await redis_service.delete_pattern("*beats:*")
         
         return BeatResponse.model_validate(beat_with_relations)
         
     except HTTPException:
         raise
         
-    except Exception as e:  
+    except Exception as e:
         await session.rollback()
         if beat_folder and beat_folder.exists():
-            import shutil
             shutil.rmtree(beat_folder, ignore_errors=True)
         raise HTTPException(500, f"Ошибка при создании бита: {str(e)}")
 
-
-
-@router.get("/", response_model=List[BeatResponse], summary="Получить все биты")
+@router.get("/", response_model=List[BeatResponse])
 @cached(ttl=300)
 async def get_beats(
     session: SessionDep,
@@ -350,9 +311,7 @@ async def get_beats(
     promotion_status: Optional[str] = None,
     tag: Optional[str] = Query(None, description="Фильтр по тегу")
 ):
-    from sqlalchemy.orm import selectinload
     from src.models.favorite import FavoriteModel
-    from src.models.tags import TagModel
 
     likes_subquery = select(func.count(FavoriteModel.id)).where(FavoriteModel.beat_id == BeatModel.id).scalar_subquery()
 
@@ -390,13 +349,12 @@ async def get_beats(
     
     return [BeatResponse.model_validate(beat) for beat in beats]
 
-@router.get("/top-beatmakers", summary="Получить топ битмейкеров по количеству лайков на их битах")
+@router.get("/top-beatmakers")
 @cached(ttl=600)
 async def get_top_beatmakers(
     session: SessionDep,
     limit: int = 10
 ):
-    from sqlalchemy.orm import selectinload
     from src.models.users import UsersModel
     from src.models.favorite import FavoriteModel
 
@@ -434,14 +392,12 @@ async def get_top_beatmakers(
         for row in top_beatmakers
     ]
 
-
-@router.get("/beatmakers", summary="Получить всех битмейкеров (пользователей с хотя бы одним битом)")
+@router.get("/beatmakers")
 @cached(ttl=600)
 async def get_all_beatmakers(
     session: SessionDep
 ):
     from src.models.users import UsersModel
-    
     
     result = await session.execute(
         select(
@@ -484,19 +440,17 @@ async def get_all_beatmakers(
         for row in beatmakers
     ]
 
-
-@router.get("/{beat_id}", response_model=BeatResponse, summary = "Получить бит по идентификатору")
+@router.get("/{beat_id}", response_model=BeatResponse)
 async def get_beat(
     beat_id: int,
     session: SessionDep
 ):
-    from sqlalchemy.orm import selectinload
-    
     result = await session.execute(
         select(BeatModel)
         .options(
             selectinload(BeatModel.owner),
-            selectinload(BeatModel.terms_of_use_backref)
+            selectinload(BeatModel.terms_of_use_backref),
+            selectinload(BeatModel.tags)
         )
         .where(BeatModel.id == beat_id)
     )
@@ -507,9 +461,7 @@ async def get_beat(
     
     return BeatResponse.model_validate(beat)
 
-
-
-@router.get("/{beat_id}/stream", summary="Стриминг файла")
+@router.get("/{beat_id}/stream")
 async def stream_beat(
     session: SessionDep,
     beat_id: int,
@@ -522,10 +474,17 @@ async def stream_beat(
     if not beat:
         raise HTTPException(404, "Бит не найден")
 
-    file_path = beat.mp3_path if format == "mp3" else beat.wav_path
-
-    if not file_path or not os.path.exists(file_path):
+    if not beat.audio_file_path:
         raise HTTPException(404, "Аудиофайл не найден")
+
+    file_path = AUDIO_STORAGE / beat.audio_file_path
+    
+    if not os.path.exists(file_path):
+        raise HTTPException(404, "Аудиофайл не найден на диске")
+
+    file_ext = beat.audio_file_path.split('.')[-1].lower()
+    if file_ext != format:
+        raise HTTPException(400, f"Запрошен формат {format}, но доступен {file_ext}")
 
     if current_user_id != beat.author_id:
         from src.models.users import UsersModel
@@ -535,23 +494,18 @@ async def stream_beat(
         )
         author = author_result.scalar_one_or_none()
         
-        print(f"🔍 Author found: {author is not None}")
-        print(f"🔍 Current download_count: {author.download_count if author else 'No author'}")
-    
         if author:
-            old_count = author.download_count
-            author.download_count = 1 if author.download_count is None else author.download_count + 1
+            old_count = author.download_count or 0
+            author.download_count = old_count + 1
             await session.commit()
-            await session.refresh(author)
-            print(f"🔍 Download count updated: {old_count} -> {author.download_count}")
 
     from fastapi.responses import FileResponse
 
-    media_type = "audio/mpeg" if format == "mp3" else "audio/wav"
+    media_type = "audio/mpeg" if file_ext == "mp3" else "audio/wav"
     response = FileResponse(
         path=file_path,
         media_type=media_type,
-        filename=f"{beat.name}.{format}"
+        filename=f"{beat.name}.{file_ext}"
     )
 
     response.headers["Access-Control-Allow-Origin"] = "*"
@@ -560,11 +514,10 @@ async def stream_beat(
 
     return response
 
-
-@router.delete("/{beat_id}", summary= "Удалить файл по id")
+@router.delete("/{beat_id}")
 async def delete_beat(
     beat_id: int,
-    session : SessionDep
+    session: SessionDep
 ):
     result = await session.execute(select(BeatModel).where(BeatModel.id == beat_id))
     beat = result.scalar_one_or_none()
@@ -572,20 +525,20 @@ async def delete_beat(
     if not beat:
         raise HTTPException(404, "Бит не найден")
     
-    
     beat_folder = AUDIO_STORAGE / "beats" / str(beat_id)
     if beat_folder.exists():
         shutil.rmtree(beat_folder, ignore_errors=True)
+    
+    cover_folder = COVER_STORAGE / str(beat_id)
+    if cover_folder.exists():
+        shutil.rmtree(cover_folder, ignore_errors=True)
     
     await session.delete(beat)
     await session.commit()
     
     return {"message": "Бит удален"}
 
-
-
-
-@router.post("/generate-identical/", summary="Создание 100 одинаковых битов")
+@router.post("/generate-identical/")
 async def generate_identical_beats(
     request: Request,
     session: SessionDep,
@@ -594,55 +547,36 @@ async def generate_identical_beats(
     genre: str = Form("hip-hop"),
     tempo: int = Form(140),
     key: str = Form("C"),
-    mp3_file: UploadFile = File(None),
-    wav_file: UploadFile = File(None),
+    audio_file: UploadFile = File(None),
 ):
-    
     await check_rate_limit(request, "beat_create", current_user_id)
     
     try:
-        if not mp3_file and not wav_file:
-            raise HTTPException(status_code=400, detail="Необходимо загрузить хотя бы один файл (MP3 или WAV)")
+        if not audio_file:
+            raise HTTPException(status_code=400, detail="Необходимо загрузить аудиофайл")
+
+        file_ext = audio_file.filename.split('.')[-1].lower()
+        if file_ext not in ['mp3', 'wav']:
+            raise HTTPException(400, "Аудиофайл должен быть в формате MP3 или WAV")
 
         total_size = 0
         file_duration = 180.0
 
-        mp3_content = None
-        if mp3_file and mp3_file.filename:
-            mp3_content = await mp3_file.read()
-            total_size += len(mp3_content)
+        audio_content = await audio_file.read()
+        total_size += len(audio_content)
 
-            temp_mp3_path = Path("temp_batch_audio.mp3")
-            async with aiofiles.open(temp_mp3_path, "wb") as f:
-                await f.write(mp3_content)
+        temp_audio_path = Path(f"temp_batch_audio.{file_ext}")
+        async with aiofiles.open(temp_audio_path, "wb") as f:
+            await f.write(audio_content)
 
-            try:
-                audio_info = MutagenFile(str(temp_mp3_path))
-                if audio_info and hasattr(audio_info, 'info'):
-                    file_duration = audio_info.info.length
-            except Exception as e:
-                print(f"Ошибка получения длительности MP3: {e}")
+        try:
+            audio_info = MutagenFile(str(temp_audio_path))
+            if audio_info and hasattr(audio_info, 'info'):
+                file_duration = audio_info.info.length
+        except Exception:
+            pass
 
-            temp_mp3_path.unlink(missing_ok=True)
-
-        wav_content = None
-        if wav_file and wav_file.filename:
-            wav_content = await wav_file.read()
-            total_size += len(wav_content)
-
-            if file_duration == 180.0:
-                temp_wav_path = Path("temp_batch_audio.wav")
-                async with aiofiles.open(temp_wav_path, "wb") as f:
-                    await f.write(wav_content)
-
-                try:
-                    audio_info = MutagenFile(str(temp_wav_path))
-                    if audio_info and hasattr(audio_info, 'info'):
-                        file_duration = audio_info.info.length
-                except Exception as e:
-                    print(f"Ошибка получения длительности WAV: {e}")
-
-                temp_wav_path.unlink(missing_ok=True)
+        temp_audio_path.unlink(missing_ok=True)
 
         beats_to_create = []
 
@@ -650,8 +584,8 @@ async def generate_identical_beats(
             beat = BeatModel(
                 name=f"{name} #{i}",
                 author_id=current_user_id,
-                mp3_path=None,
-                wav_path=None,
+                audio_file_path=None,
+                cover_path=None,
                 genre=genre,
                 tempo=tempo,
                 key=key,
@@ -665,31 +599,17 @@ async def generate_identical_beats(
         session.add_all(beats_to_create)
         await session.commit()
 
-
         for beat in beats_to_create:
             beat_folder = AUDIO_STORAGE / "beats" / str(beat.id)
             beat_folder.mkdir(parents=True, exist_ok=True)
 
-            mp3_path = None
-            wav_path = None
-
-
-            if mp3_content:
-                mp3_path = beat_folder / "audio.mp3"
-                async with aiofiles.open(mp3_path, "wb") as f:
-                    await f.write(mp3_content)
-                beat.mp3_path = str(mp3_path.relative_to(AUDIO_STORAGE))
-
-
-            if wav_content:
-                wav_path = beat_folder / "audio.wav"
-                async with aiofiles.open(wav_path, "wb") as f:
-                    await f.write(wav_content)
-                beat.wav_path = str(wav_path.relative_to(AUDIO_STORAGE))
-
+            audio_path = beat_folder / f"audio.{file_ext}"
+            async with aiofiles.open(audio_path, "wb") as f:
+                await f.write(audio_content)
+            
+            beat.audio_file_path = str(audio_path.relative_to(AUDIO_STORAGE))
 
         await session.commit()
-
 
         created_beats = []
         for beat in beats_to_create:
@@ -697,8 +617,7 @@ async def generate_identical_beats(
                 "id": beat.id,
                 "name": beat.name,
                 "folder": f"beats/{beat.id}",
-                "mp3_path": beat.mp3_path,
-                "wav_path": beat.wav_path
+                "audio_file_path": beat.audio_file_path
             })
 
         response_data = {
@@ -711,7 +630,7 @@ async def generate_identical_beats(
                 "file_size": total_size,
                 "duration_seconds": round(file_duration, 2),
                 "total_records": len(beats_to_create),
-                "files_included": ["mp3" if mp3_content else None, "wav" if wav_content else None],
+                "file_format": file_ext,
                 "storage_path": str(AUDIO_STORAGE)
             },
             "created_beats": created_beats[:10]
@@ -722,17 +641,14 @@ async def generate_identical_beats(
     except Exception as e:
         await session.rollback()
         raise HTTPException(status_code=500, detail=f"Ошибка при создании битов: {str(e)}")
-    
-    
 
-@router.post("/{beat_id}/favorite", summary="Добавить/удалить бит из избранного")
+@router.post("/{beat_id}/favorite")
 async def toggle_favorite(
     beat_id: int,
     session: SessionDep,
     current_user_id: Annotated[int, Depends(get_current_user_id)],
 ):
     from src.models.favorite import FavoriteModel
-    from src.models.beats import BeatModel
 
     result = await session.execute(select(BeatModel).where(BeatModel.id == beat_id))
     beat = result.scalar_one_or_none()
@@ -761,15 +677,13 @@ async def toggle_favorite(
         await session.commit()
         return {"message": "Бит добавлен в избранное", "action": "added"}
 
-
-@router.post("/{beat_id}/increment-download", summary="Увеличить счетчик скачиваний")
+@router.post("/{beat_id}/increment-download")
 async def increment_download_count(
     beat_id: int,
     session: SessionDep,
     current_user_id: Annotated[int, Depends(get_current_user_id)],
 ):
     from src.models.users import UsersModel
-    from src.models.beats import BeatModel
 
     result = await session.execute(select(BeatModel).where(BeatModel.id == beat_id))
     beat = result.scalar_one_or_none()

@@ -22,13 +22,38 @@ const BeatCard: React.FC<BeatCardProps> = ({ beat, onPlay, onDownload }) => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const getAudioFormat = (beat: Beat): string => {
+    if (!beat.audio_file_path) return '';
+    return beat.audio_file_path.split('.').pop()?.toUpperCase() || '';
+  };
+
+  const getCoverUrl = (beat: Beat): string | null => {
+    if (!beat.cover_path) return null;
+    return `http://localhost:8000/static/covers/${beat.cover_path}`;
+  };
+
+  const coverUrl = getCoverUrl(beat);
+  const audioFormat = getAudioFormat(beat);
+
   return (
     <div className="bg-neutral-800 rounded-lg p-4 hover:bg-neutral-700 transition-all duration-300 group border border-neutral-700">
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1">
-          <h3 className="text-white font-semibold text-lg truncate group-hover:text-red-400 transition-colors">
-            {beat.name}
-          </h3>
+          <div className="flex items-center space-x-3 mb-2">
+            {coverUrl && (
+              <img 
+                src={coverUrl} 
+                alt="Обложка" 
+                className="w-10 h-10 rounded object-cover"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+            )}
+            <h3 className="text-white font-semibold text-lg truncate group-hover:text-red-400 transition-colors">
+              {beat.name}
+            </h3>
+          </div>
           <p className="text-neutral-400 text-sm">
             by {beat.owner?.username || 'Unknown Artist'}
           </p>
@@ -60,12 +85,15 @@ const BeatCard: React.FC<BeatCardProps> = ({ beat, onPlay, onDownload }) => {
         </div>
       </div>
 
-      <div className="w-full bg-neutral-700 rounded-full h-1 mb-3">
-        <div 
-          className="bg-red-600 h-1 rounded-full transition-all duration-500"
-          style={{ width: '0%' }}
-        ></div>
-      </div>
+      {audioFormat && (
+        <div className="mb-3">
+          <span className={`text-xs px-2 py-1 rounded-full ${
+            audioFormat === 'WAV' ? 'bg-blue-600 text-white' : 'bg-green-600 text-white'
+          }`}>
+            {audioFormat}
+          </span>
+        </div>
+      )}
 
       <div className="flex justify-between items-center">
         <div className="flex space-x-2">

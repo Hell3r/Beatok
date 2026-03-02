@@ -34,8 +34,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
     genre: '',
     tempo: '',
     key: '',
-    mp3_file: null as File | null,
-    wav_file: null as File | null,
+    audio_file: null as File | null,
     cover_file: null as File | null,
     pricings: {} as Record<string, string>,
     is_free: false,
@@ -138,6 +137,22 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
+  const handleAudioChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const fileName = file.name.toLowerCase();
+      const isValidFormat = fileName.endsWith('.mp3') || fileName.endsWith('.wav');
+      
+      if (!isValidFormat) {
+        setError('Аудиофайл должен быть в формате MP3 или WAV');
+        return;
+      }
+      
+      setBeatData({ ...beatData, audio_file: file });
+      setError('');
+    }
+  };
+
   const modalTransition = useTransition(isOpen, {
     from: { opacity: 0, transform: 'scale(0.8) translateY(-20px)' },
     enter: { opacity: 1, transform: 'scale(1) translateY(0px)' },
@@ -195,8 +210,8 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
       return;
     }
 
-    if (!beatData.mp3_file && !beatData.wav_file) {
-      setError('Необходимо загрузить хотя бы один аудиофайл (MP3 или WAV)');
+    if (!beatData.audio_file) {
+      setError('Необходимо загрузить аудиофайл (MP3 или WAV)');
       setLoading(false);
       return;
     }
@@ -221,12 +236,8 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
         formData.append('tags', tags.join(','));
       }
 
-      if (beatData.mp3_file) {
-        formData.append('mp3_file', beatData.mp3_file);
-      }
-
-      if (beatData.wav_file) {
-        formData.append('wav_file', beatData.wav_file);
+      if (beatData.audio_file) {
+        formData.append('audio_file', beatData.audio_file);
       }
 
       if (beatData.cover_file) {
@@ -284,8 +295,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
         genre: '',
         tempo: '',
         key: '',
-        mp3_file: null,
-        wav_file: null,
+        audio_file: null,
         cover_file: null,
         pricings: {},
         is_free: false,
@@ -307,22 +317,6 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
       setError(err instanceof Error ? err.message : 'Произошла ошибка при добавлении бита');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileType: 'mp3' | 'wav') => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (fileType === 'mp3' && !file.name.toLowerCase().endsWith('.mp3')) {
-        setError('MP3 файл должен иметь расширение .mp3');
-        return;
-      }
-      if (fileType === 'wav' && !file.name.toLowerCase().endsWith('.wav')) {
-        setError('WAV файл должен иметь расширение .wav');
-        return;
-      }
-      setBeatData({ ...beatData, [`${fileType}_file`]: file });
-      setError('');
     }
   };
 
@@ -362,9 +356,9 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
         item && (
           <animated.div
             style={style}
-            className="fixed inset-0 flex items-center justify-center z-50 p-4 oveyflow-y-none"
+            className="fixed inset-0 flex items-center justify-center z-50 p-4"
           >
-            <div className="bg-neutral-900 rounded-lg w-full max-w-6xl max-h-[95vh] border border-neutral-800 shadow-2xl overflow-y-none">
+            <div className="bg-neutral-900 rounded-lg w-full max-w-6xl max-h-[95vh] border border-neutral-800 shadow-2xl overflow-y-auto">
               <div className="p-6 border-b border-neutral-800">
                 <div className="flex justify-between items-start">
                   <div>
@@ -418,7 +412,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
 
                       <div>
                         <label className="block text-sm select-none font-medium text-neutral-300 mb-2">
-                          Обложка
+                          Обложка (1:1)
                         </label>
                         <input
                           type="file"
@@ -426,30 +420,29 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                           onChange={handleCoverChange}
                           className="w-full h-10 p-1 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer select-none"
                         />
+                        {beatData.cover_file && (
+                          <p className="text-xs text-green-500 mt-1">
+                            ✓ Обложка загружена
+                          </p>
+                        )}
                       </div>
 
                       <div>
                         <label className="block text-sm select-none font-medium text-neutral-300 mb-2">
-                          MP3 файл
+                          Аудио файл (MP3 или WAV)
                         </label>
                         <input
                           type="file"
-                          accept=".mp3"
-                          onChange={(e) => handleFileChange(e, 'mp3')}
+                          accept=".mp3,.wav,audio/mpeg,audio/wav"
+                          onChange={handleAudioChange}
                           className="w-full h-10 p-1 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer select-none"
+                          required
                         />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm select-none font-medium text-neutral-300 mb-2">
-                          WAV файл
-                        </label>
-                        <input
-                          type="file"
-                          accept=".wav"
-                          onChange={(e) => handleFileChange(e, 'wav')}
-                          className="w-full h-10 p-1 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-red-600 file:text-white hover:file:bg-red-700 cursor-pointer select-none"
-                        />
+                        {beatData.audio_file && (
+                          <p className="text-xs text-green-500 mt-1">
+                            ✓ Аудиофайл загружен: {beatData.audio_file.name}
+                          </p>
+                        )}
                       </div>
                     </div>
 
@@ -507,6 +500,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                           ))}
                         </select>
                       </div>
+
                     </div>
 
                     <div className="space-y-2">
@@ -659,33 +653,30 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                       <label className="text-sm ml-6 text-neutral-500 select-none">При добавлении платного бита сервис прибавляет к цене комиссионные 200 р. к стоимости бита.</label>
                     </div>
                     {!beatData.is_free && (
-                      <>
-                        
-                        <div className="grid grid-cols-1 gap-4">
-                          {tariffs.map((tariff) => (
-                            <div key={tariff.name} className="flex items-center space-x-4">
-                              <label className="flex-1 text-sm font-medium text-neutral-300">
-                                {tariff.display_name}
-                                {tariff.description && (
-                                  <span className="block text-xs text-neutral-500 mt-1">
-                                    {tariff.description}
-                                  </span>
-                                )}
-                              </label>
-                              <input
-                                type="number"
-                                placeholder="Цена"
-                                value={beatData.pricings[tariff.name] || ''}
-                                onChange={(e) => handlePricingChange(tariff.name, e.target.value)}
-                                className="w-32 h-10 p-3 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
-                                min="0"
-                                step="0.01"
-                              />
-                              <span className="text-neutral-400">₽</span>
-                            </div>
-                          ))}
-                        </div>
-                      </>
+                      <div className="grid grid-cols-1 gap-4">
+                        {tariffs.map((tariff) => (
+                          <div key={tariff.name} className="flex items-center space-x-4">
+                            <label className="flex-1 text-sm font-medium text-neutral-300">
+                              {tariff.display_name}
+                              {tariff.description && (
+                                <span className="block text-xs text-neutral-500 mt-1">
+                                  {tariff.description}
+                                </span>
+                              )}
+                            </label>
+                            <input
+                              type="number"
+                              placeholder="Цена"
+                              value={beatData.pricings[tariff.name] || ''}
+                              onChange={(e) => handlePricingChange(tariff.name, e.target.value)}
+                              className="w-32 h-10 p-3 bg-neutral-800 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
+                              min="0"
+                              step="0.01"
+                            />
+                            <span className="text-neutral-400">₽</span>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
 
