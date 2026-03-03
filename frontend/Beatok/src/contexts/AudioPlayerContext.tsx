@@ -65,12 +65,6 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
   const pausedDueToVisibility = useRef(false);
 
   const loadBeat = async (beat: Beat) => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      console.error('No access token');
-      return;
-    }
-
     const baseUrl = 'http://localhost:8000';
     const beatFolder = `beats/${beat.id}`;
     const wavUrl = `${baseUrl}/audio_storage/${beatFolder}/audio.wav`;
@@ -79,9 +73,9 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
     let response;
 
     try {
-      response = await fetch(wavUrl, { headers: { 'Authorization': `Bearer ${token}` } });
+      response = await fetch(wavUrl);
       if (!response.ok) {
-        response = await fetch(mp3Url, { headers: { 'Authorization': `Bearer ${token}` } });
+        response = await fetch(mp3Url);
         if (!response.ok) {
           console.error('No audio files available for beat:', beat.id);
           return;
@@ -139,8 +133,30 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
         }, 100);
       } else if (!document.hidden && pausedDueToVisibility.current && audioRef.current) {
         pausedDueToVisibility.current = false;
+        setIsPlaying(true);
+        localStorage.setItem('isPlaying', 'true');
         audioRef.current.play().catch(error => {
           console.error('Error resuming playback on visibility change:', error);
+        });
+      }
+    };
+
+    const handleWindowBlur = () => {
+      if (isPlaying && audioRef.current) {
+        audioRef.current.pause();
+        pausedDueToVisibility.current = true;
+        setIsPlaying(false);
+        localStorage.setItem('isPlaying', 'false');
+      }
+    };
+
+    const handleWindowFocus = () => {
+      if (pausedDueToVisibility.current && audioRef.current) {
+        pausedDueToVisibility.current = false;
+        setIsPlaying(true);
+        localStorage.setItem('isPlaying', 'true');
+        audioRef.current.play().catch(error => {
+          console.error('Error resuming playback on window focus:', error);
         });
       }
     };
@@ -150,6 +166,8 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
     audioRef.current.addEventListener('ended', handleEnded);
     audioRef.current.addEventListener('error', handleError);
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleWindowBlur);
+    window.addEventListener('focus', handleWindowFocus);
 
     if (currentBeat) {
       loadBeat(currentBeat).then(() => {
@@ -183,20 +201,12 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
         audioRef.current.pause();
       }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleWindowBlur);
+      window.removeEventListener('focus', handleWindowFocus);
     };
   }, []);
 
-
-
-
-
   const playBeat = async (beat: Beat) => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      console.error('No access token');
-      return;
-    }
-
     const baseUrl = 'http://localhost:8000';
     const beatFolder = `beats/${beat.id}`;
     const wavUrl = `${baseUrl}/audio_storage/${beatFolder}/audio.wav`;
@@ -205,9 +215,9 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
     let response;
 
     try {
-      response = await fetch(wavUrl, { headers: { 'Authorization': `Bearer ${token}` } });
+      response = await fetch(wavUrl);
       if (!response.ok) {
-        response = await fetch(mp3Url, { headers: { 'Authorization': `Bearer ${token}` } });
+        response = await fetch(mp3Url);
         if (!response.ok) {
           console.error('No audio files available for beat:', beat.id);
           return;

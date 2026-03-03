@@ -43,19 +43,24 @@ const RejectionReasonModal: React.FC<RejectionReasonModalProps> = ({
         item && (
           <animated.div
             style={style}
-            className="fixed inset-0 flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 flex items-center justify-center z-50 p-4 select-none"
           >
             <div className="relative bg-neutral-900 rounded-lg w-full max-w-md border border-neutral-800 shadow-2xl">
-              <button
-                onClick={onClose}
-                className="absolute -top-3 -right-3 cursor-pointer select-none bg-neutral-800 hover:bg-neutral-700 text-white w-8 h-8 rounded-full flex items-center justify-center transition-colors duration-200 z-10 shadow-lg"
-                aria-label="Закрыть"
-              >
-                ×
-              </button>
-
-              <div className="p-6 border-b border-neutral-800 justify-center text-center">
-                <h3 className="text-xl font-semibold text-white">Причина отклонения</h3>
+              <div className="p-6 border-b border-neutral-800">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="text-xl font-semibold text-white">Причина отклонения</h3>
+                  </div>
+                  <button
+                    onClick={onClose}
+                    className="text-neutral-400 cursor-pointer hover:text-white transition-colors"
+                    aria-label="Закрыть"
+                  >
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
               </div>
 
               <div className="p-6">

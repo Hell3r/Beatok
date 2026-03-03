@@ -15,8 +15,85 @@ const PopularBeats: React.FC = () => {
     playBeat(beat);
   };
 
-  const handleDownload = (beat: Beat) => {
-    console.log('Download beat:', beat.id);
+  const isFreeBeat = (beat: Beat): boolean => {
+    if (!beat.pricings || beat.pricings.length === 0) return true;
+    const availablePrices = beat.pricings.filter(p => p.price !== null && p.is_available);
+    if (availablePrices.length === 0) return true;
+    return Math.min(...availablePrices.map(p => p.price!)) === 0;
+  };
+
+  const handleDownload = async (beat: Beat) => {
+    const token = localStorage.getItem("access_token");
+    
+    if (isFreeBeat(beat) && !token) {
+      const event = new CustomEvent('openAuthModal');
+      window.dispatchEvent(event);
+      return;
+    }
+    
+    try {
+        await fetch(`http://localhost:8000/beats/${beat.id}/increment-download`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            }
+        });
+    } catch (error) {
+        console.log('Не удалось увеличить счетчик скачиваний, но продолжаем скачивание:', error);
+    }
+    const baseUrl = 'http://localhost:8000'
+    const beatFolder = `beats/${beat.id}`;
+
+    const wavUrl = `${baseUrl}/audio_storage/${beatFolder}/audio.wav`;
+    const mp3Url = `${baseUrl}/audio_storage/${beatFolder}/audio.mp3`;
+
+    const checkAudioFile = async (url: string): Promise<boolean> => {
+      try {
+        const response = await fetch(url, { method: 'HEAD' });
+        return response.ok;
+      } catch {
+        console.log('File not available:', url);
+        return false;
+      }
+    };
+
+    const wavAvailable = await checkAudioFile(wavUrl);
+    const mp3Available = await checkAudioFile(mp3Url);
+
+    let downloadSource: string | null = null;
+    let fileExtension: string = '';
+
+    if (wavAvailable) {
+      downloadSource = wavUrl;
+      fileExtension = 'wav';
+    } else if (mp3Available) {
+      downloadSource = mp3Url;
+      fileExtension = 'mp3';
+    }
+
+    if (downloadSource) {
+      try {
+        const response = await fetch(downloadSource);
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${beat.name}.${fileExtension}`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error('Download failed:', error);
+        alert('Ошибка при скачивании файла');
+      }
+    } else {
+      alert('Файл для скачивания не доступен');
+    }
   };
 
   const handleToggleFavorite = async (beat: Beat) => {

@@ -67,6 +67,7 @@ async def get_all_requests(
     result = await session.execute(
         select(RequestsModel)
         .options(selectinload(RequestsModel.user))
+        .where(RequestsModel.status != "closed")
         .offset(skip)
         .limit(limit)
         .order_by(RequestsModel.created_at.desc())

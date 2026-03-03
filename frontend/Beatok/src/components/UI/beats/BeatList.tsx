@@ -375,6 +375,12 @@ const BeatList: React.FC<BeatListProps> = ({
                   ) : (
                     <button
                       onClick={() => {
+                        const token = localStorage.getItem('access_token');
+                        if (!token) {
+                          const event = new CustomEvent('openAuthModal');
+                          window.dispatchEvent(event);
+                          return;
+                        }
                         setBeatToPurchase(beat);
                         setPurchaseModalOpen(true);
                       }}

@@ -80,7 +80,9 @@ const Admin: React.FC = () => {
       });
       if (response.ok) {
         const data = await response.json();
-        setSupportRequests(data);
+        // Filter out closed requests on client side as additional safeguard
+        const filteredData = data.filter((request: Request) => request.status !== 'closed');
+        setSupportRequests(filteredData);
       }
     } catch (error) {
       console.error('Error fetching support requests:', error);

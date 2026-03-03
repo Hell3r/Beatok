@@ -125,8 +125,22 @@ const handlePlayBeat = (beat: Beat) => {
     playBeat(beat);
   };
 
+  const isFreeBeat = (beat: Beat): boolean => {
+    if (!beat.pricings || beat.pricings.length === 0) return true;
+    const availablePrices = beat.pricings.filter(p => p.price !== null && p.is_available);
+    if (availablePrices.length === 0) return true;
+    return Math.min(...availablePrices.map(p => p.price!)) === 0;
+  };
+
   const handleDownloadBeat = async (beat: Beat) => {
-    const token = localStorage.getItem("access_token")
+    const token = localStorage.getItem("access_token");
+
+    if (isFreeBeat(beat) && !token) {
+      const event = new CustomEvent('openAuthModal');
+      window.dispatchEvent(event);
+      return;
+    }
+    
     try {
         await fetch(`http://localhost:8000/beats/${beat.id}/increment-download`, {
             method: 'POST',
