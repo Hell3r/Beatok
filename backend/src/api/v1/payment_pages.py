@@ -207,7 +207,7 @@ async def tpay_callback(
                 <h1>Оплата прошла успешно!</h1>
                 
                 <div class="amount">
-                    {round(payment.amount * Decimal(0.975), 2)} <span>₽</span>
+                    {round(payment.amount * Decimal(0.95), 2)} <span>₽</span>
                 </div>
                 
                 <div class="details">

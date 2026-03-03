@@ -159,7 +159,7 @@ class TPayService:
                 user = await self.db.get(UsersModel, payment.user_id)
                 if user:
                     balance_to_deposit = payment.amount
-                    amount_with_commission = balance_to_deposit * Decimal(0.975)
+                    amount_with_commission = balance_to_deposit * Decimal(0.95)
                     await self.balance_service.deposit(
                         user_id=user.id,
                         amount=amount_with_commission,

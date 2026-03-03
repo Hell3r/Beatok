@@ -14,7 +14,7 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) => {
   const [error, setError] = useState('');
   const [amount, setAmount] = useState('');
 
-  const COMMISSION_RATE = 0.025;
+  const COMMISSION_RATE = 0.05;
 
   const getCommission = (value: number): number => {
     return Math.round(value * COMMISSION_RATE * 100) / 100;
@@ -187,7 +187,7 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) => {
                         <span className="text-white">{amountNum.toFixed(2)} ₽</span>
                       </div>
                       <div className="flex justify-between items-center text-sm mt-1">
-                        <span className="text-neutral-400">Комиссия (2.5%):</span>
+                        <span className="text-neutral-400">Комиссия (5%):</span>
                         <span className="text-red-400">-{commission.toFixed(2)} ₽</span>
                       </div>
                       <div className="border-t border-neutral-700 mt-2 pt-2 flex justify-between items-center">
