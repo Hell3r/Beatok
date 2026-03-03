@@ -655,7 +655,7 @@ const handlePlayBeat = (beat: Beat) => {
           </h1>
         </div>
 
-        <div className="flex flex-row gap-6 max-w-7xl md:max-w-6xl mx-auto mb-20">
+        <div className="flex flex-row gap-6 max-w-7xl md:max-w-7xl mx-auto mb-20">
           {/* desktop left panel */}
           <animated.div
             style={leftPanelSpring}
