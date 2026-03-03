@@ -65,7 +65,6 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const pausedDueToVisibility = useRef(false);
 
-  // ----- Функция для получения presigned URL с бэкенда -----
   const fetchAudioUrl = async (beatId: number): Promise<{ audio_url: string; audio_format: string } | null> => {
     try {
       const response = await fetch(`http://0.0.0.0:8000/beats/${beatId}/audio-url`);

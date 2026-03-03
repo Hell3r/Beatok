@@ -197,7 +197,6 @@ async def create_beat(
                         
                 if duplicates:
                     duplicates.sort(key=lambda x: x['similarity'], reverse=True)
-                    # Ошибка — удаляем временную папку и делаем rollback
                     shutil.rmtree(temp_dir, ignore_errors=True)
                     await session.rollback()
                     raise HTTPException(
