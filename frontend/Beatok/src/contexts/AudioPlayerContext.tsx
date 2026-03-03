@@ -32,6 +32,7 @@ interface AudioPlayerProviderProps {
   children: ReactNode;
 }
 
+
 export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ children }) => {
   const [currentBeat, setCurrentBeat] = useState<Beat | null>(() => {
     const saved = localStorage.getItem('currentBeat');
@@ -64,43 +65,22 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const pausedDueToVisibility = useRef(false);
 
-  const loadBeat = async (beat: Beat) => {
-    const baseUrl = 'http://localhost:8000';
-    const beatFolder = `beats/${beat.id}`;
-    const wavUrl = `${baseUrl}/audio_storage/${beatFolder}/audio.wav`;
-    const mp3Url = `${baseUrl}/audio_storage/${beatFolder}/audio.mp3`;
-
-    let response;
-
+  // ----- Функция для получения presigned URL с бэкенда -----
+  const fetchAudioUrl = async (beatId: number): Promise<{ audio_url: string; audio_format: string } | null> => {
     try {
-      response = await fetch(wavUrl);
+      const response = await fetch(`http://0.0.0.0:8000/beats/${beatId}/audio-url`);
       if (!response.ok) {
-        response = await fetch(mp3Url);
-        if (!response.ok) {
-          console.error('No audio files available for beat:', beat.id);
-          return;
-        }
+        console.error('Failed to fetch audio URL');
+        return null;
       }
+      return await response.json();
     } catch (error) {
-      console.error('Error fetching audio:', error);
-      return;
+      console.error('Error fetching audio URL:', error);
+      return null;
     }
-
-    const blob = await response.blob();
-    const blobUrl = URL.createObjectURL(blob);
-
-    if (!audioRef.current) {
-      console.error('Audio ref is not initialized');
-      return;
-    }
-
-    if (audioRef.current.src) {
-      URL.revokeObjectURL(audioRef.current.src);
-    }
-    audioRef.current.src = blobUrl;
-    audioRef.current.currentTime = currentTime;
   };
 
+  // ----- Инициализация аудиоэлемента и обработчиков -----
   useEffect(() => {
     audioRef.current = new Audio();
     audioRef.current.volume = volume;
@@ -121,6 +101,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
       console.error('Audio error:', e);
       setIsPlaying(false);
     };
+
     const handleVisibilityChange = () => {
       if (document.hidden && isPlaying && audioRef.current) {
         setTimeout(() => {
@@ -169,17 +150,28 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
     window.addEventListener('blur', handleWindowBlur);
     window.addEventListener('focus', handleWindowFocus);
 
-    if (currentBeat) {
-      loadBeat(currentBeat).then(() => {
-        if (isPlaying && audioRef.current) {
-          audioRef.current.play().catch(error => {
-            console.error('Error resuming playback:', error);
-            setIsPlaying(false);
-          });
+    // Восстанавливаем состояние из localStorage
+    const initAudio = async () => {
+      if (currentBeat && currentBeat.id) {
+        const audioData = await fetchAudioUrl(currentBeat.id);
+        if (audioData && audioRef.current) {
+          audioRef.current.src = audioData.audio_url;
+          audioRef.current.currentTime = currentTime;
+          if (isPlaying) {
+            try {
+              await audioRef.current.play();
+            } catch (error) {
+              console.error('Error resuming playback:', error);
+              setIsPlaying(false);
+              localStorage.setItem('isPlaying', 'false');
+            }
+          }
         }
-      });
-    }
+      }
+    };
+    initAudio();
 
+    // Загрузка избранного
     const loadFavoriteBeats = async () => {
       try {
         const token = localStorage.getItem('access_token');
@@ -204,46 +196,33 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
       window.removeEventListener('blur', handleWindowBlur);
       window.removeEventListener('focus', handleWindowFocus);
     };
-  }, []);
+  }, []); // пустой массив – инициализация один раз
 
+  // ----- Основная функция воспроизведения -----
   const playBeat = async (beat: Beat) => {
-    const baseUrl = 'http://localhost:8000';
-    const beatFolder = `beats/${beat.id}`;
-    const wavUrl = `${baseUrl}/audio_storage/${beatFolder}/audio.wav`;
-    const mp3Url = `${baseUrl}/audio_storage/${beatFolder}/audio.mp3`;
-
-    let response;
-
-    try {
-      response = await fetch(wavUrl);
-      if (!response.ok) {
-        response = await fetch(mp3Url);
-        if (!response.ok) {
-          console.error('No audio files available for beat:', beat.id);
-          return;
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching audio:', error);
-      return;
-    }
-
-    const blob = await response.blob();
-    const blobUrl = URL.createObjectURL(blob);
-
     if (!audioRef.current) {
       console.error('Audio ref is not initialized');
       return;
     }
 
+    // Получаем свежий presigned URL
+    const audioData = await fetchAudioUrl(beat.id);
+    if (!audioData) {
+      console.error('No audio URL for beat:', beat.id);
+      return;
+    }
+
+    const { audio_url, audio_format } = audioData;
+
     try {
       if (currentBeat?.id !== beat.id) {
-        if (audioRef.current.src) {
-          URL.revokeObjectURL(audioRef.current.src);
-        }
-        audioRef.current.src = blobUrl;
-        setCurrentBeat(beat);
-        localStorage.setItem('currentBeat', JSON.stringify(beat));
+        // Переключаемся на новый бит
+        audioRef.current.src = audio_url;
+        audioRef.current.currentTime = 0;
+        // Обогащаем объект бита (можно сохранить для отображения формата)
+        const enrichedBeat = { ...beat, audio_url, audio_format };
+        setCurrentBeat(enrichedBeat);
+        localStorage.setItem('currentBeat', JSON.stringify(enrichedBeat));
         setCurrentTime(0);
         setIsPlaying(true);
         localStorage.setItem('isPlaying', 'true');
@@ -253,25 +232,32 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
           await playPromise;
         }
       } else {
-        const newPlayingState = !isPlaying;
-        setIsPlaying(newPlayingState);
-
-        if (newPlayingState) {
+        // Тот же бит – просто переключаем паузу/воспроизведение
+        if (isPlaying) {
+          audioRef.current.pause();
+          setIsPlaying(false);
+          localStorage.setItem('isPlaying', 'false');
+        } else {
+          // Если URL устарел (например, изменился ключ), обновляем src
+          if (audioRef.current.src !== audio_url) {
+            audioRef.current.src = audio_url;
+          }
           const playPromise = audioRef.current.play();
           if (playPromise !== undefined) {
             await playPromise;
+            setIsPlaying(true);
+            localStorage.setItem('isPlaying', 'true');
           }
-        } else {
-          audioRef.current.pause();
         }
-        localStorage.setItem('isPlaying', newPlayingState.toString());
       }
     } catch (error) {
       console.error('Error playing audio:', error);
       setIsPlaying(false);
+      localStorage.setItem('isPlaying', 'false');
     }
   };
 
+  // ----- Переключение паузы/воспроизведения (без смены трека) -----
   const togglePlayPause = async () => {
     if (!audioRef.current || !currentBeat) return;
 
@@ -286,9 +272,6 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
           await playPromise;
           setIsPlaying(true);
           localStorage.setItem('isPlaying', 'true');
-        } else {
-          setIsPlaying(true);
-          localStorage.setItem('isPlaying', 'true');
         }
       }
     } catch (error) {
@@ -298,6 +281,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
     }
   };
 
+  // ----- Поиск (seek) -----
   const seekTo = (time: number) => {
     if (audioRef.current) {
       audioRef.current.currentTime = time;
@@ -305,6 +289,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
     }
   };
 
+  // ----- Громкость -----
   const setVolume = (newVolume: number) => {
     if (newVolume === 0 && volume > 0) {
       setPreviousVolume(volume);
@@ -325,6 +310,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
     }
   };
 
+  // ----- Следующий / предыдущий бит (на основе списка beats) -----
   const nextBeat = () => {
     if (!currentBeat || beats.length === 0) return;
 
@@ -347,6 +333,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
     playBeat(prevBeatToPlay);
   };
 
+  // ----- Избранное -----
   const toggleFavorite = async (beat: Beat) => {
     try {
       const isFavorite = favoriteBeats.some(fav => fav.id === beat.id);
@@ -362,6 +349,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
     }
   };
 
+  // ----- Сворачивание плеера -----
   const setIsMinimized = (minimized: boolean) => {
     setIsMinimizedState(minimized);
     localStorage.setItem('isMinimized', minimized.toString());

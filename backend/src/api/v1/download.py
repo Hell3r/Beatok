@@ -97,12 +97,6 @@ async def download_zip(
         
         beat = download_token.beat
 
-        from pathlib import Path
-        AUDIO_STORAGE = Path("audio_storage")
-        file_path = AUDIO_STORAGE / beat.wav_path
-        
-        if not file_path.exists():
-            raise HTTPException(status_code=404, detail="Файл не найден на сервере")
 
         purchase_info = {
             "purchase_id": download_token.purchase_id,
@@ -112,7 +106,7 @@ async def download_zip(
         }
 
         zip_buffer = ZipCreator.create_beat_zip(
-            file_path=file_path,
+            audio_key=beat.audio_key,
             beat_name=beat.name,
             purchase_info=purchase_info,
             downloads_left=download_token.max_downloads - download_token.downloads_count,

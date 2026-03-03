@@ -21,7 +21,7 @@ class BeatModel(Base):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     author_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True)
 
-    audio_file_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    audio_key: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     cover_path: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
 
     genre: Mapped[str] = mapped_column(String(50), nullable=False, index=True)

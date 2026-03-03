@@ -115,78 +115,61 @@ const BeatsPage: React.FC = () => {
   };
 
   const handleDownload = async (beat: Beat) => {
-    const token = localStorage.getItem("access_token");
-    
-    if (isFreeBeat(beat) && !token) {
-      const event = new CustomEvent('openAuthModal');
-      window.dispatchEvent(event);
-      return;
-    }
-    
-    try {
-        await fetch(`http://localhost:8000/beats/${beat.id}/increment-download`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
-    } catch (error) {
-        console.log('Не удалось увеличить счетчик скачиваний, но продолжаем скачивание:', error);
-    }
-    const baseUrl = 'http://localhost:8000'
-    const beatFolder = `beats/${beat.id}`;
+  const token = localStorage.getItem("access_token");
+  const API_BASE_URL = 'http://localhost:8000';
 
-    const wavUrl = `${baseUrl}/audio_storage/${beatFolder}/audio.wav`;
-    const mp3Url = `${baseUrl}/audio_storage/${beatFolder}/audio.mp3`;
+  if (isFreeBeat(beat) && !token) {
+    const event = new CustomEvent('openAuthModal');
+    window.dispatchEvent(event);
+    return;
+  }
 
-    const checkAudioFile = async (url: string): Promise<boolean> => {
-      try {
-        const response = await fetch(url, { method: 'HEAD' });
-        return response.ok;
-      } catch {
-        console.log('File not available:', url);
-        return false;
+  try {
+    // 1. Инкремент счётчика
+    console.log('Increment download for beat', beat.id);
+    const incResponse = await fetch(`http://localhost:8000/beats/${beat.id}/increment-download`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
       }
-    };
+    });
+    console.log('Increment response status:', incResponse.status);
 
-    const wavAvailable = await checkAudioFile(wavUrl);
-    const mp3Available = await checkAudioFile(mp3Url);
-
-    let downloadSource: string | null = null;
-    let fileExtension: string = '';
-
-    if (wavAvailable) {
-      downloadSource = wavUrl;
-      fileExtension = 'wav';
-    } else if (mp3Available) {
-      downloadSource = mp3Url;
-      fileExtension = 'mp3';
+    // 2. Получение presigned URL
+    console.log('Fetching audio URL from:', `${API_BASE_URL}/beats/${beat.id}/audio-url`);
+    const urlResponse = await fetch(`${API_BASE_URL}/beats/${beat.id}/audio-url`);
+    console.log('Audio URL response status:', urlResponse.status);
+    
+    if (!urlResponse.ok) {
+      const errorText = await urlResponse.text();
+      throw new Error(`Failed to get download URL: ${urlResponse.status} - ${errorText}`);
     }
+    
+    const data = await urlResponse.json();
+    console.log('Received audio data:', data);
+    const { audio_url, audio_format } = data;
 
-    if (downloadSource) {
-      try {
-        const response = await fetch(downloadSource);
-        if (!response.ok) {
-          throw new Error('Network response was not ok');
-        }
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${beat.name}.${fileExtension}`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      } catch (error) {
-        console.error('Download failed:', error);
-        alert('Ошибка при скачивании файла');
-      }
-    } else {
-      alert('Файл для скачивания не доступен');
+    console.log('Downloading file from:', audio_url);
+    const fileResponse = await fetch(audio_url);
+    if (!fileResponse.ok) {
+      throw new Error(`Failed to download file: ${fileResponse.status}`);
     }
-  };
+    const blob = await fileResponse.blob();
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${beat.name}.${audio_format}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Download failed:', error);
+    alert('Ошибка при скачивании файла');
+  }
+};
 
 
 

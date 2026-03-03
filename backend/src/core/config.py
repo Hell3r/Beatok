@@ -32,6 +32,13 @@ class Settings():
     TPAY_TERMINAL_KEY="TinkoffBankTest"
     TPAY_PASSWORD="TinkoffBankTest"
     
+    S3_ENDPOINT: str = os.getenv("S3_ENDPOINT")
+    S3_ACCESS_KEY: str = os.getenv("aws_access_key_id")
+    S3_SECRET_KEY: str = os.getenv("aws_secret_access_key")
+    S3_REGION: str = os.getenv("S3_REGION")
+    
+    
+    
     class Config:
         env_file = ".env"
 

@@ -24,6 +24,20 @@ from src.services.rate_limiter import check_rate_limit
 from src.services.rate_limiter import RateLimiter
 from PIL import Image
 from io import BytesIO
+import boto3
+from botocore.config import Config
+from src.core.config import settings
+import tempfile
+
+s3_client = boto3.client(
+    's3',
+    endpoint_url=settings.S3_ENDPOINT,
+    aws_access_key_id=settings.S3_ACCESS_KEY,
+    aws_secret_access_key=settings.S3_SECRET_KEY,
+    config=Config(signature_version='s3v4'),
+    region_name=settings.S3_REGION
+)
+S3_BUCKET = "beatok-bucket"
 
 router = APIRouter(prefix="/beats", tags=["Аудио файлы"])
 
@@ -63,7 +77,7 @@ async def create_beat(
         key=key,
         promotion_status=promotion_status,
         status=StatusType.MODERATED,
-        audio_file_path=None,
+        audio_key=None,
         cover_path=None,
         size=0,
         duration=0.0,
@@ -74,39 +88,43 @@ async def create_beat(
     session.add(beat)
     await session.flush()
     
+    temp_dir = tempfile.mkdtemp()
+    uploaded_s3_keys = [] 
+    
     beat_folder = None
     audio_path_for_fingerprint = None
     
     try:
         rate_limiter = RateLimiter()
         await rate_limiter.increment_daily_beat_counter(current_user_id)
-        beat_folder = AUDIO_STORAGE / "beats" / str(beat.id)
-        beat_folder.mkdir(parents=True, exist_ok=True)
         total_size = 0
+        audio_path_for_fingerprint = None
+        audio_ext = None
                 
         if audio_file and audio_file.filename:
             file_ext = audio_file.filename.split('.')[-1].lower()
             if file_ext not in ['mp3', 'wav']:
                 raise HTTPException(400, "Аудиофайл должен быть в формате MP3 или WAV")
-            
-            audio_filename = f"audio.{file_ext}"
-            audio_path = beat_folder / audio_filename
-            
-            content = await audio_file.read()
-            async with aiofiles.open(audio_path, "wb") as f:
-                await f.write(content)
-            
-            beat.audio_file_path = str(audio_path.relative_to(AUDIO_STORAGE))
-            total_size += len(content)
-            audio_path_for_fingerprint = audio_path
+            audio_ext = file_ext
 
+            # Читаем содержимое
+            content = await audio_file.read()
+            total_size += len(content)
+
+            # Сохраняем во временный файл для fingerprint и длительности
+            temp_audio_path = os.path.join(temp_dir, f"audio.{audio_ext}")
+            async with aiofiles.open(temp_audio_path, "wb") as f:
+                await f.write(content)
+
+            # Получаем длительность
             try:
-                audio = MutagenFile(audio_path)
+                audio = MutagenFile(temp_audio_path)
                 if audio is not None and hasattr(audio, 'info'):
                     beat.duration = round(audio.info.length, 2)
             except Exception:
                 pass
-        
+
+            audio_path_for_fingerprint = temp_audio_path
         beat.size = total_size
 
         if cover_file and cover_file.filename:
@@ -179,12 +197,9 @@ async def create_beat(
                         
                 if duplicates:
                     duplicates.sort(key=lambda x: x['similarity'], reverse=True)
-                    
-                    if beat_folder.exists():
-                        shutil.rmtree(beat_folder, ignore_errors=True)
-                    
+                    # Ошибка — удаляем временную папку и делаем rollback
+                    shutil.rmtree(temp_dir, ignore_errors=True)
                     await session.rollback()
-                
                     raise HTTPException(
                         status_code=409, 
                         detail={
@@ -196,7 +211,20 @@ async def create_beat(
                 
                 beat.audio_fingerprint = fingerprint
                 beat.audio_fingerprint_timings = json.dumps(fingerprint_data["timings"])
-
+        
+        if audio_ext:
+            # Формируем ключ объекта в бакете (используем единый audio_key)
+            object_key = f"beats/{beat.id}/audio.{audio_ext}"
+            # Загружаем файл из временного файла
+            with open(temp_audio_path, "rb") as f:
+                s3_client.upload_fileobj(
+                    f,
+                    S3_BUCKET,
+                    object_key,
+                    ExtraArgs={'ContentType': f'audio/{audio_ext}'}  # audio/mpeg или audio/wav
+                )
+            uploaded_s3_keys.append(object_key)
+            beat.audio_key = object_key
         if terms_of_use:
             try:
                 terms_data = json.loads(terms_of_use)
@@ -270,23 +298,12 @@ async def create_beat(
             'promotion_status': beat_with_relations.promotion_status
         }
 
-        audio_path = None
-        if beat_with_relations.audio_file_path:
-            audio_path = AUDIO_STORAGE / beat_with_relations.audio_file_path
+
 
         cover_path = None
         if beat_with_relations.cover_path:
             cover_path = COVER_STORAGE / beat_with_relations.cover_path
 
-        import asyncio
-        asyncio.create_task(
-            support_bot.send_beat_moderation_notification(
-                beat_data, 
-                user_info, 
-                str(audio_path) if audio_path else None,
-                str(cover_path) if cover_path else None
-            )
-        )
         
         await redis_service.delete_pattern("*beats:*")
         
@@ -484,58 +501,7 @@ async def get_beat(
     
     return BeatResponse.model_validate(beat)
 
-@router.get("/{beat_id}/stream")
-async def stream_beat(
-    session: SessionDep,
-    beat_id: int,
-    current_user_id: Annotated[int, Depends(get_current_user_id)],
-    format: str = Query("mp3", regex="^(mp3|wav)$"),
-):
-    result = await session.execute(select(BeatModel).where(BeatModel.id == beat_id))
-    beat = result.scalar_one_or_none()
 
-    if not beat:
-        raise HTTPException(404, "Бит не найден")
-
-    if not beat.audio_file_path:
-        raise HTTPException(404, "Аудиофайл не найден")
-
-    file_path = AUDIO_STORAGE / beat.audio_file_path
-    
-    if not os.path.exists(file_path):
-        raise HTTPException(404, "Аудиофайл не найден на диске")
-
-    file_ext = beat.audio_file_path.split('.')[-1].lower()
-    if file_ext != format:
-        raise HTTPException(400, f"Запрошен формат {format}, но доступен {file_ext}")
-
-    if current_user_id != beat.author_id:
-        from src.models.users import UsersModel
-        
-        author_result = await session.execute(
-            select(UsersModel).where(UsersModel.id == beat.author_id)
-        )
-        author = author_result.scalar_one_or_none()
-        
-        if author:
-            old_count = author.download_count or 0
-            author.download_count = old_count + 1
-            await session.commit()
-
-    from fastapi.responses import FileResponse
-
-    media_type = "audio/mpeg" if file_ext == "mp3" else "audio/wav"
-    response = FileResponse(
-        path=file_path,
-        media_type=media_type,
-        filename=f"{beat.name}.{file_ext}"
-    )
-
-    response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, OPTIONS"
-    response.headers["Access-Control-Allow-Headers"] = "*"
-
-    return response
 
 @router.delete("/{beat_id}")
 async def delete_beat(
@@ -548,9 +514,11 @@ async def delete_beat(
     if not beat:
         raise HTTPException(404, "Бит не найден")
     
-    beat_folder = AUDIO_STORAGE / "beats" / str(beat_id)
-    if beat_folder.exists():
-        shutil.rmtree(beat_folder, ignore_errors=True)
+    if beat.audio_key:
+        try:
+            s3_client.delete_object(Bucket=S3_BUCKET, Key=beat.audio_key)
+        except ClientError as e:
+            print(f"Ошибка при удалении объекта {beat.audio_key} из S3: {e}")
     
     cover_folder = COVER_STORAGE / str(beat_id)
     if cover_folder.exists():
@@ -835,3 +803,36 @@ async def reject_beat(
     await redis_service.delete_pattern("*beats*")
     
     return {"success": True, "message": f"Бит '{beat.name}' отклонен", "reason": reason}
+
+
+
+@router.get("/{beat_id}/audio-url")
+async def get_beat_audio_url(
+    beat_id: int,
+    session: SessionDep
+):
+    """
+    Возвращает presigned URL для аудиофайла бита.
+    """
+    # Находим бит
+    result = await session.execute(
+        select(BeatModel).where(BeatModel.id == beat_id)
+    )
+    beat = result.scalar_one_or_none()
+    if not beat:
+        raise HTTPException(status_code=404, detail="Beat not found")
+    
+    if not beat.audio_key:
+        raise HTTPException(status_code=404, detail="No audio file for this beat")
+    
+    try:
+        url = s3_client.generate_presigned_url(
+            'get_object',
+            Params={'Bucket': S3_BUCKET, 'Key': beat.audio_key},
+            ExpiresIn=3600
+        )
+    except ClientError as e:
+        logger.error(f"Error generating presigned URL for beat {beat_id}: {e}")
+        raise HTTPException(status_code=500, detail="Error generating audio URL")
+    
+    return {"audio_url": url, "audio_format": beat.audio_key.split('.')[-1].lower()}

@@ -53,7 +53,7 @@ class BeatResponse(BaseModel):
     size: int
     duration: float
     cover_path: Optional[str] = None
-    audio_file_path: Optional[str] = None
+    audio_key: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     likes_count: int = 0
@@ -108,7 +108,7 @@ class BeatResponse(BaseModel):
                 "size": obj.size,
                 "duration": obj.duration,
                 "cover_path": getattr(obj, 'cover_path', None),
-                "audio_file_path": getattr(obj, 'audio_file_path', None),
+                "audio_key": getattr(obj, 'audio_key', None),
                 "created_at": obj.created_at,
                 "updated_at": obj.updated_at,
                 "likes_count": getattr(obj, 'likes_count', 0),
