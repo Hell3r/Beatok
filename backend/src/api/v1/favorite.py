@@ -136,7 +136,7 @@ async def get_user_favorites(
                 "created_at": beat.created_at.isoformat() if beat.created_at else None,
                 "updated_at": beat.updated_at.isoformat() if beat.updated_at else None,
                 "author_id": beat.author_id,
-                "cover_path": None,
+                "cover_path": beat.cover_path,
                 "audio_path": None,
                 "pricings": pricings_data
             })

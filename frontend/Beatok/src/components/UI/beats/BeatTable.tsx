@@ -294,7 +294,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
       );
     } else {
       return (
-        <td className="p-4 text-center">
+        <td className="p-4 text-center select-none">
           <div className="flex justify-center space-x-2">
             {isOwnBeat ? (
               <button

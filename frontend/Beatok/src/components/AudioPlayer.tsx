@@ -8,6 +8,11 @@ const getCoverUrl = (beat: any): string | null => {
   return `http://localhost:8000/static/covers/${beat.cover_path}`;
 };
 
+const getAudioFormat = (beat: any): string => {
+  if (!beat?.audio_file_path) return '';
+  return beat.audio_file_path.split('.').pop()?.toUpperCase() || '';
+};
+
 const AudioPlayer: React.FC = () => {
   const {
     currentBeat,
@@ -137,6 +142,7 @@ const AudioPlayer: React.FC = () => {
   if (!currentBeat) return null;
 
   const coverUrl = getCoverUrl(currentBeat);
+  const audioFormat = getAudioFormat(currentBeat);
 
   return (
     <>
@@ -220,11 +226,14 @@ const AudioPlayer: React.FC = () => {
                   <p className="text-neutral-300 text-xs truncate">
                     {currentBeat.owner?.username || `${currentBeat.author?.username}`}
                   </p>
-                  {currentBeat.wav_path && (
-                    <span className="text-xs bg-blue-500/20 text-blue-300 px-1 py-0.5 rounded border border-blue-500/30">WAV</span>
-                  )}
-                  {!currentBeat.wav_path && currentBeat.mp3_path && (
-                    <span className="text-xs bg-green-500/20 text-green-300 px-1 py-0.5 rounded border border-green-500/30">MP3</span>
+                  {audioFormat && (
+                    <span className={`text-xs px-1 py-0.5 rounded border ${
+                      audioFormat === 'WAV' 
+                        ? 'bg-blue-500/20 text-blue-300 border-blue-500/30' 
+                        : 'bg-green-500/20 text-green-300 border-green-500/30'
+                    }`}>
+                      {audioFormat}
+                    </span>
                   )}
                 </div>
               </div>
@@ -396,11 +405,12 @@ const AudioPlayer: React.FC = () => {
                     <p className="text-neutral-400 text-sm truncate">
                       {currentBeat.owner?.username || `${currentBeat.author?.username}`}
                     </p>
-                    {currentBeat.wav_path && (
-                      <span className="text-xs bg-blue-600 text-white px-1 rounded">WAV</span>
-                    )}
-                    {!currentBeat.wav_path && currentBeat.mp3_path && (
-                      <span className="text-xs bg-green-600 text-white px-1 rounded">MP3</span>
+                    {audioFormat && (
+                      <span className={`text-xs px-1 rounded ${
+                        audioFormat === 'WAV' ? 'bg-blue-600 text-white' : 'bg-green-600 text-white'
+                      }`}>
+                        {audioFormat}
+                      </span>
                     )}
                   </div>
                 </div>
@@ -523,7 +533,7 @@ const AudioPlayer: React.FC = () => {
             </div>
           </div>
         )}
-    </animated.div>
+      </animated.div>
     </>
   );
 };

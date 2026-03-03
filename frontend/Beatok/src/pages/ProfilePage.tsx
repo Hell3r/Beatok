@@ -3,6 +3,7 @@ import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useSpring, animated } from '@react-spring/web';
 import { userService } from '../services/userService';
 import { beatService } from '../services/beatService';
+import { requestService } from '../services/requestService';
 import { getAvatarUrl } from '../utils/getAvatarURL';
 import { getCurrentUser } from '../utils/getCurrentUser';
 import AuthModal from '../components/AuthModal';
@@ -46,7 +47,7 @@ const ProfilePage: React.FC = () => {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'info' | 'balance' | 'mybeats' | 'stats' | 'favorites' | 'history'>('info');
+  const [activeTab, setActiveTab] = useState<'info' | 'balance' | 'mybeats' | 'stats' | 'favorites' | 'history' | 'requests'>('info');
   const [viewMode, setViewMode] = useState<'tabs' | 'content'>('tabs');
 
   const [formData, setFormData] = useState({
@@ -86,6 +87,9 @@ const [favoriteBeats, setFavoriteBeats] = useState<Beat[]>([]);
 
   const [historyItems, setHistoryItems] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  
+  const [userRequests, setUserRequests] = useState<any[]>([]);
+  const [requestsLoading, setRequestsLoading] = useState(false);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1280);
@@ -219,8 +223,8 @@ const handlePlayBeat = (beat: Beat) => {
 
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['info', 'balance', 'mybeats', 'stats', 'favorites', 'history'].includes(tab)) {
-      setActiveTab(tab as 'info' | 'balance' | 'mybeats' | 'stats' | 'favorites' | 'history');
+    if (tab && ['info', 'balance', 'mybeats', 'stats', 'favorites', 'history', 'requests'].includes(tab)) {
+      setActiveTab(tab as 'info' | 'balance' | 'mybeats' | 'stats' | 'favorites' | 'history' | 'requests');
       setViewMode('content');
     } else {
       setActiveTab(isOwnProfile ? 'info' : 'mybeats');
@@ -255,6 +259,12 @@ const handlePlayBeat = (beat: Beat) => {
       loadUserHistory();
     }
   }, [user, activeTab, historyItems.length]);
+
+  useEffect(() => {
+    if (user && activeTab === 'requests' && userRequests.length === 0) {
+      loadUserRequests();
+    }
+  }, [user, activeTab, userRequests.length]);
 
   useEffect(() => {
     if (user && activeTab === 'mybeats' && !isOwnProfile && favoriteBeats.length === 0) {
@@ -316,6 +326,20 @@ const handlePlayBeat = (beat: Beat) => {
       console.error('Failed to load user history:', error);
     } finally {
       setHistoryLoading(false);
+    }
+  };
+
+  const loadUserRequests = async () => {
+    if (!user) return;
+
+    try {
+      setRequestsLoading(true);
+      const requests = await requestService.getUserRequests();
+      setUserRequests(requests);
+    } catch (error) {
+      console.error('Failed to load user requests:', error);
+    } finally {
+      setRequestsLoading(false);
     }
   };
 
@@ -811,6 +835,21 @@ const handlePlayBeat = (beat: Beat) => {
                               История
                             </button>
                           )}
+                          {isOwnProfile && (
+                            <button
+                              onClick={() => {
+                                setActiveTab('requests');
+                                setSearchParams({ tab: 'requests' });
+                              }}
+                              className={`w-full px-4 py-3 text-sm rounded-lg transition-colors cursor-pointer select-none ${
+                                activeTab === 'requests'
+                                  ? 'bg-red-600 text-white'
+                                  : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                              }`}
+                            >
+                              Заявки
+                            </button>
+                          )}
                         </div>
                       </div>
                     ) : (
@@ -830,7 +869,7 @@ const handlePlayBeat = (beat: Beat) => {
 
                   {/* desktop tabs */}
                   <div className="hidden md:block bg-neutral-800 rounded-lg p-4 border border-neutral-700">
-                    <div className="flex space-x-4 justify-center">
+                    <div className="flex flex-wrap justify-center gap-2">
                       {isOwnProfile && (
                         <button
                           onClick={() => {
@@ -915,6 +954,21 @@ const handlePlayBeat = (beat: Beat) => {
                           }`}
                         >
                           История
+                        </button>
+                      )}
+                      {isOwnProfile && (
+                        <button
+                          onClick={() => {
+                            setActiveTab('requests');
+                            setSearchParams({ tab: 'requests' });
+                          }}
+                          className={`px-4 py-2 text-base rounded-lg transition-colors cursor-pointer select-none ${
+                            activeTab === 'requests'
+                              ? 'bg-red-600 text-white'
+                              : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                          }`}
+                        >
+                          Заявки
                         </button>
                       )}
                     </div>
@@ -1038,7 +1092,7 @@ const handlePlayBeat = (beat: Beat) => {
                           <div className='justify-between items-center mt-20'>
                             <p className='text-neutral-400 text-sm text-center'>
                               ОБРАТИТЕ ВНИМАНИЕ <br />
-                              При пополнении баланса сервис взимает комиссию в размере 2.5%
+                              При пополнении баланса сервис взимает комиссию в размере 5%
                             </p>
                           </div>
                         </div>
@@ -1256,6 +1310,63 @@ const handlePlayBeat = (beat: Beat) => {
                                   <div className="text-neutral-400 text-sm">
                                     {item.tariff_name === 'leasing' ? 'Аренда' : 'Эксклюзив'}
                                   </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'requests' && isOwnProfile && (
+                    <div className='p-4'>
+                      <h2 className="text-xl font-semibold text-white mb-6">Заявки</h2>
+
+                      {requestsLoading ? (
+                        <div className="flex justify-center py-8">
+                          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                        </div>
+                      ) : userRequests.length === 0 ? (
+                        <div className="text-center py-8">
+                          <p className="text-neutral-400">
+                            У вас пока нет заявок
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {userRequests.map((request) => (
+                            <div key={request.id} className="bg-neutral-750 rounded-lg p-4">
+                              <div className="flex justify-between items-start">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <span className={`px-2 py-1 text-xs rounded-full ${
+                                      request.status === 'pending' || request.status === 'in_progress'
+                                        ? 'bg-yellow-600 text-white'
+                                        : 'bg-gray-600 text-white'
+                                    }`}>
+                                      {request.status === 'pending' ? 'В работе' : request.status === 'in_progress' ? 'В работе' : 'Закрыта'}
+                                    </span>
+                                    <span className="text-neutral-400 text-sm">
+                                      {formatDate(request.created_at)}
+                                    </span>
+                                  </div>
+                                  <h3 className="text-white font-medium mb-1">{request.title}</h3>
+                                  <p className="text-neutral-400 text-sm">
+                                    {request.description}
+                                  </p>
+                                  <p className="text-neutral-500 text-xs mt-2">
+                                    Тип проблемы: {request.problem_type}
+                                  </p>
+                                </div>
+                                <div className="text-right">
+                                  <span className={`text-sm font-medium ${
+                                    request.status === 'pending' || request.status === 'in_progress'
+                                      ? 'text-yellow-500'
+                                      : 'text-gray-400'
+                                  }`}>
+                                    {request.status === 'pending' ? 'В работе' : request.status === 'in_progress' ? 'В работе' : 'Закрыта'}
+                                  </span>
                                 </div>
                               </div>
                             </div>

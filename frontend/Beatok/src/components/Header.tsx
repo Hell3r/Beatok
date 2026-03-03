@@ -5,7 +5,7 @@ import AvatarDropdown from './AvatarDropdown';
 import SubscriptionModal from './SubscriptionModal';
 import type { User } from '../types/auth';
 import { getAvatarUrl } from '../utils/getAvatarURL';
-import { FaHome, FaMusic, FaUser, FaQuestionCircle, FaUsers } from 'react-icons/fa';
+import { FaHome, FaMusic, FaUser, FaQuestionCircle, FaUsers, FaClipboardList } from 'react-icons/fa';
 import { useNotificationContext } from './NotificationProvider';
 
 interface HeaderProps {
@@ -82,7 +82,9 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
     { href: '/beatmakers', label: 'БИТМЕЙКЕРЫ' },
   //{ href: '/about', label: 'О НАС' },
     { href: '/support', label: 'FAQ'},
-    { href: 'mailto:beatok_service@mail.ru', label: 'BEATOK_SERVICE@MAIL.RU'}]
+    { href: 'mailto:beatok_service@mail.ru', label: 'BEATOK_SERVICE@MAIL.RU'}];
+    
+  const authNavItems: NavItem[] = [];
     
 
 
@@ -161,6 +163,16 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
                   АДМИН ПАНЕЛЬ
                 </a>
               )}
+              {currentUser && authNavItems.map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  className={`${window.location.search.includes('tab=requests') ? 'text-white' : 'text-gray-300'} hover:text-white transition-colors duration-200 font-medium focus:outline-none flex items-center gap-1`}
+                >
+                  <FaClipboardList className="w-4 h-4" />
+                  {item.label}
+                </a>
+              ))}
             </div>
           </div>
 
