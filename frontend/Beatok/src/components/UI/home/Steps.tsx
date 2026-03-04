@@ -78,7 +78,7 @@ const Steps: React.FC = () => {
 
       <div className="bg-neutral-900 py-16">
         <div className="container mx-auto px-4 text-center">
-          <h3 className="text-white text-2xl font-bold mb-6">Почему выбирают BEATOK?</h3>
+          <h3 className="text-white text-2xl font-bold mb-6">Почему выбирают БИТОК?</h3>
           <div className="max-w-4xl mx-auto text-left">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-neutral-800 rounded-lg p-4">
@@ -105,7 +105,7 @@ const Steps: React.FC = () => {
               </div>
             </div>
             <p className="text-gray-300 text-center mt-6 text-lg">
-              <strong>BEATOK</strong> – инновационная платформа, где свобода творчества сочетается с доступностью. Мы верим в поддержку начинающих продюсеров и развитие музыкальной индустрии СНГ. Присоединяйся и создавай музыку без границ!
+              <strong>БИТОК</strong> – инновационная платформа, где свобода творчества сочетается с доступностью. Мы верим в поддержку начинающих продюсеров и развитие музыкальной индустрии СНГ. Присоединяйся и создавай музыку без границ!
             </p>
           </div>
         </div>

@@ -62,7 +62,7 @@ async def tpay_callback(
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Оплата успешна - Beatok</title>
+            <title>Оплата успешна - БИТОК</title>
             <style>
                 * {{
                     margin: 0;
@@ -270,7 +270,7 @@ async def tpay_callback(
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Оплата не прошла - Beatok</title>
+            <title>Оплата не прошла - БИТОК</title>
             <style>
                 * {{
                     margin: 0;

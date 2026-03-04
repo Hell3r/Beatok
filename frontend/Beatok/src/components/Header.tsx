@@ -121,10 +121,10 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
               href="/"
               onClick={handleLogoClick}
               className="text-2xl font-bold hover:scale-105 transition-all duration-200 focus:outline-none"
-              aria-label="BEATOK - переход на главную"
+              aria-label="БИТОК - переход на главную"
             >
-              <span className="text-white">BEAT</span>
-              <span className="text-red-600">OK</span>
+              <span className="text-white">БИТ</span>
+              <span className="text-red-600">ОК</span>
             </a>
 
             <div className="flex space-x-6">

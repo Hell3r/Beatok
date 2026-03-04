@@ -44,8 +44,8 @@ const HomePage: React.FC = () => {
                         <div className="mb-4">
                             <h3 className="inline text-white font-bold text-4xl">на </h3>
                             <div className='inline-block glitch-text'>
-                                <h3 className="inline text-white font-bold text-5xl">BEAT</h3>
-                                <h3 className="inline text-red-600 font-bold text-5xl">OK</h3>
+                                <h3 className="inline text-white font-bold text-5xl">БИТ</h3>
+                                <h3 className="inline text-red-600 font-bold text-5xl">ОК</h3>
                             </div>
                         </div>
                         <hr className='my-6 w-48 border-t-2 border-red-600 mx-auto' />

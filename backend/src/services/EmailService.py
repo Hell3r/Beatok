@@ -63,7 +63,7 @@ class EmailService:
         
         logger.info(f"Sending verification email to {email}")
         
-        subject = f"Подтверждение регистрации в Beatok"
+        subject = f"Подтверждение регистрации в БИТОК"
         
         html_content = self._render_verification_template(
             username=username,
@@ -111,7 +111,7 @@ class EmailService:
 
         logger.info(f"Sending password reset email to {email}")
 
-        subject = f"Восстановление пароля в Beatok"
+        subject = f"Восстановление пароля в БИТОК"
 
         html_content = self._render_password_reset_template(
             username=username,
@@ -207,7 +207,7 @@ class EmailService:
             logger.warning("SMTP не настроен, не могу отправить письмо")
             return False
         
-        subject = f"🎵 Ссылка на скачивание бита '{beat_name}' | Beatok"
+        subject = f"🎵 Ссылка на скачивание бита '{beat_name}' | БИТОК"
         
         html_content = self._render_download_link_template(
             username=username,
@@ -228,7 +228,7 @@ class EmailService:
             text_content = f"""
             Здравствуйте, {username}!
             
-            Спасибо за покупку на Beatok!
+            Спасибо за покупку на БИТОК!
             
             🎧 Детали покупки:
             • Бит: {beat_name}
@@ -244,7 +244,7 @@ class EmailService:
             • Максимум 5 скачиваний
             • Не передавайте ссылку другим
             
-            Спасибо, что выбрали Beatok!
+            Спасибо, что выбрали БИТОК!
             """
             
             message.attach(MIMEText(text_content, "plain", "utf-8"))
@@ -348,7 +348,7 @@ class EmailService:
         </tr>
         <tr>
             <td style="padding:20px; text-align:center; background:#333333; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
-                <p style="color:#999999; font-size:12px; margin:0;">Beatok &copy; 2025</p>
+                <p style="color:#999999; font-size:12px; margin:0;">БИТОК &copy; 2025</p>
             </td>
         </tr>
         </table>
@@ -414,7 +414,7 @@ class EmailService:
         </tr>
         <tr>
             <td style="padding:20px; text-align:center; background:#333333; border-bottom-left-radius: 10px; border-bottom-right-radius: 10px;">
-                <p style="color:#999999; font-size:12px; margin:0;">Beatok &copy; 2025</p>
+                <p style="color:#999999; font-size:12px; margin:0;">БИТОК &copy; 2025</p>
             </td>
         </tr>
         </table>
@@ -559,7 +559,7 @@ class EmailService:
                                         <li>Сохраните файл на компьютер</li>
                                     </ul>
                                     <p style="margin-top: 15px; font-size: 12px;">
-                                        Beatok © {{ current_year }}
+                                        БИТОК © {{ current_year }}
                                     </p>
                                 </div>
                             </td>
@@ -568,7 +568,7 @@ class EmailService:
                         <tr>
                             <td class="footer">
                                 <div class="copyright">
-                                    © {{ current_year }} BEATOK. Все права защищены.
+                                    © {{ current_year }} БИТОК. Все права защищены.
                                 </div>
                             </td>
                         </tr>

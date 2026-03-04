@@ -122,7 +122,7 @@ const Footer: React.FC = () => {
         </div>
         <div className="text-center mt-8 mb-20">
           <p className="text-gray-400 text-sm">
-            © BEATOK {getCurrentYear()}  - Все права защищены
+            © БИТОК {getCurrentYear()}  - Все права защищены
           </p>
         </div>
       </div>

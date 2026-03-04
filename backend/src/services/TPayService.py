@@ -44,13 +44,13 @@ class TPayService:
             if amount > Decimal('100000.00'):
                 raise ValueError("Максимальная сумма пополнения 100 000 ₽")
 
-            order_id = f"BEATOK_{user_id}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:6]}"
+            order_id = f"БИТОК{user_id}_{datetime.utcnow().strftime('%Y%m%d%H%M%S')}_{uuid.uuid4().hex[:6]}"
 
             payload = {
                 "TerminalKey": self.terminal_key,
                 "Amount": int(amount * 100),
                 "OrderId": order_id,
-                "Description": description or f"Пополнение баланса Beatok",
+                "Description": description or f"Пополнение баланса БИТОК",
                 "SuccessURL": self.callback_url
             }
 

@@ -91,7 +91,7 @@ class ZipCreator:
     ) -> str:
         current_date = datetime.now().strftime('%d.%m.%Y %H:%M:%S')
         expires_date = expires_at.strftime('%d.%m.%Y %H:%M')
-        return f"""BEATOK - ДЕТАЛИ ПОКУПКИ
+        return f"""БИТОК - ДЕТАЛИ ПОКУПКИ
 {"=" * 50}
 
 🎵 БИТ: {beat_name}
@@ -112,7 +112,7 @@ class ZipCreator:
 • Формат: {audio_format.upper()}
 
 {"=" * 50}
-© Beatok {datetime.now().year}
+© БИТОК {datetime.now().year}
     """
 
     @staticmethod
@@ -121,7 +121,7 @@ class ZipCreator:
 {"=" * 50}
 
 БИТ: {beat_name}
-АВТОРСКИЕ ПРАВА: Beatok
+АВТОРСКИЕ ПРАВА: БИТОК
 
 1. ПРАВА НА ИСПОЛЬЗОВАНИЕ:
    ✓ Использование в личных музыкальных проектах
@@ -163,7 +163,7 @@ class ZipCreator:
 • Время ответа: до 24 часов
 
 {"=" * 50}
-© Beatok {datetime.now().year}
+© БИТОК {datetime.now().year}
 Все права защищены.
     """
 
