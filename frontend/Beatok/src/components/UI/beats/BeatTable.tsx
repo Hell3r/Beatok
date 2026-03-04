@@ -276,7 +276,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
               {beat.status === 'available' ? 'Доступен' : beat.status === 'moderated' ? 'На модерации' : 'Отклонён'}
             </span>
             <div className="flex space-x-1">
-              {beat.status === 'available' && (
+              {beat.status === 'available' && beat.promotion_status !== 'promoted' && (
                 <button
                   onClick={() => handlePromoteClick(beat)}
                   className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold px-3 py-2 rounded-lg transition-all duration-300 cursor-pointer flex items-center space-x-2 shadow-md hover:shadow-lg transform hover:scale-[1.02]"

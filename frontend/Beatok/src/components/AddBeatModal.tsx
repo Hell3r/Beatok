@@ -216,6 +216,12 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
       return;
     }
 
+    if (!beatData.cover_file) {
+      setError('Необходимо загрузить обложку для бита');
+      setLoading(false);
+      return;
+    }
+
     try {
       const token = localStorage.getItem('access_token');
       if (!token) {

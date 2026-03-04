@@ -69,6 +69,9 @@ async def create_beat(
     if not audio_file:
         raise HTTPException(400, "Необходимо загрузить MP3 или WAV файл")
 
+    if not cover_file or not cover_file.filename:
+        raise HTTPException(400, "Необходимо загрузить обложку для бита")
+
     beat = BeatModel(
         name=name,
         genre=genre,

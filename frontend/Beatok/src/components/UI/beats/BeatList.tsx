@@ -334,7 +334,7 @@ const BeatList: React.FC<BeatListProps> = ({
                 </div>
               </div>
 
-              {isProfileView && beat.status === 'available' && (
+              {isProfileView && beat.status === 'available' && beat.promotion_status !== 'promoted' && (
                 <div className="mb-4">
                   <button
                     onClick={() => setBeatToPromote(beat)}
