@@ -24,16 +24,19 @@ export interface Beat {
     id: number;
     username: string;
     avatar_path?: string;
+    role?: string;
   };
   author?: {
     id: number;
     username: string;
     avatar_path?: string;
+    role?: string;
   };
   user?: {
     id: number;
     username: string;
     avatar_path?: string;
+    role?: string;
   };
   pricings?: BeatPricing[];
   terms_of_use?: {

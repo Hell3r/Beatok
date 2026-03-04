@@ -5,6 +5,7 @@ export interface TopBeatmaker {
   username: string;
   avatar_path: string;
   beat_count: number;
+  role?: string;
 }
 
 export interface Beatmaker {

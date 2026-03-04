@@ -179,7 +179,8 @@ async def get_user_profile(
             last_login=user.last_login,
             description=user.description,
             birthday=user.birthday,
-            prom_status=user.prom_status
+            prom_status=user.prom_status,
+            role=user.role
         )
 
     except Exception as e:

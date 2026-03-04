@@ -405,6 +405,7 @@ async def get_top_beatmakers(
             "user_id": row[0].id,
             "username": row[0].username,
             "avatar_path": row[0].avatar_path,
+            "role": row[0].role,
             "total_likes": row[1] or 0,
             "beat_count": row[2]
         }

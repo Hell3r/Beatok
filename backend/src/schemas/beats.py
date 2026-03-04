@@ -8,6 +8,7 @@ class UserInfo(BaseModel):
     id: int
     username: str
     avatar_path: Optional[str] = None
+    role: Optional[str] = None
 
 class BeatBase(BaseModel):
     name: str
@@ -73,7 +74,8 @@ class BeatResponse(BaseModel):
             owner_data = {
                 "id": obj.owner.id,
                 "username": obj.owner.username,
-                "avatar_path": obj.owner.avatar_path
+                "avatar_path": obj.owner.avatar_path,
+                "role": getattr(obj.owner, 'role', None)
             }
 
             terms_of_use_data = None

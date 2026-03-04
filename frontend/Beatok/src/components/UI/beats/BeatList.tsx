@@ -10,6 +10,7 @@ import type { Filters } from './Filter';
 import BeatPurchaseModal from '../../BeatPurchaseModal';
 import BeatPromotionModal from '../../BeatPromotionModal';
 import BeatInfoModal from '../../BeatInfoModal';
+import RoleBadge from '../RoleBadge';
 
 interface BeatListProps {
   beats: Beat[];
@@ -80,6 +81,13 @@ const BeatList: React.FC<BeatListProps> = ({
     if (beat.author?.avatar_path) return getAvatarUrl(authorId, beat.author.avatar_path);
     if (beat.user?.avatar_path) return getAvatarUrl(authorId, beat.user.avatar_path);
     return 'http://localhost:8000/static/default_avatar.png';
+  };
+
+  const getAuthorRole = (beat: Beat): string | undefined => {
+    if (beat.owner?.role) return beat.owner.role;
+    if (beat.author?.role) return beat.author.role;
+    if (beat.user?.role) return beat.user.role;
+    return undefined;
   };
 
   const getCoverUrl = (beat: Beat): string | null => {
@@ -287,6 +295,7 @@ const BeatList: React.FC<BeatListProps> = ({
                     <p className="text-neutral-400 text-sm truncate hover:text-red-400 transition-colors">
                       by {getAuthorName(beat)}
                     </p>
+                    <RoleBadge role={getAuthorRole(beat)} showLabel={true} className="ml-1" />
                   </div>
                 </div>
 

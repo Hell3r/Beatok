@@ -15,6 +15,7 @@ import WithdrawalModal from '../components/WithdrawalModal';
 import { useNotificationContext } from '../components/NotificationProvider';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import type { Beat } from '../types/Beat';
+import RoleBadge from '../components/UI/RoleBadge';
 
 interface UserProfile {
   id: number;
@@ -29,6 +30,7 @@ interface UserProfile {
   download_count?: number;
   description?: string;
   prom_status?: string;
+  role?: string;
 }
 
 const ProfilePage: React.FC = () => {
@@ -651,17 +653,20 @@ const ProfilePage: React.FC = () => {
             {isOwnProfile ? (
               `Привет, ${user.username}!`
             ) : (
-              <>
+              <div className="flex items-center gap-4">
                 <img
                   src={getAvatarUrl(user.id, user.avatar_path)}
                   alt="Аватар"
-                  className="w-8 h-8 rounded-full object-cover border border-neutral-600 mt-1"
+                  className="w-16 h-16 rounded-full object-cover border-2 border-neutral-600"
                   onError={(e) => {
                     e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
                   }}
                 />
-                {user.username}
-              </>
+                <span className="flex items-center gap-2">
+                  {user.username}
+                  <RoleBadge role={user.role} showLabel={true} />
+                </span>
+              </div>
             )}
           </h1>
         </div>
@@ -687,7 +692,10 @@ const ProfilePage: React.FC = () => {
               </div>
 
               <div className="text-center mt-4">
-                <h2 className="text-xl font-semibold text-white">{user.username}</h2>
+                <h2 className="text-xl font-semibold text-white flex items-center justify-center gap-2">
+                  {user.username}
+                  <RoleBadge role={user.role} showLabel={true} />
+                </h2>
                 {isOwnProfile && (
                   <p className="text-neutral-400 text-sm mt-1">ID: #{user.id}</p>
                 )}

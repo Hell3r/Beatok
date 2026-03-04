@@ -41,6 +41,7 @@ class UserResponse(BaseModel):
     last_login: Optional[datetime] = None
     description: Optional[str] = None
     prom_status: Optional[str] = None
+    role: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

@@ -11,6 +11,7 @@ import BeatPurchaseModal from '../../BeatPurchaseModal';
 import BeatPromotionModal from '../../BeatPromotionModal';
 import BeatInfoModal from '../../BeatInfoModal';
 import { getCurrentUser } from '../../../utils/getCurrentUser';
+import RoleBadge from '../RoleBadge';
 
 const getCoverUrl = (beat: Beat): string | null => {
   if (!beat.cover_path) return null;
@@ -96,6 +97,13 @@ const BeatTable: React.FC<BeatTableProps> = ({
     if (beat.author?.avatar_path) return getAvatarUrl(authorId, beat.author.avatar_path);
     if (beat.user?.avatar_path) return getAvatarUrl(authorId, beat.user.avatar_path);
     return 'http://localhost:8000/static/default_avatar.png';
+  };
+
+  const getAuthorRole = (beat: Beat): string | undefined => {
+    if (beat.owner?.role) return beat.owner.role;
+    if (beat.author?.role) return beat.author.role;
+    if (beat.user?.role) return beat.user.role;
+    return undefined;
   };
 
   const handleAuthorClick = (beat: Beat) => {
@@ -576,21 +584,24 @@ const BeatTable: React.FC<BeatTableProps> = ({
                     {!isProfileView && !hideAuthorColumn && (
                       <td className="p-4 text-neutral-300 text-center">
                         <div 
-                          className="flex items-center justify-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+                          className="flex flex-col items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
                           onClick={() => handleAuthorClick(beat)}
                           title={`Перейти к профилю ${getAuthorName(beat)}`}
                         >
-                          <img
-                            src={getAuthorAvatar(beat)}
-                            alt="Аватар автора"
-                            className="w-6 h-6 rounded-full object-cover"
-                            onError={(e) => {
-                              e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
-                            }}
-                          />
-                          <span className="hover:text-red-400 transition-colors">
-                            {truncateText(getAuthorName(beat), 15)}
-                          </span>
+                          <div className="flex items-center space-x-2">
+                            <img
+                              src={getAuthorAvatar(beat)}
+                              alt="Аватар автора"
+                              className="w-6 h-6 rounded-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
+                              }}
+                            />
+                            <span className="hover:text-red-400 transition-colors">
+                              {truncateText(getAuthorName(beat), 15)}
+                            </span>
+                          </div>
+                          <RoleBadge role={getAuthorRole(beat)} showLabel={true} className="mt-1" />
                         </div>
                       </td>
                     )}

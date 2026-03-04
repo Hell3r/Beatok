@@ -8,4 +8,5 @@ export interface User {
   is_active?: boolean;
   description?: string;
   prom_status?: string;
+  role?: string;
 }

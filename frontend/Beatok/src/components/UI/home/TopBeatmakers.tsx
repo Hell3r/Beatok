@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { userService, type TopBeatmaker } from '../../../services/userService';
 import { getAvatarUrl } from '../../../utils/getAvatarURL';
+import RoleBadge from '../RoleBadge';
 
 const TopBeatmakers: React.FC = () => {
   const [beatmakers, setBeatmakers] = useState<TopBeatmaker[]>([]);
@@ -135,8 +136,9 @@ const TopBeatmakers: React.FC = () => {
               </div>
               
               <div className="p-4">
-                <h3 className="text-white font-semibold text-lg truncate group-hover:text-red-400 transition-colors duration-300">
+                <h3 className="text-white font-semibold text-lg truncate group-hover:text-red-400 transition-colors duration-300 flex items-center gap-2">
                   {beatmaker.username}
+                  <RoleBadge role={beatmaker.role} showLabel={true} />
                 </h3>
                 <p className="text-neutral-400 text-sm group-hover:text-neutral-300 transition-colors duration-300 mt-1">
                   {beatmaker.beat_count} бит{beatmaker.beat_count !== 1 ? 'ов' : ''}
