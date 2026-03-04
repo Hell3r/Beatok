@@ -9,15 +9,32 @@ import logging
 logger = logging.getLogger(__name__)
 
 class RateLimiter:
+    # Лимиты для обычных пользователей
+    LIMITS_STANDARD = {
+        'api_global': (1000, 60),           # 1000 запросов в минуту
+        'auth_login': (5, 60),              # 5 попыток входа в минуту
+        'beat_create': (100, 300),          # 100 созданий битов за 5 минут
+        'file_upload': (20, 3600),          # 20 загрузок в час
+        'beat_download': (50, 3600),        # 50 скачиваний в час
+        'beat_daily_limit': (5, 86400),     # 5 битов в сутки (24 часа) для обычных
+    }
+    
+    # Лимиты для подписчиков
+    LIMITS_SUBSCRIBER = {
+        'api_global': (1000, 60),           # 1000 запросов в минуту
+        'auth_login': (5, 60),              # 5 попыток входа в минуту
+        'beat_create': (100, 300),          # 100 созданий битов за 5 минут
+        'file_upload': (20, 3600),          # 20 загрузок в час
+        'beat_download': (50, 3600),        # 50 скачиваний в час
+        'beat_daily_limit': (15, 86400),    # 15 битов в сутки для подписчиков
+    }
+    
     def __init__(self):
-        self.limits = {
-            'api_global': (1000, 60),           # 1000 запросов в минуту
-            'auth_login': (5, 60),              # 5 попыток входа в минуту
-            'beat_create': (10, 300),           # 10 созданий битов за 5 минут
-            'file_upload': (20, 3600),          # 20 загрузок в час
-            'beat_download': (50, 3600),        # 50 скачиваний в час
-            'beat_daily_limit': (3, 86400),     # 3 бита в сутки (24 часа)
-        }
+        self.limits = self.LIMITS_STANDARD.copy()
+    
+    def get_limits_for_user(self, is_subscriber: bool) -> dict:
+        """Возвращает лимиты в зависимости от статуса подписки"""
+        return self.LIMITS_SUBSCRIBER.copy() if is_subscriber else self.LIMITS_STANDARD.copy()
     
     async def is_rate_limited(self, action: str, identifier: str) -> bool:
         """
@@ -60,20 +77,6 @@ class RateLimiter:
             return False
     
     async def check_daily_beat_limit(self, user_id: int) -> Dict[str, Any]:
-        """
-        Проверяет дневной лимит битов для пользователя
-        
-        Returns:
-            dict: {
-                "can_create": bool,
-                "used": int,
-                "remaining": int,
-                "limit": int,
-                "resets_in": int (seconds),
-                "resets_at": str (HH:MM),
-                "user_message": str
-            }
-        """
         if not await redis_service.is_connected():
             logger.warning("Redis не подключен, разрешаем создание")
             return {
@@ -117,9 +120,8 @@ class RateLimiter:
             user_message = ""
             if request_count >= max_requests:
                 user_message = (
-                    f"❌ Дневной лимит исчерпан!\n"
+                    f"Дневной лимит исчерпан!\n"
                     f"Вы загрузили {request_count}/{max_requests} битов за последние 24 часа.\n"
-                    f"Лимит сбросится через {hours}ч {minutes}м в {reset_time}."
                 )
             else:
                 user_message = (
@@ -153,12 +155,6 @@ class RateLimiter:
             }
     
     async def increment_daily_beat_counter(self, user_id: int) -> int:
-        """
-        Увеличивает счётчик дневных битов для пользователя
-        
-        Returns:
-            int: новое количество битов за последние 24 часа
-        """
         if not await redis_service.is_connected():
             return 0
             
@@ -186,12 +182,6 @@ class RateLimiter:
             return 0
     
     async def get_user_beat_stats(self, user_id: int) -> Dict[str, Any]:
-        """
-        Полная статистика по битам пользователя
-        
-        Returns:
-            dict: статистика за сегодня, вчера и 30 дней
-        """
         if not await redis_service.is_connected():
             return {"error": "Redis not connected"}
         
@@ -220,7 +210,6 @@ class RateLimiter:
             
             stats["last_7_days"] = week_stats
             
-            # Общее количество битов (по всем записям в ключе)
             action = 'beat_daily_limit'
             identifier = f"user_{user_id}"
             key = f"rate_limit:{action}:{identifier}"
@@ -237,16 +226,6 @@ class RateLimiter:
             return {"error": str(e)}
 
 def get_client_identifier(request: Request, user_id: int = None) -> str:
-    """
-    Генерирует уникальный идентификатор клиента
-    
-    Args:
-        request: FastAPI Request объект
-        user_id: ID пользователя (если аутентифицирован)
-    
-    Returns:
-        str: уникальный идентификатор
-    """
     client_ip = request.client.host if request.client else "0.0.0.0"
     
     if user_id:
@@ -258,24 +237,30 @@ def get_client_identifier(request: Request, user_id: int = None) -> str:
         ip_agent_hash = hashlib.md5(f"{client_ip}_{user_agent}".encode()).hexdigest()[:16]
         return f"ip_{ip_agent_hash}"
 
-async def check_rate_limit(request: Request, action: str, user_id: int = None):
-    """
-    Основная функция проверки rate limit
+async def check_rate_limit(request: Request, action: str, user_id: int = None, is_subscriber: bool = False):
+    if is_subscriber:
+        limits = RateLimiter.LIMITS_SUBSCRIBER
+    else:
+        limits = RateLimiter.LIMITS_STANDARD
     
-    Для beat_create дополнительно проверяет дневной лимит (3 бита в сутки)
-    """
     identifier = get_client_identifier(request, user_id)
     
     rate_limiter = RateLimiter()
+    rate_limiter.limits = limits  # Устанавливаем нужные лимиты
     
     # ⭐ СПЕЦИАЛЬНАЯ ПРОВЕРКА ДЛЯ ДНЕВНОГО ЛИМИТА НА БИТЫ
-    if action == "beat_create" and user_id:
-        logger.info(f"🔍 Проверка дневного лимита для user_id={user_id}")
+    if action in ["beat_create", "beat_daily_limit"] and user_id:
+        logger.info(f"🔍 Проверка дневного лимита для user_id={user_id}, подписчик={is_subscriber}")
         
+        limit_for_user = limits['beat_daily_limit'][0]  # 5 или 15
         daily_limit_info = await rate_limiter.check_daily_beat_limit(user_id)
         
+        # Переопределяем лимит в информации
+        daily_limit_info['limit'] = limit_for_user
+        daily_limit_info['remaining'] = max(0, limit_for_user - daily_limit_info['used'])
+        
         if not daily_limit_info["can_create"]:
-            logger.warning(f"🚨 Daily limit exceeded for user {user_id}: {daily_limit_info['used']}/3")
+            logger.warning(f"🚨 Daily limit exceeded for user {user_id}: {daily_limit_info['used']}/{limit_for_user}")
             
             # Форматируем детали ошибки
             hours = daily_limit_info["resets_in"] // 3600
@@ -286,9 +271,10 @@ async def check_rate_limit(request: Request, action: str, user_id: int = None):
                 detail={
                     "error": "daily_beat_limit_exceeded",
                     "message": "Дневной лимит битов исчерпан",
-                    "limit": daily_limit_info["limit"],
+                    "limit": limit_for_user,
                     "used": daily_limit_info["used"],
                     "remaining": daily_limit_info["remaining"],
+                    "is_subscriber": is_subscriber,
                     "resets_in_seconds": daily_limit_info["resets_in"],
                     "resets_in_human": f"{hours}ч {minutes}м",
                     "resets_at": daily_limit_info["resets_at"],
@@ -297,12 +283,11 @@ async def check_rate_limit(request: Request, action: str, user_id: int = None):
                 }
             )
         else:
-            logger.info(f"✅ Daily limit OK for user {user_id}: {daily_limit_info['used']}/3")
+            logger.info(f"✅ Daily limit OK for user {user_id}: {daily_limit_info['used']}/{limit_for_user}")
     
-    # ОБЫЧНАЯ ПРОВЕРКА RATE LIMIT
     if await rate_limiter.is_rate_limited(action, identifier):
         # Получаем информацию о лимите для сообщения
-        max_requests, window_seconds = rate_limiter.limits.get(action, (0, 60))
+        max_requests, window_seconds = limits.get(action, (0, 60))
         
         # Определяем единицу времени
         if window_seconds < 60:
@@ -329,5 +314,4 @@ async def check_rate_limit(request: Request, action: str, user_id: int = None):
             }
         )
 
-# Глобальный экземпляр rate limiter
 rate_limiter = RateLimiter()

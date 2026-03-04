@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useTransition, animated } from '@react-spring/web';
 import { paymentService } from '../services/paymentService';
 import { useNotificationContext } from './NotificationProvider';
+import { getCurrentUser } from '../utils/getCurrentUser';
 
 interface DepositModalProps {
   isOpen: boolean;
@@ -14,6 +15,8 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) => {
   const [error, setError] = useState('');
   const [amount, setAmount] = useState('');
 
+  const currentUser = getCurrentUser();
+  const isSubscription = currentUser?.prom_status === 'subscription';
   const COMMISSION_RATE = 0.05;
 
   const getCommission = (value: number): number => {
@@ -186,13 +189,15 @@ const DepositModal: React.FC<DepositModalProps> = ({ isOpen, onClose }) => {
                         <span className="text-neutral-400">Внесено:</span>
                         <span className="text-white">{amountNum.toFixed(2)} ₽</span>
                       </div>
-                      <div className="flex justify-between items-center text-sm mt-1">
-                        <span className="text-neutral-400">Комиссия (5%):</span>
-                        <span className="text-red-400">-{commission.toFixed(2)} ₽</span>
-                      </div>
+                      {!isSubscription && (
+                        <div className="flex justify-between items-center text-sm mt-1">
+                          <span className="text-neutral-400">Комиссия (5%):</span>
+                          <span className="text-red-400">-{commission.toFixed(2)} ₽</span>
+                        </div>
+                      )}
                       <div className="border-t border-neutral-700 mt-2 pt-2 flex justify-between items-center">
                         <span className="text-neutral-300 font-medium">Вы получите:</span>
-                        <span className="text-green-400 font-bold text-lg">{finalAmount.toFixed(2)} ₽</span>
+                        <span className="text-green-400 font-bold text-lg">{isSubscription ? amountNum.toFixed(2) : finalAmount.toFixed(2)} ₽</span>
                       </div>
                     </div>
                   )}

@@ -1,3 +1,4 @@
+
 from fastapi import APIRouter, HTTPException, Depends, Query, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,13 +10,14 @@ from src.database.database import get_session
 from src.models.downland_token import DownloadTokenModel
 from src.models.beats import BeatModel
 from src.services.template_service import template_service
-from src.scripts.zip_creator import ZipCreator
+from src.scripts.zip_creator import ZipCreator, TermsOfUseData
 import logging
 
 router = APIRouter(prefix="/purchase/download", tags=["Загрузки"])
 logger = logging.getLogger(__name__)
 
-@router.get("/confirm/{token}", response_class=HTMLResponse, summary = "Открытие страницы подтверждения скачивания (по токену)")
+
+@router.get("/confirm/{token}", response_class=HTMLResponse, summary="Открытие страницы подтверждения скачивания (по токену)")
 async def download_confirm(
     token: str,
     request: Request,
@@ -27,9 +29,9 @@ async def download_confirm(
             .where(DownloadTokenModel.token == token)
             .options(selectinload(DownloadTokenModel.beat))
         )
-        
+
         download_token = result.scalar_one_or_none()
-        
+
         if not download_token or not download_token.can_download:
             return HTMLResponse(
                 content=template_service.render_error_page(
@@ -39,7 +41,7 @@ async def download_confirm(
                 ),
                 status_code=404
             )
-        
+
         beat = download_token.beat
 
         BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
@@ -53,9 +55,9 @@ async def download_confirm(
             download_action_url=download_action_url,
             direct_download_url=direct_download_url
         )
-        
+
         return HTMLResponse(content=html_content)
-        
+
     except Exception as e:
         logger.error(f"Error in download confirm: {e}")
         return HTMLResponse(
@@ -67,7 +69,7 @@ async def download_confirm(
         )
 
 
-@router.get("/zip/{token}", summary = "Скачивание архива с битов (по токену)")
+@router.get("/zip/{token}", summary="Скачивание архива с битов (по токену)")
 async def download_zip(
     token: str,
     session: AsyncSession = Depends(get_session)
@@ -76,32 +78,42 @@ async def download_zip(
         result = await session.execute(
             select(DownloadTokenModel)
             .where(DownloadTokenModel.token == token)
-            .options(selectinload(DownloadTokenModel.beat))
+            .options(selectinload(DownloadTokenModel.beat).selectinload(BeatModel.terms_of_use_backref))
         )
-        
+
         download_token = result.scalar_one_or_none()
-        
+
         if not download_token or not download_token.can_download:
             raise HTTPException(
                 status_code=404,
                 detail="Токен недействителен или достигнут лимит скачиваний"
             )
-            
+
         download_token.downloads_count += 1
         download_token.last_download_at = datetime.utcnow()
-        
+
         if download_token.downloads_count >= download_token.max_downloads:
             download_token.is_active = False
-        
+
         await session.commit()
-        
+
         beat = download_token.beat
 
+        terms_of_use = None
+        if beat.terms_of_use_backref and len(beat.terms_of_use_backref) > 0:
+            terms_model = beat.terms_of_use_backref[0]
+            terms_of_use = TermsOfUseData(
+                recording_tracks=terms_model.recording_tracks,
+                commercial_perfomance=terms_model.commercial_perfomance,
+                rotation_on_the_radio=terms_model.rotation_on_the_radio,
+                music_video_recording=terms_model.music_video_recording,
+                release_of_copies=terms_model.release_of_copies
+            )
 
         purchase_info = {
             "purchase_id": download_token.purchase_id,
-            "tariff_name": "Standard", 
-            "price": 0, 
+            "tariff_name": "Standard",
+            "price": 0,
             "purchase_date": download_token.created_at.strftime('%d.%m.%Y %H:%M')
         }
 
@@ -110,11 +122,12 @@ async def download_zip(
             beat_name=beat.name,
             purchase_info=purchase_info,
             downloads_left=download_token.max_downloads - download_token.downloads_count,
-            expires_at=download_token.expires_at
+            expires_at=download_token.expires_at,
+            terms_of_use=terms_of_use
         )
 
         zip_filename = f"beatok_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip"
-        
+
         import urllib.parse
         encoded_filename = urllib.parse.quote(zip_filename, safe='')
 
@@ -129,7 +142,7 @@ async def download_zip(
                 "Expires": "0"
             }
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
@@ -137,7 +150,7 @@ async def download_zip(
         raise HTTPException(status_code=500, detail="Ошибка при создании архива")
 
 
-@router.get("/direct/{token}", summary = "Прямая ссылка на скачивание WAV (по токену)")
+@router.get("/direct/{token}", summary="Прямая ссылка на скачивание WAV (по токену)")
 async def download_direct(
     token: str,
     session: AsyncSession = Depends(get_session)
@@ -148,28 +161,28 @@ async def download_direct(
             .where(DownloadTokenModel.token == token)
             .options(selectinload(DownloadTokenModel.beat))
         )
-        
+
         download_token = result.scalar_one_or_none()
-        
+
         if not download_token or not download_token.can_download:
             raise HTTPException(status_code=404, detail="Токен недействителен")
 
         download_token.downloads_count += 1
         download_token.last_download_at = datetime.utcnow()
-        
+
         if download_token.downloads_count >= download_token.max_downloads:
             download_token.is_active = False
-        
+
         await session.commit()
-        
+
         beat = download_token.beat
 
         from pathlib import Path
         from fastapi.responses import FileResponse
-        
+
         AUDIO_STORAGE = Path("audio_storage")
         file_path = AUDIO_STORAGE / beat.wav_path
-        
+
         if not file_path.exists():
             raise HTTPException(status_code=404, detail="Файл не найден")
 
@@ -184,7 +197,9 @@ async def download_direct(
                 "Cache-Control": "no-cache, no-store, must-revalidate"
             }
         )
-        
+
     except Exception as e:
         logger.error(f"Direct download error: {e}")
         raise HTTPException(status_code=500, detail="Ошибка скачивания")
+
+

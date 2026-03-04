@@ -8,12 +8,14 @@ from src.models.beats import BeatModel
 from src.models.promotion import BeatPromotionModel
 from src.models.users import UsersModel
 from src.services.BalanceService import BalanceService
+from src.database.deps import SessionDep
 
 logger = logging.getLogger(__name__)
 
 class PromotionService:
     def __init__(self, db: AsyncSession):
         self.db = db
+        self.balance_service = BalanceService(db)
     
     PROMOTION_PRICE = Decimal('200.0')
     PROMOTION_DURATION_DAYS = 3
@@ -55,9 +57,12 @@ class PromotionService:
                     f"на балансе: {float(user.balance)} ₽"
                 )
             
-            balance_before = user.balance
-            user.balance = user.balance - self.PROMOTION_PRICE
-            balance_after = user.balance
+            new_balance = await self.balance_service.purchase(
+                user_id=user.id,
+                amount=Decimal(str(self.PROMOTION_PRICE)),
+                description=f"Оформление продвижения бита {beat.id}"
+            )
+
 
             promotion = BeatPromotionModel(
                 beat_id=beat_id,
@@ -87,7 +92,7 @@ class PromotionService:
                 "price": float(self.PROMOTION_PRICE),
                 "ends_at": promotion.ends_at,
                 "promotion_id": promotion.id,
-                "new_balance": float(balance_after)
+                "new_balance": new_balance
             }
             
         except ValueError as e:

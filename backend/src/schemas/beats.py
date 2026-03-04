@@ -9,6 +9,7 @@ class UserInfo(BaseModel):
     username: str
     avatar_path: Optional[str] = None
     role: Optional[str] = None
+    prom_status: Optional[str] = None
 
 class BeatBase(BaseModel):
     name: str
@@ -75,7 +76,8 @@ class BeatResponse(BaseModel):
                 "id": obj.owner.id,
                 "username": obj.owner.username,
                 "avatar_path": obj.owner.avatar_path,
-                "role": getattr(obj.owner, 'role', None)
+                "role": getattr(obj.owner, 'role', None),
+                "prom_status": getattr(obj.owner, 'prom_status', None)
             }
 
             terms_of_use_data = None
