@@ -187,7 +187,7 @@ class BeatService {
   }
 
   async getPromotedBeats(): Promise<Beat[]> {
-    const response = await this.fetchApi('/beats?promotion_status=promoted&limit=3');
+    const response = await this.fetchApi('/beats?promotion_status=promoted&limit=10');
     return response;
   }
 
