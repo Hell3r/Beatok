@@ -5,7 +5,7 @@ import logging
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from src.scripts.create_default_avatar import create_default_avatar
 from dotenv import load_dotenv
 from src.tasks.background import task_manager
@@ -37,22 +37,26 @@ app = FastAPI(
 )
 app.include_router(main_router)
 
-origins = [
-    ["http://localhost", "http://localhost:3000"],
-    "http://localhost:8000",
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:3000",
-]
-
+# Allow all origins for development
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def add_cors_headers(request: Request, call_next):
+    # Handle CORS for all requests
+    response = await call_next(request)
+    
+    # Add CORS headers to response
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
+    
+    return response
 
 def ensure_default_avatar_exists():
     default_avatar_path = "static/default_avatar.png"

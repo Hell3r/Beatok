@@ -246,10 +246,12 @@ const BeatTable: React.FC<BeatTableProps> = ({
     }
   };
 
-  const handlePromoteConfirm = async (beatId: number) => {
-    console.log('Promoting beat:', beatId);
+  // Callback to refresh beats after successful promotion
+  const handlePromoteSuccess = () => {
     setPromotionModalOpen(false);
     setBeatToPromote(null);
+    // Trigger a custom event that ProfilePage can listen to
+    window.dispatchEvent(new CustomEvent('beatsUpdated'));
   };
 
   const renderActions = (beat: Beat) => {
@@ -279,7 +281,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
               {beat.status === 'available' && beat.promotion_status !== 'promoted' && (
                 <button
                   onClick={() => handlePromoteClick(beat)}
-                  className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold px-3 py-2 rounded-lg transition-all duration-300 cursor-pointer flex items-center space-x-2 shadow-md hover:shadow-lg transform hover:scale-[1.02]"
+                  className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold px-3 py-2 rounded-lg transition-colors duration-300 cursor-pointer flex items-center space-x-2 shadow-md hover:shadow-lg transform hover:scale-[1.02]"
                   title="Продвигать бит"
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -658,7 +660,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
         isOpen={promotionModalOpen}
         onClose={() => setPromotionModalOpen(false)}
         beat={beatToPromote}
-        onPromote={handlePromoteConfirm}
+        onPromoteSuccess={handlePromoteSuccess}
       />
 
       <BeatInfoModal

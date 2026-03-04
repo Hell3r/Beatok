@@ -1,26 +1,31 @@
 import React, { useState, useEffect } from 'react';
 import { useSpring, animated } from '@react-spring/web';
 import type { Beat } from '../types/Beat';
+import { beatService } from '../services/beatService';
+import { useNotificationContext } from '../components/NotificationProvider';
 
 interface BeatPromotionModalProps {
   isOpen: boolean;
   onClose: () => void;
   beat: Beat | null;
-  onPromote: (beatId: number) => void;
+  onPromoteSuccess?: (beatId: number) => void;
 }
 
 const BeatPromotionModal: React.FC<BeatPromotionModalProps> = ({
   isOpen,
   onClose,
   beat,
-  onPromote,
+  onPromoteSuccess,
 }) => {
+  const { showSuccess, showError } = useNotificationContext();
   const [isProcessing, setIsProcessing] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen) {
       setShouldRender(true);
+      setError(null);
     }
   }, [isOpen]);
 
@@ -44,11 +49,19 @@ const BeatPromotionModal: React.FC<BeatPromotionModalProps> = ({
     if (!beat) return;
 
     setIsProcessing(true);
+    setError(null);
+    
     try {
-      await onPromote(beat.id);
-      onClose();
-    } catch (error) {
-      console.error('Failed to promote beat:', error);
+      const result = await beatService.promoteBeat(beat.id);
+      
+      if (result.success) {
+        showSuccess(`Бит "${result.beat_name}" успешно продвинут! Осталось на балансе: ${result.new_balance} ₽`);
+        onPromoteSuccess?.(beat.id);
+        onClose();
+      }
+    } catch (err: any) {
+      console.error('Failed to promote beat:', err);
+      setError(err.message || 'Ошибка при продвижении бита');
     } finally {
       setIsProcessing(false);
     }
@@ -56,6 +69,7 @@ const BeatPromotionModal: React.FC<BeatPromotionModalProps> = ({
 
   const handleClose = () => {
     if (!isProcessing) {
+      setError(null);
       onClose();
     }
   };
@@ -67,7 +81,7 @@ const BeatPromotionModal: React.FC<BeatPromotionModalProps> = ({
       <animated.div
         className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
         style={overlaySpring}
-        onClick={onClose}
+        onClick={handleClose}
       />
 
       <animated.div
@@ -94,10 +108,16 @@ const BeatPromotionModal: React.FC<BeatPromotionModalProps> = ({
               <div className="text-center">
                 <span className="text-neutral-400 text-sm">Стоимость продвижения:</span>
                 <div className="text-white font-bold text-2xl mt-1">200 ₽</div>
-                <div className="text-neutral-500 text-xs">за неделю</div>
+                <div className="text-neutral-500 text-xs">за 3 дня</div>
               </div>
             </div>
           </div>
+
+          {error && (
+            <div className="bg-red-900/50 border border-red-600 rounded-lg p-3 mb-4">
+              <p className="text-red-400 text-sm text-center">{error}</p>
+            </div>
+          )}
 
           <div className="flex space-x-3">
             <button
@@ -108,7 +128,7 @@ const BeatPromotionModal: React.FC<BeatPromotionModalProps> = ({
               {isProcessing ? 'Обработка...' : 'Продвинуть'}
             </button>
             <button
-              onClick={onClose}
+              onClick={handleClose}
               className="flex-1 bg-neutral-700 hover:bg-neutral-600 text-white px-4 py-2 rounded-lg transition-colors cursor-pointer"
               disabled={isProcessing}
             >

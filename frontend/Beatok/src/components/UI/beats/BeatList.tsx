@@ -338,7 +338,7 @@ const BeatList: React.FC<BeatListProps> = ({
                 <div className="mb-4">
                   <button
                     onClick={() => setBeatToPromote(beat)}
-                    className="w-full select-none bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-semibold px-4 py-3 rounded-lg transition-all duration-300 cursor-pointer flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
+                    className="w-full select-none bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700  text-black font-semibold px-4 py-3 rounded-lg transition-colors duration-300 cursor-pointer flex items-center justify-center space-x-2 shadow-lg hover:shadow-xl transform hover:scale-[1.02]"
                     title="Продвигать бит"
                   >
                     <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -432,7 +432,11 @@ const BeatList: React.FC<BeatListProps> = ({
         isOpen={promotionModalOpen}
         onClose={() => setPromotionModalOpen(false)}
         beat={beatToPromote}
-        onPromote={(beatId) => console.log('Promoting beat:', beatId)}
+        onPromoteSuccess={() => {
+          setPromotionModalOpen(false);
+          setBeatToPromote(null);
+          window.dispatchEvent(new CustomEvent('beatsUpdated'));
+        }}
       />
 
       <BeatInfoModal

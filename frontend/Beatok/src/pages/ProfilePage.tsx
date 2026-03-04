@@ -81,7 +81,7 @@ const ProfilePage: React.FC = () => {
   } | null>(null);
   const [statsLoading, setStatsLoading] = useState(false);
 
-const [favoriteBeats, setFavoriteBeats] = useState<Beat[]>([]);
+  const [favoriteBeats, setFavoriteBeats] = useState<Beat[]>([]);
   const [favoriteBeatsLoading, setFavoriteBeatsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
@@ -97,17 +97,17 @@ const [favoriteBeats, setFavoriteBeats] = useState<Beat[]>([]);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-const leftPanelSpring = useSpring({
-  opacity: (activeTab === 'mybeats' || activeTab === 'favorites') ? 0 : 1,
-  width: (activeTab === 'mybeats' || activeTab === 'favorites') ? '0%' : '33%',
-  scale: (activeTab === 'mybeats' || activeTab === 'favorites') ? 0.9 : 1,
-  config: { tension: 300, friction: 30 }
-});
+  const leftPanelSpring = useSpring({
+    opacity: (activeTab === 'mybeats' || activeTab === 'favorites') ? 0 : 1,
+    width: (activeTab === 'mybeats' || activeTab === 'favorites') ? '0%' : '33%',
+    scale: (activeTab === 'mybeats' || activeTab === 'favorites') ? 0.9 : 1,
+    config: { tension: 300, friction: 30 }
+  });
 
-const rightPanelSpring = useSpring({
-  width: (activeTab === 'mybeats' || activeTab === 'favorites') ? '100%' : isMobile ? '100%' : '67%',
-  config: { tension: 300, friction: 30 }
-});
+  const rightPanelSpring = useSpring({
+    width: (activeTab === 'mybeats' || activeTab === 'favorites') ? '100%' : isMobile ? '100%' : '67%',
+    config: { tension: 300, friction: 30 }
+  });
 
   const updateUserInStorage = (userData: Partial<UserProfile>) => {
     try {
@@ -123,9 +123,9 @@ const rightPanelSpring = useSpring({
     }
   };
 
-const { playBeat, currentBeat, isPlaying } = useAudioPlayer();
+  const { playBeat, currentBeat, isPlaying } = useAudioPlayer();
 
-const handlePlayBeat = (beat: Beat) => {
+  const handlePlayBeat = (beat: Beat) => {
     playBeat(beat);
   };
 
@@ -271,6 +271,17 @@ const handlePlayBeat = (beat: Beat) => {
       loadFavoriteBeats();
     }
   }, [user, activeTab, isOwnProfile, favoriteBeats.length]);
+
+  // Listen for beats updates (e.g., after promotion)
+  useEffect(() => {
+    const handleBeatsUpdated = () => {
+      loadMyBeats();
+      loadUserProfile();
+    };
+
+    window.addEventListener('beatsUpdated', handleBeatsUpdated);
+    return () => window.removeEventListener('beatsUpdated', handleBeatsUpdated);
+  }, [user]);
 
   const loadMyBeats = async () => {
     if (!user) return;
@@ -1134,7 +1145,7 @@ const handlePlayBeat = (beat: Beat) => {
                               className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2 text-white placeholder-neutral-500 focus:outline-none focus:border-red-500 transition-colors"
                             />
                           </div>
-<BeatList
+                          <BeatList
                             beats={myBeats}
                             loading={beatsLoading}
                             currentPlayingBeat={currentBeat}
@@ -1150,7 +1161,7 @@ const handlePlayBeat = (beat: Beat) => {
                           />
                         </>
                       ) : (
-<BeatTable
+                        <BeatTable
                           beats={myBeats}
                           filters={filters}
                           isProfileView={isOwnProfile}
@@ -1235,7 +1246,7 @@ const handlePlayBeat = (beat: Beat) => {
                           </p>
                         </div>
                       ) : isMobile ? (
-<BeatList
+                        <BeatList
                           beats={favoriteBeats}
                           loading={favoriteBeatsLoading}
                           currentPlayingBeat={currentBeat}
@@ -1248,7 +1259,7 @@ const handlePlayBeat = (beat: Beat) => {
                           favoriteBeats={favoriteBeats}
                         />
                       ) : (
-<BeatTable
+                        <BeatTable
                           beats={favoriteBeats}
                           filters={filters}
                           isProfileView={false}

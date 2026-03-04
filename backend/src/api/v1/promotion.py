@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 import logging
@@ -10,6 +11,19 @@ from src.dependencies.auth import get_current_user_id
 
 router = APIRouter(prefix="/promotion", tags=["Продвижение"])
 logger = logging.getLogger(__name__)
+
+@router.options("/{path:path}")
+async def cors_handler(request: Request, path: str):
+    """Handle CORS preflight requests"""
+    return JSONResponse(
+        status_code=200,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type, Authorization",
+            "Access-Control-Max-Age": "3600",
+        }
+    )
 
 @router.get("/info", response_model=PromotionInfo, summary = "Информация о продвижении")
 async def get_promotion_info(session: AsyncSession = Depends(get_session)):

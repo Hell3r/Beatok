@@ -1,5 +1,6 @@
 import logging
 from datetime import datetime, timedelta
+from decimal import Decimal
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, and_
 from typing import List, Optional
@@ -14,7 +15,7 @@ class PromotionService:
     def __init__(self, db: AsyncSession):
         self.db = db
     
-    PROMOTION_PRICE = 200.0
+    PROMOTION_PRICE = Decimal('200.0')
     PROMOTION_DURATION_DAYS = 3
     PROMOTION_DESCRIPTION = "Продвижение бита на 3 дня в топе"
     
@@ -50,16 +51,18 @@ class PromotionService:
             if user.balance < self.PROMOTION_PRICE:
                 raise ValueError(
                     f"Недостаточно средств на балансе. "
-                    f"Нужно: {self.PROMOTION_PRICE} ₽, "
-                    f"на балансе: {user.balance} ₽"
+                    f"Нужно: {float(self.PROMOTION_PRICE)} ₽, "
+                    f"на балансе: {float(user.balance)} ₽"
                 )
             
-            user.balance -= 200
+            balance_before = user.balance
+            user.balance = user.balance - self.PROMOTION_PRICE
+            balance_after = user.balance
 
             promotion = BeatPromotionModel(
                 beat_id=beat_id,
                 user_id=user_id,
-                price=self.PROMOTION_PRICE,
+                price=float(self.PROMOTION_PRICE),
                 starts_at=datetime.utcnow(),
                 ends_at=datetime.utcnow() + timedelta(days=self.PROMOTION_DURATION_DAYS),
                 is_active=True
@@ -73,7 +76,7 @@ class PromotionService:
             
             logger.info(
                 f"✅ Beat promoted: beat_id={beat_id}, user_id={user_id}, "
-                f"price={self.PROMOTION_PRICE}, ends_at={promotion.ends_at}"
+                f"price={float(self.PROMOTION_PRICE)}, ends_at={promotion.ends_at}"
             )
             
             return {
@@ -81,9 +84,10 @@ class PromotionService:
                 "message": "Бит успешно продвинут на 3 дня",
                 "beat_id": beat_id,
                 "beat_name": beat.name,
-                "price": self.PROMOTION_PRICE,
+                "price": float(self.PROMOTION_PRICE),
                 "ends_at": promotion.ends_at,
-                "promotion_id": promotion.id
+                "promotion_id": promotion.id,
+                "new_balance": float(balance_after)
             }
             
         except ValueError as e:
@@ -187,7 +191,7 @@ class PromotionService:
     
     async def get_promotion_info(self) -> dict:
         return {
-            "price": self.PROMOTION_PRICE,
+            "price": float(self.PROMOTION_PRICE),
             "duration_days": self.PROMOTION_DURATION_DAYS,
             "description": self.PROMOTION_DESCRIPTION
         }

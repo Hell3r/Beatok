@@ -213,6 +213,38 @@ class BeatService {
 
     return await response.json();
   }
+
+  async promoteBeat(beatId: number): Promise<{
+    success: boolean;
+    message: string;
+    beat_id: number;
+    beat_name: string;
+    price: number;
+    ends_at: string;
+    new_balance: number;
+    promotion_id: number;
+  }> {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      throw new Error('Не авторизован');
+    }
+
+    const response = await fetch(`${API_BASE_URL}/promotion/promote`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ beat_id: beatId }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Ошибка при продвижении бита' }));
+      throw new Error(errorData.detail || errorData.message || `HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  }
 }
 
 export const beatService = new BeatService();
