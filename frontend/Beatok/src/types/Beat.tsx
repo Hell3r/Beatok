@@ -25,18 +25,21 @@ export interface Beat {
     username: string;
     avatar_path?: string;
     role?: string;
+    prom_status?: string;
   };
   author?: {
     id: number;
     username: string;
     avatar_path?: string;
     role?: string;
+    prom_status?: string;
   };
   user?: {
     id: number;
     username: string;
     avatar_path?: string;
     role?: string;
+    prom_status?: string;
   };
   pricings?: BeatPricing[];
   terms_of_use?: {

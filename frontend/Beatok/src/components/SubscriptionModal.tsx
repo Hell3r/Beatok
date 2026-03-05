@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useTransition, animated, useSpring } from '@react-spring/web';
 import { useModal } from '../hooks/useModal';
+import { userService } from '../services/userService';
+import { useNotificationContext } from './NotificationProvider';
 
 interface SubscriptionModalProps {
   isOpen: boolean;
@@ -9,6 +11,8 @@ interface SubscriptionModalProps {
 
 const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose }) => {
   const { openModal, closeModal } = useModal();
+  const { showSuccess, showError } = useNotificationContext();
+  const [loading, setLoading] = useState(false);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -36,6 +40,30 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose }
     height: '500px',
     config: { tension: 300, friction: 30 }
   });
+
+  const handleSubscribe = async () => {
+    setLoading(true);
+    try {
+      const result = await userService.subscribe();
+      showSuccess(result.message);
+      
+      // Update localStorage user_info with new prom_status
+      const userInfo = localStorage.getItem('user_info');
+      if (userInfo) {
+        const parsed = JSON.parse(userInfo);
+        parsed.prom_status = 'subscription';
+        parsed.balance = result.balance;
+        localStorage.setItem('user_info', JSON.stringify(parsed));
+        window.dispatchEvent(new Event('userUpdated'));
+      }
+      
+      onClose();
+    } catch (error) {
+      showError(error instanceof Error ? error.message : 'Ошибка при оформлении подписки');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <>
@@ -127,9 +155,11 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose }
                     </div>
 
                     <button
-                      className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-black font-bold py-3 px-4 rounded-lg transition-colors duration-200 cursor-pointer"
+                      onClick={handleSubscribe}
+                      disabled={loading}
+                      className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 disabled:from-neutral-600 disabled:to-neutral-700 text-black font-bold py-3 px-4 rounded-lg transition-colors duration-200 cursor-pointer"
                     >
-                      Оформить подписку
+                      {loading ? 'Оформление...' : 'Оформить подписку'}
                     </button>
                   </div>
                 </div>

@@ -4,6 +4,7 @@ import logging
 import asyncio
 from datetime import datetime
 from typing import Dict, Any, Optional
+from dataclasses import dataclass
 import random
 import re
 from botocore.exceptions import ClientError
@@ -11,6 +12,17 @@ from botocore.exceptions import ClientError
 from src.core.s3_client import s3_client, S3_BUCKET
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class TermsOfUseData:
+    """Data class for terms of use information."""
+    recording_tracks: bool = False
+    commercial_perfomance: bool = False
+    rotation_on_the_radio: bool = False
+    music_video_recording: bool = False
+    release_of_copies: bool = False
+
 
 class ZipCreator:
     """Создание ZIP-архива с битом из S3 и документами."""
@@ -22,7 +34,8 @@ class ZipCreator:
         purchase_info: Dict[str, Any],
         downloads_left: int,
         expires_at: datetime,
-        audio_format: Optional[str] = None
+        audio_format: Optional[str] = None,
+        terms_of_use: Optional[TermsOfUseData] = None
     ) -> io.BytesIO:
         """
         Скачивает аудиофайл из S3 по ключу и упаковывает в ZIP вместе с текстовыми файлами.
@@ -60,11 +73,14 @@ class ZipCreator:
                 )
                 zip_file.writestr("ПРОЧТИ_МЕНЯ.txt", info_content.encode('utf-8'))
 
-                license_content = ZipCreator._create_license_content(beat_name)
-                zip_file.writestr("ЛИЦЕНЗИЯ.txt", license_content.encode('utf-8'))
 
                 contacts_content = ZipCreator._create_contacts_content()
                 zip_file.writestr("КОНТАКТЫ.txt", contacts_content.encode('utf-8'))
+
+                # Добавляем файл условий использования, если они есть
+                if terms_of_use:
+                    terms_content = ZipCreator._create_terms_of_use_content(beat_name, terms_of_use)
+                    zip_file.writestr("УСЛОВИЯ_ИСПОЛЬЗОВАНИЯ.txt", terms_content.encode('utf-8'))
 
         except ClientError as e:
             logger.error(f"Ошибка при скачивании файла из S3: {e}")
@@ -115,40 +131,6 @@ class ZipCreator:
 © БИТОК {datetime.now().year}
     """
 
-    @staticmethod
-    def _create_license_content(beat_name: str) -> str:
-        return f"""ЛИЦЕНЗИОННОЕ СОГЛАШЕНИЕ
-{"=" * 50}
-
-БИТ: {beat_name}
-АВТОРСКИЕ ПРАВА: БИТОК
-
-1. ПРАВА НА ИСПОЛЬЗОВАНИЕ:
-   ✓ Использование в личных музыкальных проектах
-   ✓ Использование в некоммерческих релизах
-   ✓ Редактирование и обработка для своих нужд
-
-2. ТРЕБУЕТСЯ УКАЗАНИЕ АВТОРА:
-   ✓ При публикации трека с использованием этого бита
-   ✓ В описании трека на стриминговых платформах
-   ✓ При коммерческом использовании
-
-3. ЗАПРЕЩАЕТСЯ:
-   ✗ Перепродажа или распространение файла
-   ✗ Создание сэмплов для перепродажи
-   ✗ Заявление авторских прав на оригинальный бит
-
-4. ТЕХНИЧЕСКИЕ ДЕТАЛИ:
-   • Файл предоставляется в формате WAV
-   • Рекомендуется использовать в DAW (FL Studio, Ableton и т.д.)
-   • Для стриминга конвертируйте в MP3 320kbps
-
-5. ПОДДЕРЖКА:
-   • Техническая поддержка: support@beatok.ru
-
-{"=" * 50}
-ДАННОЕ СОГЛАШЕНИЕ ДЕЙСТВИТЕЛЬНО С МОМЕНТА ПОКУПКИ
-    """
 
     @staticmethod
     def _create_contacts_content() -> str:
@@ -168,7 +150,48 @@ class ZipCreator:
     """
 
     @staticmethod
+    def _create_terms_of_use_content(beat_name: str, terms_of_use: TermsOfUseData) -> str:
+        """Создает текстовый контент с условиями использования бита."""
+        
+        terms_list = []
+        
+        if terms_of_use.recording_tracks:
+            terms_list.append("  • Запись треков (вокал)")
+        if terms_of_use.commercial_perfomance:
+            terms_list.append("  • Коммерческое использование")
+        if terms_of_use.rotation_on_the_radio:
+            terms_list.append("  • Ротация на радио")
+        if terms_of_use.music_video_recording:
+            terms_list.append("  • Запись музыкального видео (MTV)")
+        if terms_of_use.release_of_copies:
+            terms_list.append("  • Выпуск тиража (CD, DVD и т.д.)")
+        
+        terms_str = "\n".join(terms_list) if terms_list else "  (Особые условия не указаны)"
+        
+        return f"""УСЛОВИЯ ИСПОЛЬЗОВАНИЯ БИТА
+{"=" * 50}
+
+🎵 Приобретенный бит: {beat_name}
+
+📋 РАЗРЕШЁННЫЕ ВИДЫ ИСПОЛЬЗОВАНИЯ:
+
+{terms_str}
+
+{"=" * 50}
+
+⚠️ ВАЖНОЕ ПРИМЕЧАНИЕ:
+При публикации трека с использованием данного бита,
+пожалуйста, укажите автора в описании трека.
+
+По всем вопросам обращайтесь: support@beatok.ru
+
+{"=" * 50}
+© БИТОК {datetime.now().year}
+    """
+
+    @staticmethod
     def get_zip_filename(beat_name: str) -> str:
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         safe_name = ZipCreator._safe_filename(beat_name)
         return f"beatok_{safe_name}_{timestamp}.zip"
+

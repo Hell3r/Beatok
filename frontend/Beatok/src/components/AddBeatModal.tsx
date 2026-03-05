@@ -266,10 +266,30 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
         return;
       }
 
+      if (response.status === 429) {
+        const errorData = await response.json();
+        // Пытаемся получить user_message из detail или message
+        const errorMessage = errorData.detail?.user_message || 
+                            errorData.detail?.message || 
+                            'Дневной лимит битов исчерпан. Попробуйте позже.';
+        setError(errorMessage);
+        setLoading(false);
+        return;
+      }
+
       if (!response.ok) {
         console.log(response.status)
         const errorData = await response.json();
-        throw new Error(errorData.detail || 'Ошибка при добавлении бита');
+        // Пытаемся получить message из detail, если это объект
+        let errorMessage = 'Ошибка при добавлении бита';
+        if (errorData.detail) {
+          if (typeof errorData.detail === 'string') {
+            errorMessage = errorData.detail;
+          } else if (errorData.detail.message) {
+            errorMessage = errorData.detail.message;
+          }
+        }
+        throw new Error(errorMessage);
       }
 
       const beatResponse = await response.json();

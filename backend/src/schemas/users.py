@@ -94,3 +94,10 @@ class HistoryItem(BaseModel):
     counterparty_username: str
 
     model_config = ConfigDict(from_attributes=True)
+
+class SubscriptionResponse(BaseModel):
+    message: str
+    subscription_end: Optional[datetime] = None
+    balance: Optional[float] = None
+
+    model_config = ConfigDict(from_attributes=True)

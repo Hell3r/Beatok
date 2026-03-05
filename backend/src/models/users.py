@@ -21,6 +21,8 @@ class UsersModel(Base):
     download_count: Mapped[int] = mapped_column(Integer, default=0)
     description: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
     prom_status: Mapped[str] = mapped_column(String(500), nullable= False, default= "standard")
+    subscription_start: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    subscription_end: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
 
     
@@ -49,3 +51,11 @@ class UsersModel(Base):
 
     def __repr__(self) -> str:
         return f"User(id={self.id}, username='{self.username}', email='{self.email}')"
+    
+    def has_active_subscription(self) -> bool:
+        """Проверяет, активна ли подписка"""
+        if self.prom_status != "subscription":
+            return False
+        if self.subscription_end is None:
+            return False
+        return self.subscription_end > datetime.utcnow()

@@ -187,6 +187,13 @@ const Admin: React.FC = () => {
     return beat.author_id || null;
   };
 
+  const getAuthorPromStatus = (beat: Beat): string | null => {
+    if (beat.owner?.prom_status) return beat.owner.prom_status;
+    if (beat.author?.prom_status) return beat.author.prom_status;
+    if (beat.user?.prom_status) return beat.user.prom_status;
+    return null;
+  };
+
   const handleAuthorClick = (beat: Beat) => {
     const authorId = getAuthorId(beat);
     if (authorId) {
@@ -363,6 +370,11 @@ const Admin: React.FC = () => {
                                 }}
                               />
                               <span className="text-neutral-400 text-sm hover:text-red-400 transition-colors">by {getAuthorName(beat)}</span>
+                              {getAuthorPromStatus(beat) === 'subscription' && (
+                                <span className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600 text-black text-xs font-semibold px-2 py-0.5 rounded-full">
+                                  Высокий приоритет
+                                </span>
+                              )}
                             </div>
                             <div className="text-xs text-neutral-500">
                               ID бита: {beat.id} | ID автора: {getAuthorId(beat)}

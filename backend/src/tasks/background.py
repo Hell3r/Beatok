@@ -346,6 +346,47 @@ class BackgroundTaskManager:
                 logger.error(f"Promotion check error: {str(e)}")
                 await asyncio.sleep(300)
     
+    async def _run_subscription_check(self):
+        """Проверка истёкших подписок и деактивация"""
+        from src.database.database import async_session_factory
+        from src.models.users import UsersModel
+        from sqlalchemy import select, update
+        
+        while self.is_running:
+            try:
+                logger.info("Starting expired subscriptions check...")
+                
+                async with async_session_factory() as session:
+                    # Находим пользователей с истёкшей подпиской
+                    result = await session.execute(
+                        select(UsersModel).where(
+                            UsersModel.prom_status == "subscription",
+                            UsersModel.subscription_end < datetime.utcnow()
+                        )
+                    )
+                    expired_users = result.scalars().all()
+                    
+                    if expired_users:
+                        # Обновляем статус подписки
+                        for user in expired_users:
+                            user.prom_status = "standard"
+                            user.subscription_end = None
+                            user.subscription_start = None
+                            logger.info(f"EXPIRED_SUBSCRIPTION: User {user.id} ({user.email}) subscription expired")
+                        
+                        await session.commit()
+                        logger.info(f"Deactivated {len(expired_users)} expired subscriptions")
+                
+                # Проверяем каждый час
+                await asyncio.sleep(60 * 60)
+                
+            except asyncio.CancelledError:
+                logger.info("Subscription check task cancelled")
+                break
+            except Exception as e:
+                logger.error(f"Subscription check error: {str(e)}")
+                await asyncio.sleep(300)
+    
     async def _run_disk_space_check(self):
         while self.is_running:
             try:
@@ -477,6 +518,11 @@ class BackgroundTaskManager:
         self.tasks['promotion_check'] = asyncio.create_task(
             self._run_promotion_check(),
             name="promotion_check_task"
+        )
+        
+        self.tasks['subscription_check'] = asyncio.create_task(
+            self._run_subscription_check(),
+            name="subscription_check_task"
         )
         
         logger.info(

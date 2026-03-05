@@ -64,7 +64,14 @@ async def create_beat(
     audio_file: UploadFile = File(None),
     cover_file: UploadFile = File(None),
 ):
-    await check_rate_limit(request, "beat_create", current_user_id)
+    from src.models.users import UsersModel
+    user_result = await session.execute(
+        select(UsersModel).where(UsersModel.id == current_user_id)
+    )
+    current_user = user_result.scalar_one_or_none()
+    is_subscriber = current_user.has_active_subscription() if current_user else False
+    
+    await check_rate_limit(request, "beat_create", current_user_id, is_subscriber)
 
     if not audio_file:
         raise HTTPException(400, "Необходимо загрузить MP3 или WAV файл")
@@ -543,7 +550,15 @@ async def generate_identical_beats(
     key: str = Form("C"),
     audio_file: UploadFile = File(None),
 ):
-    await check_rate_limit(request, "beat_create", current_user_id)
+    # Получаем статус подписки пользователя
+    from src.models.users import UsersModel
+    user_result = await session.execute(
+        select(UsersModel).where(UsersModel.id == current_user_id)
+    )
+    current_user = user_result.scalar_one_or_none()
+    is_subscriber = current_user.has_active_subscription() if current_user else False
+    
+    await check_rate_limit(request, "beat_create", current_user_id, is_subscriber)
     
     try:
         if not audio_file:

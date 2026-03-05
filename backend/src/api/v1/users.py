@@ -10,11 +10,11 @@ from typing import Optional
 import logging
 import os
 import uuid
-from datetime import date
+from datetime import date, datetime
 from src.models.email_verification import EmailVerificationModel
 from src.services.rate_limiter import check_rate_limit
 from src.services.RedisService import redis_service
-from src.schemas.users import DeleteUserRequest, UsersSchema, UserResponse, UserCreate, TokenResponse, UserUpdate, VerifyEmailRequest, MessageResponse, ResendVerificationRequest, ForgotPasswordRequest, ResetPasswordRequest, HistoryItem
+from src.schemas.users import DeleteUserRequest, UsersSchema, UserResponse, UserCreate, TokenResponse, UserUpdate, VerifyEmailRequest, MessageResponse, ResendVerificationRequest, ForgotPasswordRequest, ResetPasswordRequest, HistoryItem, SubscriptionResponse
 from src.services.EmailService import email_service
 from src.services.AuthService import (
     add_to_blacklist,
@@ -29,6 +29,7 @@ from src.services.AuthService import (
     get_password_hash,
     get_current_user
 )
+from src.services.BalanceService import BalanceService
 
 templates = Jinja2Templates(directory="src/templates")
 router = APIRouter(prefix="/v1/users")
@@ -36,6 +37,7 @@ logger = logging.getLogger(__name__)
 
 AVATAR_DIR = "static/avatars"
 DEFAULT_AVATAR_PATH = "static/default_avatar.png"
+SUBSCRIPTION_PRICE = 300  # Цена подписки в рублях
 
 os.makedirs(AVATAR_DIR, exist_ok=True)
 
@@ -1026,4 +1028,76 @@ async def get_user_history(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Ошибка при получении истории: {str(e)}"
+        )
+
+
+@router.post(
+    "/subscribe",
+    response_model=SubscriptionResponse,
+    tags=["Подписка"],
+    summary="Оформить подписку"
+)
+async def create_subscription(
+    session: SessionDep,
+    current_user: UsersModel = Depends(get_current_user)
+):
+    from decimal import Decimal
+    from datetime import timedelta
+    
+    SUBSCRIPTION_DAYS = 30
+    
+    try:
+        balance_service = BalanceService(session)
+
+        if current_user.has_active_subscription():
+            expires_at = current_user.subscription_end.strftime("%d.%m.%Y") if current_user.subscription_end else "неизвестно"
+            return SubscriptionResponse(
+                message=f"У вас уже есть активная подписка до {expires_at}",
+                subscription_end=current_user.subscription_end,
+                balance=float(current_user.balance)
+            )
+
+        if current_user.balance < SUBSCRIPTION_PRICE:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Недостаточно средств на балансе. Требуется: {SUBSCRIPTION_PRICE} руб."
+            )
+
+        new_balance = await balance_service.purchase(
+            user_id=current_user.id,
+            amount=Decimal(str(SUBSCRIPTION_PRICE)),
+            description="Оформление подписки"
+        )
+
+        now = datetime.utcnow()
+        current_user.prom_status = "subscription"
+        current_user.subscription_start = now
+        current_user.subscription_end = now + timedelta(days=SUBSCRIPTION_DAYS)
+        
+        await session.commit()
+        
+        expires_at = current_user.subscription_end.strftime("%d.%m.%Y")
+        logger.info(f"SUBSCRIPTION: User {current_user.id} ({current_user.email}) purchased subscription for {SUBSCRIPTION_PRICE} RUB, expires: {expires_at}")
+        
+        return SubscriptionResponse(
+            message=f"Подписка успешно оформлена! Списано: {SUBSCRIPTION_PRICE} руб. Подписка действует до {expires_at}",
+            subscription_end=current_user.subscription_end,
+            balance=float(new_balance)
+        )
+        
+    except HTTPException:
+        await session.rollback()
+        raise
+    except ValueError as e:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        await session.rollback()
+        logger.error(f"Subscription error for user {current_user.id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Произошла ошибка при оформлении подписки"
         )

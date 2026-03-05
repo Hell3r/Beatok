@@ -88,4 +88,23 @@ async updateUserProfile(data: any) {
     const response = await api.get(`/v1/users/${userId}/history`);
     return response.data;
   },
+
+  async subscribe() {
+    const token = localStorage.getItem('access_token');
+    
+    const response = await fetch(`http://localhost:8000/v1/users/subscribe`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Failed to create subscription');
+    }
+
+    return await response.json();
+  },
 };

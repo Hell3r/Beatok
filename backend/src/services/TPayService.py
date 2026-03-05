@@ -159,13 +159,17 @@ class TPayService:
                 user = await self.db.get(UsersModel, payment.user_id)
                 if user:
                     balance_to_deposit = payment.amount
-                    amount_with_commission = balance_to_deposit * Decimal(0.95)
+                    
+                    # Для подписчиков комиссия не взимается
+                    commission_rate = Decimal(0.95) if not user.has_active_subscription() else Decimal(1.0)
+                    amount_with_commission = balance_to_deposit * commission_rate
+                    
                     await self.balance_service.deposit(
                         user_id=user.id,
                         amount=amount_with_commission,
                         description=f"Пополнение через T-Pay #{tpay_payment_id}"
                     )
-                    logger.info(f"💰 Balance +{amount_with_commission} RUB for user {user.id}")
+                    logger.info(f"💰 Balance +{amount_with_commission} RUB for user {user.id} (commission: {'5%' if commission_rate == Decimal(0.95) else '0%'})")
                 await self.db.commit()
                 logger.info(f"✅ Payment confirmed and balance deposited: {tpay_payment_id}")
             else:
@@ -335,11 +339,16 @@ class TPayService:
 
                 user = await self.db.get(UsersModel, payment.user_id)
                 if user:
+                    # Для подписчиков комиссия не взимается
+                    commission_rate = Decimal(0.95) if not user.has_active_subscription() else Decimal(1.0)
+                    amount_with_commission = payment.amount * commission_rate
+                    
                     await self.balance_service.deposit(
                         user_id=user.id,
-                        amount=payment.amount,
+                        amount=amount_with_commission,
                         description=f"Пополнение через T-Pay #{payment.tpay_payment_id}"
                     )
+                    logger.info(f"💰 Balance +{amount_with_commission} RUB for user {user.id} (commission: {'5%' if commission_rate == Decimal(0.95) else '0%'})")
                 
                 logger.info(f"✅ Payment confirmed via webhook: {payment_id}")
                 
