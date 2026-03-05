@@ -22,6 +22,11 @@ class RequestUpdate(BaseModel):
     description: Optional[str] = None
     problem_type: Optional[str] = None
     status: Optional[str] = None
+    response: Optional[str] = None
+    response_at: Optional[datetime] = None
+
+class RequestResponseUpdate(BaseModel):
+    response: str
 
 class RequestsResponse(BaseModel):
     id: int
@@ -29,6 +34,8 @@ class RequestsResponse(BaseModel):
     description: str
     problem_type: str
     status: str
+    response: Optional[str] = None
+    response_at: Optional[datetime] = None
     created_at: datetime
     user_id: int
     user: Optional[UserInfo] = None

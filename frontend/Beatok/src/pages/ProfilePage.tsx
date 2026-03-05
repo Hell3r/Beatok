@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { useSpring, animated } from '@react-spring/web';
+import { useSpring, animated, useTransition } from '@react-spring/web';
 import { userService } from '../services/userService';
 import { beatService } from '../services/beatService';
 import { requestService } from '../services/requestService';
@@ -93,6 +93,9 @@ const ProfilePage: React.FC = () => {
   const [userRequests, setUserRequests] = useState<any[]>([]);
   const [requestsLoading, setRequestsLoading] = useState(false);
 
+  const [responseViewModalOpen, setResponseViewModalOpen] = useState(false);
+  const [selectedRequestForView, setSelectedRequestForView] = useState<any | null>(null);
+
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 1280);
     window.addEventListener('resize', checkMobile);
@@ -109,6 +112,20 @@ const ProfilePage: React.FC = () => {
   const rightPanelSpring = useSpring({
     width: (activeTab === 'mybeats' || activeTab === 'favorites') ? '100%' : isMobile ? '100%' : '67%',
     config: { tension: 300, friction: 30 }
+  });
+
+  const requestModalTransition = useTransition(responseViewModalOpen && selectedRequestForView, {
+    from: { opacity: 0, transform: 'scale(0.8) translateY(-20px)' },
+    enter: { opacity: 1, transform: 'scale(1) translateY(0px)' },
+    leave: { opacity: 0, transform: 'scale(0.8) translateY(-20px)' },
+    config: { tension: 300, friction: 30 }
+  });
+
+  const requestOverlayTransition = useTransition(responseViewModalOpen && selectedRequestForView, {
+    from: { opacity: 0 },
+    enter: { opacity: 1 },
+    leave: { opacity: 0 },
+    config: { duration: 200 }
   });
 
   const updateUserInStorage = (userData: Partial<UserProfile>) => {
@@ -274,7 +291,6 @@ const ProfilePage: React.FC = () => {
     }
   }, [user, activeTab, isOwnProfile, favoriteBeats.length]);
 
-  // Listen for beats updates (e.g., after promotion)
   useEffect(() => {
     const handleBeatsUpdated = () => {
       loadMyBeats();
@@ -557,6 +573,13 @@ const ProfilePage: React.FC = () => {
   const handleShowRejectionReason = (beat: Beat) => {
     setSelectedBeat(beat);
     setRejectionModalOpen(true);
+  };
+
+  const handleViewRequestResponse = (request: any) => {
+    if (request.response) {
+      setSelectedRequestForView(request);
+      setResponseViewModalOpen(true);
+    }
   };
 
   const handleToggleFavorite = async (beat: Beat) => {
@@ -1355,7 +1378,11 @@ const ProfilePage: React.FC = () => {
                       ) : (
                         <div className="space-y-4">
                           {userRequests.map((request) => (
-                            <div key={request.id} className="bg-neutral-750 rounded-lg p-4">
+                            <div 
+                              key={request.id} 
+                              className={`bg-neutral-750 rounded-lg p-4 ${request.response ? 'cursor-pointer hover:bg-neutral-700 transition-colors' : ''}`}
+                              onClick={() => handleViewRequestResponse(request)}
+                            >
                               <div className="flex justify-between items-start">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 mb-2">
@@ -1369,6 +1396,14 @@ const ProfilePage: React.FC = () => {
                                     <span className="text-neutral-400 text-sm">
                                       {formatDate(request.created_at)}
                                     </span>
+                                    {request.response && (
+                                      <span className="px-2 py-1 text-xs rounded-ful bg-green-600 rounded-full text-white flex items-center gap-1">
+                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                        Есть ответ
+                                      </span>
+                                    )}
                                   </div>
                                   <h3 className="text-white font-medium mb-1">{request.title}</h3>
                                   <p className="text-neutral-400 text-sm">
@@ -1421,6 +1456,64 @@ const ProfilePage: React.FC = () => {
         onClose={() => setWithdrawalModalOpen(false)}
         currentBalance={user?.balance || 0}
       />
+
+      {requestOverlayTransition((overlayStyle, item) =>
+        item && (
+          <animated.div
+            style={overlayStyle}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            onClick={() => {
+              setResponseViewModalOpen(false);
+              setSelectedRequestForView(null);
+            }}
+          >
+            {requestModalTransition((modalStyle, item) =>
+              item && (
+                <animated.div
+                  style={modalStyle}
+                  className="bg-neutral-800 rounded-lg p-6 max-w-lg w-full mx-4 select-none"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h3 className="text-xl font-semibold text-white mb-4">Ответ на заявку</h3>
+                  
+                  <div className="mb-4 p-3 bg-neutral-700 rounded">
+                    <p className="text-neutral-400 text-sm mb-1">Ваша заявка:</p>
+                    <p className="text-white font-medium">{selectedRequestForView?.title}</p>
+                    <p className="text-neutral-400 text-sm mt-1">Тип: {selectedRequestForView?.problem_type}</p>
+                  </div>
+
+                  <div className="mb-4">
+                    <p className="text-neutral-400 text-sm mb-2">Дата ответа:</p>
+                    <p className="text-white">
+                      {selectedRequestForView?.response_at 
+                        ? new Date(selectedRequestForView.response_at).toLocaleDateString('ru-RU')
+                        : '-'
+                      }
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <p className="text-neutral-400 text-sm mb-2">Ответ службы поддержки:</p>
+                    <div className="bg-neutral-700 rounded p-4 max-h-60 overflow-y-auto">
+                      <p className="text-white whitespace-pre-wrap">{selectedRequestForView?.response}</p>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setResponseViewModalOpen(false);
+                      setSelectedRequestForView(null);
+                    }}
+                    className="w-full cursor-pointer bg-neutral-600 hover:bg-neutral-500 text-white font-semibold py-2 px-4 rounded transition-colors"
+                  >
+                    Закрыть
+                  </button>
+                </animated.div>
+              )
+            )}
+          </animated.div>
+        )
+      )}
     </>
   );
 };

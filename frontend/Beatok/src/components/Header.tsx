@@ -155,7 +155,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
                   </a>
                 );
               })}
-              {currentUser && currentUser.role === 'admin' && (
+              {currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator') && (
                 <a
                   href="/admin"
                   className={`${getCurrentPath() === '/admin' ? 'text-white' : 'text-gray-300'} hover:text-white transition-colors duration-200 font-medium focus:outline-none`}

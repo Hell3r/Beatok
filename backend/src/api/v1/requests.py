@@ -8,10 +8,12 @@ from pathlib import Path
 from src.models.users import UsersModel
 from src.database.deps import SessionDep
 from src.models.requests import RequestsModel
-from src.schemas.requests import RequestsSchema, RequestsResponse, RequestCreate
+from src.schemas.requests import RequestsSchema, RequestsResponse, RequestCreate, RequestResponseUpdate
 from src.services.AuthService import get_current_user
 from src.dependencies.auth import get_current_user_id
+from src.services.EmailService import email_service
 from pydantic import BaseModel
+from datetime import datetime
 
 
 class User(BaseModel):
@@ -61,20 +63,41 @@ async def create_request(
 @router.get("/", response_model=List[RequestsResponse], summary="Получить все заявки")
 async def get_all_requests(
     session: SessionDep,
+    current_user: UsersModel = Depends(get_current_user),
     skip: int = 0,
     limit: int = 100
 ):
-    result = await session.execute(
-        select(RequestsModel)
-        .options(selectinload(RequestsModel.user))
-        .where(RequestsModel.status != "closed")
-        .offset(skip)
-        .limit(limit)
-        .order_by(RequestsModel.created_at.desc())
-    )
-    
-    requests = result.scalars().all()
-    return requests
+    try:
+        print(f"🔍 Getting all requests. User ID: {current_user.id}, Role: {current_user.role}")
+
+        if current_user.role not in ('admin', 'moderator'):
+            print(f"⛔ Access denied for user {current_user.id} with role {current_user.role}")
+            raise HTTPException(status_code=403, detail="Нет доступа")
+        
+        print(f"✅ User is admin, executing query with skip={skip}, limit={limit}")
+        
+        query = select(RequestsModel).options(
+            selectinload(RequestsModel.user)
+        ).where(
+            RequestsModel.status != "closed"
+        ).offset(skip).limit(limit).order_by(
+            RequestsModel.created_at.desc()
+        )
+        
+        result = await session.execute(query)
+        requests = result.scalars().all()
+        
+        print(f"✅ Found {len(requests)} requests")
+        
+        return requests
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Error in get_all_requests: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/my-requests", response_model=List[RequestsResponse], summary="Получить мои заявки")
@@ -115,7 +138,7 @@ async def get_request_by_id(
     if not request:
         raise HTTPException(status_code=404, detail="Заявка не найдена")
 
-    if request.user_id != current_user.id and current_user.role != 'admin':
+    if request.user_id != current_user.id and current_user.role not in ('admin', 'moderator'):
         raise HTTPException(status_code=403, detail="Нет доступа к этой заявке")
     
     return request
@@ -128,7 +151,7 @@ async def update_request_status(
     status: str = Form(..., description="Новый статус заявки"),
     current_user: UsersModel = Depends(get_current_user)
 ):
-    if current_user.role != 'admin':
+    if current_user.role not in ('admin', 'moderator'):
         raise HTTPException(status_code=403, detail="Нет доступа")
     
     result = await session.execute(
@@ -146,5 +169,50 @@ async def update_request_status(
     request.status = status
     await session.commit()
     await session.refresh(request)
+    
+    return request
+
+
+@router.patch("/{request_id}/respond", response_model=RequestsResponse, summary="Ответить на заявку")
+async def respond_to_request(
+    request_id: int,
+    session: SessionDep,
+    response_data: RequestResponseUpdate,
+    current_user: UsersModel = Depends(get_current_user)
+):
+    if current_user.role not in ('admin', 'moderator'):
+        raise HTTPException(status_code=403, detail="Нет доступа")
+    
+    result = await session.execute(
+        select(RequestsModel)
+        .options(selectinload(RequestsModel.user))
+        .where(RequestsModel.id == request_id)
+    )
+    request = result.scalar_one_or_none()
+    
+    if not request:
+        raise HTTPException(status_code=404, detail="Заявка не найдена")
+    
+    request.response = response_data.response
+    request.response_at = datetime.utcnow()
+    request.status = "closed"
+    
+    await session.commit()
+    await session.refresh(request)
+
+    if request.user and request.user.email:
+        try:
+            await email_service.send_request_response_email(
+                to_email=request.user.email,
+                username=request.user.username,
+                request_title=request.title,
+                request_description=request.description or "",
+                response_text=response_data.response,
+                problem_type=request.problem_type
+            )
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to send response email: {e}")
     
     return request

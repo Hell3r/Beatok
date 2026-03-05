@@ -757,7 +757,7 @@ async def approve_beat(
     )
     user = user_result.scalar_one_or_none()
     
-    if not user or user.role != 'admin':
+    if not user or user.role not in ('admin', 'moderator'):
         raise HTTPException(status_code=403, detail="Нет доступа")
     
     result = await session.execute(
@@ -801,7 +801,7 @@ async def reject_beat(
     )
     user = user_result.scalar_one_or_none()
     
-    if not user or user.role != 'admin':
+    if not user or user.role not in ('admin', 'moderator'):
         raise HTTPException(status_code=403, detail="Нет доступа")
     
     result = await session.execute(

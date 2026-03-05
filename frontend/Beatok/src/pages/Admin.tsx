@@ -10,8 +10,9 @@ import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import { useNotificationContext } from '../components/NotificationProvider';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import BeatInfoModal from '../components/BeatInfoModal';
+import { requestService } from '../services/requestService';
 
-const API_URL = 'http://localhost:8000';
+const API_URL = 'http://127.0.0.1:8000';
 
 interface User {
   id: number;
@@ -53,12 +54,16 @@ const Admin: React.FC = () => {
   });
   const [savingUser, setSavingUser] = useState(false);
   
+  const [responseModalOpen, setResponseModalOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
+  const [responseText, setResponseText] = useState('');
+  const [sendingResponse, setSendingResponse] = useState(false);
+  
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { playBeat, currentBeat, isPlaying, togglePlayPause } = useAudioPlayer();
   const { showSuccess, showError } = useNotificationContext();
 
-  // Transitions for reject modal
   const rejectOverlayTransition = useTransition(rejectModalOpen, {
     from: { opacity: 0 },
     enter: { opacity: 1 },
@@ -73,7 +78,6 @@ const Admin: React.FC = () => {
     config: { tension: 300, friction: 30 }
   });
 
-  // Transitions for edit modal
   const editOverlayTransition = useTransition(editModalOpen, {
     from: { opacity: 0 },
     enter: { opacity: 1 },
@@ -82,6 +86,21 @@ const Admin: React.FC = () => {
   });
 
   const editModalTransition = useTransition(editModalOpen, {
+    from: { opacity: 0, transform: 'scale(0.8) translateY(-20px)' },
+    enter: { opacity: 1, transform: 'scale(1) translateY(0px)' },
+    leave: { opacity: 0, transform: 'scale(0.8) translateY(-20px)' },
+    config: { tension: 300, friction: 30 }
+  });
+
+
+  const responseOverlayTransition = useTransition(responseModalOpen, {
+    from: { opacity: 0 },
+    enter: { opacity: 1 },
+    leave: { opacity: 0 },
+    config: { duration: 200 }
+  });
+
+  const responseModalTransition = useTransition(responseModalOpen, {
     from: { opacity: 0, transform: 'scale(0.8) translateY(-20px)' },
     enter: { opacity: 1, transform: 'scale(1) translateY(0px)' },
     leave: { opacity: 0, transform: 'scale(0.8) translateY(-20px)' },
@@ -100,7 +119,7 @@ const Admin: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (currentUser && currentUser.role === 'admin') {
+    if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator')) {
       fetchModerationBeats();
       fetchSupportRequests();
       
@@ -294,19 +313,12 @@ const Admin: React.FC = () => {
 
   const fetchSupportRequests = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_URL}/v1/requests/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        const filteredData = data.filter((request: Request) => request.status !== 'closed');
-        setSupportRequests(filteredData);
-      }
+      const data = await requestService.getAllRequests();
+      const filteredData = data.filter((request: Request) => request.status !== 'closed');
+      setSupportRequests(filteredData);
     } catch (error) {
       console.error('Error fetching support requests:', error);
+      showError('Ошибка при загрузке заявок');
     }
   };
 
@@ -381,17 +393,42 @@ const Admin: React.FC = () => {
     }
   };
 
+  const handleResponseClick = (request: Request) => {
+    setSelectedRequest(request);
+    setResponseText('');
+    setResponseModalOpen(true);
+  };
+
+  const handleSendResponse = async () => {
+    if (!selectedRequest || !responseText.trim()) return;
+    
+    setSendingResponse(true);
+    try {
+      const updatedRequest = await requestService.respondToRequest(selectedRequest.id, responseText);
+      setSupportRequests(prev => prev.filter(r => r.id !== selectedRequest.id));
+      setResponseModalOpen(false);
+      setSelectedRequest(null);
+      setResponseText('');
+      showSuccess('Ответ отправлен пользователю на email');
+    } catch (error) {
+      console.error('Error sending response:', error);
+      showError('Ошибка при отправке ответа');
+    } finally {
+      setSendingResponse(false);
+    }
+  };
+
   const getCoverUrl = (beat: Beat): string | null => {
     if (!beat.cover_path) return null;
-    return `http://localhost:8000/static/covers/${beat.cover_path}`;
+    return `http://127.0.0.1:8000/static/covers/${beat.cover_path}`;
   };
 
   const getAuthorAvatar = (beat: Beat): string => {
     const authorId = beat.owner?.id || beat.author?.id || beat.user?.id || beat.author_id;
     const avatarPath = beat.owner?.avatar_path || beat.author?.avatar_path || beat.user?.avatar_path;
-    if (!authorId) return 'http://localhost:8000/static/default_avatar.png';
+    if (!authorId) return 'http://127.0.0.1:8000/static/default_avatar.png';
     if (avatarPath) return getAvatarUrl(authorId, avatarPath);
-    return 'http://localhost:8000/static/default_avatar.png';
+    return 'http://127.0.0.1:8000/static/default_avatar.png';
   };
 
   const getAuthorName = (beat: Beat): string => {
@@ -453,7 +490,7 @@ const Admin: React.FC = () => {
     release_of_copies: 'Выпуск копий'
   };
 
-  if (!currentUser || currentUser.role !== 'admin') {
+  if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'moderator')) {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center select-none">
@@ -463,6 +500,8 @@ const Admin: React.FC = () => {
       </div>
     );
   }
+
+  const isAdmin = currentUser?.role === 'admin';
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -487,19 +526,20 @@ const Admin: React.FC = () => {
         >
           Заявки поддержки ({supportRequests.length})
         </button>
-        <button
-          onClick={() => handleTabChange('users')}
-          className={`px-4 py-2 font-semibold transition-colors cursor-pointer select-none ${
-            activeTab === 'users'
-              ? 'text-red-500 border-b-2 border-red-500'
-              : 'text-neutral-400 hover:text-white'
-          }`}
-        >
-          Реестр пользователей ({users.length})
-        </button>
+        {isAdmin && (
+          <button
+            onClick={() => handleTabChange('users')}
+            className={`px-4 py-2 font-semibold transition-colors cursor-pointer select-none ${
+              activeTab === 'users'
+                ? 'text-red-500 border-b-2 border-red-500'
+                : 'text-neutral-400 hover:text-white'
+            }`}
+          >
+            Реестр пользователей ({users.length})
+          </button>
+        )}
       </div>
 
-      {/* Tab content */}
       {activeTab === 'moderation' && (
         <div>
           {loading ? (
@@ -588,7 +628,7 @@ const Admin: React.FC = () => {
                                 alt="Аватар"
                                 className="w-5 h-5 rounded-full"
                                 onError={(e) => {
-                                  e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
+                                  e.currentTarget.src = 'http://127.0.0.1:8000/static/default_avatar.png';
                                 }}
                               />
                               <span className="text-neutral-400 text-sm hover:text-red-400 transition-colors">by {getAuthorName(beat)}</span>
@@ -736,12 +776,20 @@ const Admin: React.FC = () => {
                         <span className="text-neutral-300 text-sm">{request.user.username}</span>
                         <span className="text-neutral-500 text-sm">({request.user.email})</span>
                       </div>
-                      <button
-                        onClick={() => handleCloseRequest(request.id)}
-                        className="bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-semibold py-2 px-4 rounded transition-colors cursor-pointer"
-                      >
-                        Закрыть
-                      </button>
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => handleResponseClick(request)}
+                          className="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold py-2 px-4 rounded transition-colors cursor-pointer"
+                        >
+                          Ответить
+                        </button>
+                        <button
+                          onClick={() => handleCloseRequest(request.id)}
+                          className="bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-semibold py-2 px-4 rounded transition-colors cursor-pointer"
+                        >
+                          Закрыть
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -812,7 +860,7 @@ const Admin: React.FC = () => {
                       <td className="py-3 px-2 text-neutral-300">{user.id}</td>
                       <td className="py-3 px-2">
                         <img
-                          src={user.avatar_path ? getAvatarUrl(user.id, user.avatar_path) : 'http://localhost:8000/static/default_avatar.png'}
+                          src={user.avatar_path ? getAvatarUrl(user.id, user.avatar_path) : 'http://127.0.0.1:8000/static/default_avatar.png'}
                           alt="Аватар"
                           className="w-10 h-10 rounded-full cursor-pointer hover:ring-2 hover:ring-red-500 transition-all"
                           onClick={(e) => {
@@ -820,7 +868,7 @@ const Admin: React.FC = () => {
                             navigate(`/profile/${user.id}`);
                           }}
                           onError={(e) => {
-                            e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
+                            e.currentTarget.src = 'http://127.0.0.1:8000/static/default_avatar.png';
                           }}
                         />
                       </td>
@@ -856,8 +904,7 @@ const Admin: React.FC = () => {
           )}
         </div>
       )}
-      
-      {/* Animated Reject Modal */}
+
       {rejectOverlayTransition((style, item) =>
         item && (
           <animated.div
@@ -909,7 +956,6 @@ const Admin: React.FC = () => {
         )
       )}
 
-      {/* Animated Edit Modal */}
       {editOverlayTransition((style, item) =>
         item && (
           <animated.div
@@ -931,11 +977,11 @@ const Admin: React.FC = () => {
                   
                   <div className="flex items-center space-x-3 mb-6 p-3 bg-neutral-700 rounded-lg">
                     <img
-                      src={selectedUser.avatar_path ? getAvatarUrl(selectedUser.id, selectedUser.avatar_path) : 'http://localhost:8000/static/default_avatar.png'}
+                      src={selectedUser.avatar_path ? getAvatarUrl(selectedUser.id, selectedUser.avatar_path) : 'http://127.0.0.1host:8000/static/default_avatar.png'}
                       alt="Аватар"
                       className="w-12 h-12 rounded-full"
                       onError={(e) => {
-                        e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
+                        e.currentTarget.src = 'http://127.0.0.1:8000/static/default_avatar.png';
                       }}
                     />
                     <div>
@@ -1017,6 +1063,64 @@ const Admin: React.FC = () => {
         onClose={() => setInfoModalOpen(false)}
         beat={beatToShowInfo}
       />
+
+      {responseOverlayTransition((style, item) =>
+        item && (
+          <animated.div
+            style={style}
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            onClick={() => {
+              setResponseModalOpen(false);
+              setSelectedRequest(null);
+              setResponseText('');
+            }}
+          >
+            {responseModalTransition((modalStyle, modalItem) =>
+              modalItem && selectedRequest && (
+                <animated.div
+                  style={modalStyle}
+                  className="bg-neutral-800 rounded-lg p-6 max-w-lg w-full mx-4 select-none"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h3 className="text-xl font-semibold text-white mb-4">Ответ на заявку</h3>
+                  <div className="mb-4 p-3 bg-neutral-700 rounded">
+                    <p className="text-neutral-400 text-sm mb-1">Заявка:</p>
+                    <p className="text-white font-medium">{selectedRequest.title}</p>
+                    <p className="text-neutral-400 text-sm mt-1">От: {selectedRequest.user?.username} ({selectedRequest.user?.email})</p>
+                  </div>
+                  <p className="text-neutral-400 mb-2">Ваш ответ:</p>
+                  <textarea
+                    value={responseText}
+                    onChange={(e) => setResponseText(e.target.value)}
+                    className="w-full h-40 bg-neutral-700 text-white rounded-lg p-3 mb-4 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Введите текст ответа..."
+                  />
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={handleSendResponse}
+                      disabled={!responseText.trim() || sendingResponse}
+                      className="flex-1 cursor-pointer bg-red-600 hover:bg-red-700 disabled:bg-neutral-600 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded transition-colors"
+                    >
+                      {sendingResponse ? 'Отправка...' : 'Отправить ответ'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setResponseModalOpen(false);
+                        setSelectedRequest(null);
+                        setResponseText('');
+                      }}
+                      disabled={sendingResponse}
+                      className="flex-1 cursor-pointer bg-neutral-600 hover:bg-neutral-500 disabled:bg-neutral-700 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded transition-colors"
+                    >
+                      Отмена
+                    </button>
+                  </div>
+                </animated.div>
+              )
+            )}
+          </animated.div>
+        )
+      )}
     </div>
   );
 };

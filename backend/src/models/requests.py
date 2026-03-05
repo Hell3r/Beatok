@@ -14,6 +14,8 @@ class RequestsModel(Base):
     description: Mapped[Optional[str]] = mapped_column()
     problem_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     status: Mapped[str] = mapped_column(String(20), default="pending", index=True)
+    response: Mapped[Optional[str]] = mapped_column(String(2000), nullable=True)
+    response_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
 
     user: Mapped["UsersModel"] = relationship("UsersModel", back_populates="requests")

@@ -172,7 +172,7 @@ const BeatList: React.FC<BeatListProps> = ({
   const trail = useTrail(sortedBeats.length, {
     from: { opacity: 0 },
     to: { opacity: 1 },
-    config: { duration: 300 },
+    config: { duration: 50 },
   });
 
   const getAudioFormat = (beat: Beat): string => {

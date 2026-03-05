@@ -646,4 +646,195 @@ class EmailService:
                 "details": str(e)
             }
 
+    async def send_request_response_email(
+        self,
+        to_email: str,
+        username: str,
+        request_title: str,
+        request_description: str,
+        response_text: str,
+        problem_type: str
+    ) -> bool:
+        self._initialize()
+        
+        if not all([self.smtp_username, self.smtp_password]):
+            logger.warning("SMTP не настроен, не могу отправить письмо")
+            return False
+        
+        subject = f"Ответ на вашу заявку '{request_title}' | БИТОК"
+        
+        html_content = self._render_request_response_template(
+            username=username,
+            request_title=request_title,
+            request_description=request_description,
+            response_text=response_text,
+            problem_type=problem_type,
+            app_name=self.app_name
+        )
+        
+        try:
+            message = MIMEMultipart("alternative")
+            message["From"] = formataddr((self.from_name, self.from_email))
+            message["To"] = to_email
+            message["Subject"] = subject
+            
+            text_content = f"""
+Здствуйте, {username}!
+
+На вашу заявку в поддержку БИТОК поступил ответ:
+
+📋 Детали заявки:
+• Заголовок: {request_title}
+• Тип проблемы: {problem_type}
+• Описание: {request_description}
+
+📝 Ответ службы поддержки:
+{response_text}
+
+---
+С уважением,
+Служба поддержки БИТОК
+"""
+            
+            message.attach(MIMEText(text_content, "plain", "utf-8"))
+            message.attach(MIMEText(html_content, "html", "utf-8"))
+            
+            import ssl
+            context = ssl.create_default_context()
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
+            
+            if self.smtp_port == 465:
+                smtp = aiosmtplib.SMTP(
+                    hostname=self.smtp_host,
+                    port=self.smtp_port,
+                    use_tls=True,
+                    tls_context=context
+                )
+            else:
+                smtp = aiosmtplib.SMTP(
+                    hostname=self.smtp_host,
+                    port=self.smtp_port,
+                    use_tls=False,
+                    start_tls=True,
+                    tls_context=context
+                )
+            
+            await smtp.connect()
+            await smtp.login(self.smtp_username, self.smtp_password)
+            await smtp.send_message(message)
+            await smtp.quit()
+            
+            logger.info(f"✅ Ответ на заявку отправлен на {to_email}")
+            return True
+        
+        except Exception as e:
+            logger.error(f"Ошибка отправки ответа на заявку: {e}")
+            return False
+    
+    def _render_request_response_template(
+        self,
+        username: str,
+        request_title: str,
+        request_description: str,
+        response_text: str,
+        problem_type: str,
+        app_name: str
+    ) -> str:
+        template_str = '''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Ответ на вашу заявку</title>
+    <style type="text/css">
+        body { margin: 0; padding: 0; width: 100% !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+
+        body { font-family: Arial, sans-serif; color: white; background-color: #0a0a0a; }
+        .container { max-width: 600px; margin: 0 auto; }
+
+        .header { background-color: #0a0a0a; padding: 25px 0; text-align: center; }
+        .logo { color: #ffffff; font-size: 32px; font-weight: bold; text-decoration: none; margin-bottom: 30px; }
+        .logo-red { color: #dc2626; }
+
+        .content { background-color: #0a0a0a; padding: 40px 30px; }
+        .greeting { color: #e5e5e5; font-size: 16px; line-height: 1.6; margin-bottom: 25px; text-align: center; }
+
+        .request-box { background: #1a1a1a; border-radius: 10px; padding: 20px; margin: 20px 0; border-left: 4px solid #dc2626; }
+        .request-title { color: white; font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+        .request-label { color: #e5e5e5; font-size: 14px; margin-bottom: 5px; }
+        .request-value { color: white; font-size: 14px; margin-bottom: 15px; }
+
+        .response-box { background: #1a1a1a; border-radius: 10px; padding: 20px; margin: 20px 0; border-left: 4px solid #22c55e; }
+        .response-title { color: #22c55e; font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+        .response-text { color: white; font-size: 14px; line-height: 1.6; }
+
+        .footer { background-color: #0a0a0a; color: #e5e5e5; padding: 25px; text-align: center; font-size: 12px; }
+        .footer a { color: #cccccc; text-decoration: none; }
+        .copyright { margin-top: 15px; }
+
+        @media only screen and (max-width: 600px) {
+            .content { padding: 25px 15px; }
+        }
+    </style>
+</head>
+<body>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0a0a0a">
+        <tr>
+            <td align="center">
+                <table class="container" width="600" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                        <td class="header">
+                            <div class="logo">BEAT<span class="logo-red">OK</span></div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="content">
+                            <h1 class="greeting">Здравствуйте, {{ username }}!</h1>
+                            <p class="greeting">На вашу заявку в службу поддержки поступил ответ:</p>
+
+                            <div class="request-box">
+                                <div class="request-title">{{ request_title }}</div>
+                                <div class="request-label">Тип проблемы:</div>
+                                <div class="request-value">{{ problem_type }}</div>
+                                <div class="request-label">Описание:</div>
+                                <div class="request-value">{{ request_description }}</div>
+                            </div>
+
+                            <div class="response-box">
+                                <div class="response-title">📝 Ответ службы поддержки</div>
+                                <div class="response-text">{{ response_text }}</div>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="footer">
+                            <div class="copyright">
+                                © {{ current_year }} БИТОК. Все права защищены.
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>'''
+        
+        from jinja2 import Template
+        template = Template(template_str)
+        return template.render(
+            username=username,
+            request_title=request_title,
+            request_description=request_description,
+            response_text=response_text,
+            problem_type=problem_type,
+            app_name=app_name,
+            current_year=datetime.now().year
+        )
+
 email_service = EmailService()

@@ -21,4 +21,11 @@ async def get_current_admin_user(current_user: CurrentUser) -> UsersModel:
         raise HTTPException(status_code=403, detail="Not enough permissions")
     return current_user
 
+async def get_current_admin_or_moderator_user(current_user: CurrentUser) -> UsersModel:
+    """Зависимость для проверки администратора или модератора"""
+    if getattr(current_user, 'role', 'user') not in ('admin', 'moderator'):
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    return current_user
+
 AdminUser = Annotated[UsersModel, Depends(get_current_admin_user)]
+AdminOrModeratorUser = Annotated[UsersModel, Depends(get_current_admin_or_moderator_user)]
