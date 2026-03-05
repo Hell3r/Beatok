@@ -96,7 +96,12 @@ class PurchaseService:
             purchaser_balance_before = purchaser.balance
             seller_balance_before = seller.balance
 
-            purchaser.balance -= price
+            new_balance = await self.balance_service.purchase(
+                user_id=purchaser.id,
+                amount=Decimal(str(price)),
+                description=f"Покупка бита {beat.name} ({tariff.display_name})"
+            )
+
             
 
             await self.balance_service.deposit(

@@ -837,4 +837,168 @@ class EmailService:
             current_year=datetime.now().year
         )
 
+    async def send_email_change_confirmation_email(self, old_email: str, new_email: str, token: str, username: str) -> bool:
+        self._initialize()
+
+        if not self.base_url:
+            logger.error("BASE_URL not configured")
+            return False
+
+        if not self.base_url.startswith(('http://', 'https://')):
+            self.base_url = f"http://{self.base_url}"
+            logger.warning(f"BASE_URL updated to include protocol: {self.base_url}")
+
+        if not all([self.smtp_username, self.smtp_password]):
+            logger.warning(f"Email change confirmation URL: {self.base_url}/v1/users/confirm-email-change?token={token}")
+            return True
+
+        confirmation_url = f"{self.base_url}/v1/users/confirm-email-change?token={token}"
+
+        logger.info(f"Sending email change confirmation to {old_email} (new email: {new_email})")
+
+        subject = f"Подтверждение смены email в БИТОК"
+
+        html_content = self._render_email_change_template(
+            username=username,
+            old_email=old_email,
+            new_email=new_email,
+            confirmation_url=confirmation_url,
+            app_name=self.app_name
+        )
+
+        for attempt in range(3):
+            try:
+                success = await self._send_email(
+                    to_email=old_email,
+                    subject=subject,
+                    html_content=html_content
+                )
+
+                if success:
+                    logger.info(f"Email change confirmation successfully sent to {old_email}")
+                    return True
+
+            except Exception as e:
+                logger.error(f"Error sending email change confirmation to {old_email} (attempt {attempt + 1}): {str(e)}")
+
+            if attempt < 2:
+                await asyncio.sleep(5)
+
+        logger.error(f"All attempts failed to send email change confirmation to {old_email}")
+        return False
+
+    def _render_email_change_template(
+        self,
+        username: str,
+        old_email: str,
+        new_email: str,
+        confirmation_url: str,
+        app_name: str
+    ) -> str:
+        template_str = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Подтверждение смены email</title>
+    <style type="text/css">
+        body { margin: 0; padding: 0; width: 100% !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table { border-collapse: collapse; mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+
+        body { font-family: Arial, sans-serif; color: white; background-color: #0a0a0a; }
+        .container { max-width: 600px; margin: 0 auto; }
+
+        .header { background-color: #0a0a0a; padding: 25px 0; text-align: center; }
+        .logo { color: #ffffff; font-size: 32px; font-weight: bold; text-decoration: none; margin-bottom: 30px; }
+        .logo-red { color: #dc2626; }
+
+        .content { background-color: #0a0a0a; padding: 40px 30px; }
+        .title { color: white; font-size: 24px; font-weight: bold; margin-bottom: 20px; text-align: center; }
+        .greeting { color: #e5e5e5; font-size: 16px; line-height: 1.6; margin-bottom: 25px; text-align: center; }
+
+        .email-box { background: #1a1a1a; border-radius: 10px; padding: 20px; margin: 20px 0; border-left: 4px solid #dc2626; }
+        .email-label { color: #e5e5e5; font-size: 14px; margin-bottom: 5px; }
+        .email-value { color: white; font-size: 16px; font-weight: bold; }
+
+        .warning { background: #1a1a1a; border-radius: 10px; padding: 20px; margin: 20px 0; border-left: 4px solid #f59e0b; }
+        .warning-title { color: #f59e0b; font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+        .warning-text { color: #e5e5e5; font-size: 14px; line-height: 1.6; }
+
+        .button-box { text-align: center; margin: 30px 0; }
+        .button { display: inline-block; background-color: #dc2626; color: white !important; text-decoration: none;
+                        padding: 14px 35px; border-radius: 6px; font-size: 16px; font-weight: bold; border: none; }
+        
+        .footer { background-color: #0a0a0a; color: #e5e5e5; padding: 25px; text-align: center; font-size: 12px; }
+        .footer a { color: #cccccc; text-decoration: none; }
+        .copyright { margin-top: 15px; }
+
+        @media only screen and (max-width: 600px) {
+            .content { padding: 25px 15px; }
+        }
+    </style>
+</head>
+<body>
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#0a0a0a">
+        <tr>
+            <td align="center">
+                <table class="container" width="600" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                        <td class="header">
+                            <div class="logo">BEAT<span class="logo-red">OK</span></div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="content">
+                            <h1 class="title">Подтверждение смены email</h1>
+                            <p class="greeting">Здравствуйте, {{ username }}!</p>
+                            <p class="greeting">Вы запросили смену email адреса на {{ app_name }}.</p>
+
+                            <div class="email-box">
+                                <div class="email-label">Текущий email:</div>
+                                <div class="email-value">{{ old_email }}</div>
+                                <div style="margin: 15px 0; color: #e5e5e5;">⬇️</div>
+                                <div class="email-label">Новый email:</div>
+                                <div class="email-value">{{ new_email }}</div>
+                            </div>
+
+                            <div class="warning">
+                                <div class="warning-title">⚠️ Внимание</div>
+                                <div class="warning-text">
+                                    Если вы не запрашивали смену email, немедленно свяжитесь с поддержкой или измените пароль.
+                                </div>
+                            </div>
+
+                            <div class="button-box">
+                                <a href="{{ confirmation_url }}" class="button">Подтвердить смену email</a>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td class="footer">
+                            <div class="copyright">
+                                © {{ current_year }} БИТОК. Все права защищены.
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>"""
+
+        from jinja2 import Template
+        template = Template(template_str)
+        return template.render(
+            username=username,
+            old_email=old_email,
+            new_email=new_email,
+            confirmation_url=confirmation_url,
+            app_name=app_name,
+            current_year=datetime.now().year
+        )
+
 email_service = EmailService()

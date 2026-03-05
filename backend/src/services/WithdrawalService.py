@@ -7,6 +7,7 @@ from typing import Optional, List
 from src.models.withdrawal import WithdrawalModel, WithdrawalStatus
 from src.models.users import UsersModel
 from src.schemas.withdrawal import WithdrawalCreate, WithdrawalResponse, WithdrawalStatusResponse
+from src.services.BalanceService import BalanceService
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +18,7 @@ MAX_WITHDRAWAL_AMOUNT = Decimal('100000.00')
 class WithdrawalService:
     def __init__(self, db: AsyncSession):
         self.db = db
+        self.balance_service = BalanceService(db)
     
     async def _get_user(self, user_id: int) -> UsersModel:
         result = await self.db.execute(
@@ -44,9 +46,11 @@ class WithdrawalService:
         if data.amount > MAX_WITHDRAWAL_AMOUNT:
             raise ValueError(f"Максимальная сумма вывода {MAX_WITHDRAWAL_AMOUNT} ₽")
 
-        balance_before = user.balance
-        user.balance -= data.amount
-        balance_after = user.balance
+        new_balance = await self.balance_service.withdrawal(
+                user_id=user.id,
+                amount=Decimal(str(data.amount)),
+                description=f"Вывод средств на карту: **{data.card_number[-4:]}"
+            )
 
         withdrawal = WithdrawalModel(
             user_id=user_id,

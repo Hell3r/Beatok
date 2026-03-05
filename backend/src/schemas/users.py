@@ -101,3 +101,10 @@ class SubscriptionResponse(BaseModel):
     balance: Optional[float] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+class ChangeEmailRequest(BaseModel):
+    old_email: EmailStr
+    new_email: EmailStr
+
+class ChangeEmailConfirmRequest(BaseModel):
+    token: str

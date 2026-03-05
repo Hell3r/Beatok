@@ -15,7 +15,8 @@ from datetime import date, datetime
 from src.models.email_verification import EmailVerificationModel
 from src.services.rate_limiter import check_rate_limit
 from src.services.RedisService import redis_service
-from src.schemas.users import DeleteUserRequest, UsersSchema, UserResponse, UserCreate, TokenResponse, UserUpdate, VerifyEmailRequest, MessageResponse, ResendVerificationRequest, ForgotPasswordRequest, ResetPasswordRequest, HistoryItem, SubscriptionResponse
+from src.schemas.users import DeleteUserRequest, UsersSchema, UserResponse, UserCreate, TokenResponse, UserUpdate, VerifyEmailRequest, MessageResponse, ResendVerificationRequest, ForgotPasswordRequest, ResetPasswordRequest, HistoryItem, SubscriptionResponse, ChangeEmailRequest
+from src.schemas.balance import BalanceOperationResponse
 from src.services.EmailService import email_service
 from src.services.AuthService import (
     add_to_blacklist,
@@ -154,6 +155,164 @@ async def check_email_available(
 ):
     exists = await check_email_exists(email, session)
     return {"available": not exists}
+
+
+@router.get(
+    "/confirm-email-change",
+    response_class=HTMLResponse,
+    summary="Подтверждение смены email",
+    tags=["Верификация Email и авторизация"]
+)
+async def confirm_email_change(
+    token: str,
+    session: SessionDep
+):
+    try:
+        verification = await session.execute(
+            select(EmailVerificationModel).where(
+                and_(
+                    EmailVerificationModel.token == token,
+                    EmailVerificationModel.verification_type == "email_change"
+                )
+            )
+        )
+        verification = verification.scalar_one_or_none()
+
+        if not verification:
+            return templates.TemplateResponse(
+                "error_verify.html",
+                {"request": {}, "error_message": "Неверный или устаревший токен подтверждения"}
+            )
+
+        if not verification.is_valid():
+            if verification.is_used:
+                return templates.TemplateResponse(
+                    "error_verify.html",
+                    {"request": {}, "error_message": "Этот токен подтверждения уже был использован"}
+                )
+            else:
+                return templates.TemplateResponse(
+                    "error_verify.html",
+                    {"request": {}, "error_message": "Срок действия токена подтверждения истек"}
+                )
+
+        new_email = verification.new_email
+        
+        if not new_email:
+            return templates.TemplateResponse(
+                "error_verify.html",
+                {"request": {}, "error_message": "Срок действия запроса истек"}
+            )
+
+        user = await session.execute(
+            select(UsersModel).where(UsersModel.email == verification.email)
+        )
+        user = user.scalar_one_or_none()
+
+        if not user:
+            return templates.TemplateResponse(
+                "error_verify.html",
+                {"request": {}, "error_message": "Пользователь не найден"}
+            )
+
+        old_email = user.email
+        user.email = new_email
+        
+        verification.is_used = True
+        
+        await session.commit()
+
+        logger.info(f"Email changed for user {user.id}: {old_email} -> {new_email}")
+
+        return templates.TemplateResponse(
+            "email_change_confirm.html",
+            {"request": {}, "old_email": old_email, "new_email": new_email}
+        )
+
+    except HTTPException:
+        await session.rollback()
+        raise
+    except Exception as e:
+        await session.rollback()
+        logger.error(f"Email change confirmation error for token {token}: {str(e)}")
+        return templates.TemplateResponse(
+            "error_verify.html",
+            {"request": {}, "error_message": "Произошла внутренняя ошибка сервера"}
+        )
+
+
+@router.post(
+    "/request-email-change",
+    response_model=MessageResponse,
+    summary="Запрос на смену email",
+    tags=["Верификация Email и авторизация"]
+)
+async def request_email_change(
+    email_data: ChangeEmailRequest,
+    background_tasks: BackgroundTasks,
+    session: SessionDep,
+    current_user: UsersModel = Depends(get_current_user)
+):
+    try:
+        if email_data.old_email.lower() != current_user.email.lower():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Указанный email не совпадает с вашим текущим email"
+            )
+
+        existing_user = await session.execute(
+            select(UsersModel).where(UsersModel.email == email_data.new_email)
+        )
+        if existing_user.scalar_one_or_none():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Этот email уже зарегистрирован другим пользователем"
+            )
+
+        await session.execute(
+            delete(EmailVerificationModel).where(
+                and_(
+                    EmailVerificationModel.email == current_user.email,
+                    EmailVerificationModel.verification_type == "email_change",
+                    EmailVerificationModel.is_used == False
+                )
+            )
+        )
+
+        verification = EmailVerificationModel(
+            email=current_user.email,
+            verification_type="email_change",
+            new_email=email_data.new_email
+        )
+        
+        session.add(verification)
+        await session.commit()
+
+        background_tasks.add_task(
+            email_service.send_email_change_confirmation_email,
+            current_user.email,
+            email_data.new_email,
+            verification.token,
+            current_user.username
+        )
+
+        logger.info(f"Email change requested for user {current_user.id}: {current_user.email} -> {email_data.new_email}")
+
+        return MessageResponse(
+            message="Письмо с подтверждением смены email отправлено на ваш текущий email"
+        )
+
+    except HTTPException:
+        await session.rollback()
+        raise
+    except Exception as e:
+        await session.rollback()
+        logger.error(f"Email change request error for user {current_user.id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Произошла ошибка при запросе смены email"
+        )
+
 
 @router.get("/{user_id}", response_model=UserResponse, tags=["Пользователи"], summary="Получить профиль пользователя")
 async def get_user_profile(
@@ -1177,4 +1336,45 @@ async def create_subscription(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Произошла ошибка при оформлении подписки"
+        )
+
+
+@router.get(
+    "/me/balance-history",
+    response_model=List[BalanceOperationResponse],
+    tags=["Пользователи"],
+    summary="Получить историю баланса"
+)
+async def get_my_balance_history(
+    session: SessionDep,
+    current_user: UsersModel = Depends(get_current_user)
+):
+    try:
+        from src.models.balance import UserBalanceModel
+        
+        result = await session.execute(
+            select(UserBalanceModel)
+            .where(UserBalanceModel.user_id == current_user.id)
+            .order_by(UserBalanceModel.created_at.desc())
+        )
+        operations = result.scalars().all()
+        
+        return [
+            BalanceOperationResponse(
+                id=op.id,
+                operation_type=op.operation_type.value,
+                amount=float(op.amount),
+                balance_before=float(op.balance_before),
+                balance_after=float(op.balance_after),
+                description=op.description,
+                created_at=op.created_at
+            )
+            for op in operations
+        ]
+        
+    except Exception as e:
+        logger.error(f"Balance history error for user {current_user.id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Ошибка при получении истории баланса"
         )

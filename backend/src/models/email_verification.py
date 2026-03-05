@@ -9,6 +9,7 @@ class EmailVerificationModel(Base):
     
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     email: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    new_email: Mapped[str] = mapped_column(String(255), nullable=True, index=True)
     token: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
     verification_type: Mapped[str] = mapped_column(String(20), default="registration")
     is_used: Mapped[bool] = mapped_column(Boolean, default=False, index=True)

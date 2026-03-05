@@ -1,32 +1,38 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const EmailChange: React.FC = () => {
     const [oldEmail, setOldEmail] = useState('');
     const [newEmail, setNewEmail] = useState('');
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState('');
+    const navigate = useNavigate();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setMessage('');
 
+        const token = localStorage.getItem('access_token');
 
         try {
-            const response = await fetch('/api/v1/users/me', {
-                method: 'PUT',
+            const response = await fetch('http://0.0.0.0:8000/v1/users/request-email-change', {
+                method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    // auth head
+                    'Authorization': `Bearer ${token}`,
                 },
                 body: JSON.stringify({
-                    email: newEmail,
-                    // Include old email if required by API
+                    old_email: oldEmail,
+                    new_email: newEmail,
                 }),
             });
 
             if (response.ok) {
-                setMessage('Email успешно изменён!');
+                setMessage('Письмо с подтверждением отправлено на ваш текущий email!');
+                setTimeout(() => {
+                    navigate('/');
+                }, 3000);
             } else {
                 const errorData = await response.json();
                 setMessage(errorData.detail || 'Ошибка при изменении email');
@@ -84,7 +90,7 @@ const EmailChange: React.FC = () => {
                             disabled={loading}
                             className="w-full select-none cursor-pointer max-w-100 mx-auto bg-red-600 hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            {loading ? 'Подтверждение...' : 'Подтвердить изменение'}
+                            {loading ? 'Отправка...' : 'Подтвердить изменение'}
                         </button>
                     </div>
                 </form>

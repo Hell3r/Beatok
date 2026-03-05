@@ -60,7 +60,7 @@ class PromotionService:
             new_balance = await self.balance_service.purchase(
                 user_id=user.id,
                 amount=Decimal(str(self.PROMOTION_PRICE)),
-                description=f"Оформление продвижения бита {beat.id}"
+                description=f"Оформление продвижения бита {beat.name}"
             )
 
 

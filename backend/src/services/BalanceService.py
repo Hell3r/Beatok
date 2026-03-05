@@ -123,3 +123,36 @@ class BalanceService:
         logger.info(f"BALANCE_PURCHASE: User {user_id} spent {amount} RUB")
         
         return balance_after
+
+
+
+    async def withdrawal(self, user_id: int, amount: Decimal, description: str = None) -> Decimal:
+            if amount <= 0:
+                raise ValueError("Сумма списания должна быть положительной")
+            
+            user = await self._get_user(user_id)
+            
+            if user.balance < amount:
+                raise ValueError("Недостаточно средств на балансе")
+            
+            balance_before = user.balance
+            user.balance -= amount
+            balance_after = user.balance
+            
+            operation = UserBalanceModel(
+                user_id=user_id,
+                operation_type=BalanceOperationType.WITHDRAWAL,
+                amount=amount,
+                balance_before=balance_before,
+                balance_after=balance_after,
+                description=description or f"Вывод средств"
+            )
+            
+            self.db.add(operation)
+            await self.db.flush()
+            
+            await self.db.commit()
+            
+            logger.info(f"BALANCE_WITHDRAWAL: User {user_id} spent {amount} RUB")
+            
+            return balance_after
