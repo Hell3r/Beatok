@@ -7,6 +7,7 @@ from sqlalchemy import select, delete, and_, func
 from src.models.users import UsersModel
 from src.database.deps import SessionDep
 from typing import Optional
+from pydantic import BaseModel
 import logging
 import os
 import uuid
@@ -37,7 +38,7 @@ logger = logging.getLogger(__name__)
 
 AVATAR_DIR = "static/avatars"
 DEFAULT_AVATAR_PATH = "static/default_avatar.png"
-SUBSCRIPTION_PRICE = 300  # Цена подписки в рублях
+SUBSCRIPTION_PRICE = 300
 
 os.makedirs(AVATAR_DIR, exist_ok=True)
 
@@ -103,7 +104,7 @@ async def login_user(
             detail="Произошла ошибка при входе в систему"
         )
 
-@router.post("/logout", tags=["Верификация Email и авторизация"], summary=["Выход"])
+@router.post("/logout", tags=["Верификация Email и авторизация"], summary="Выход")
 async def logout_user(
     session: SessionDep,
     response: Response,
@@ -125,7 +126,7 @@ async def logout_user(
         )
 
 
-@router.get("/users", response_model=List[UserResponse], tags=["Пользователи"], summary=["Получить всех пользователей"])
+@router.get("/users", response_model=List[UserResponse], tags=["Пользователи"], summary="Получить всех пользователей")
 async def get_all_users(session: SessionDep):
     try:
         result = await session.execute(select(UsersModel))
@@ -195,10 +196,16 @@ async def get_user_profile(
 async def update_user_profile(
     user_id: int,
     user_data: dict,
-    session: SessionDep
+    session: SessionDep,
+    current_user: UsersModel = Depends(get_current_user)
 ):
     try:
-        print(f"Updating user {user_id} with data: {user_data}")
+        # Allow admins to update any user's profile
+        if current_user.id != user_id and current_user.role != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Вы можете обновить только свой профиль"
+            )
 
         user_stmt = select(UsersModel).where(UsersModel.id == user_id)
         user_result = await session.execute(user_stmt)
@@ -210,9 +217,9 @@ async def update_user_profile(
                 detail="Пользователь не найден"
             )
 
+        allowed_fields = ['username', 'email', 'birthday', 'description']
         for key, value in user_data.items():
-            if key in ['username', 'email', 'birthday', 'description']:
-                print(f"Setting {key} = {value}")
+            if key in allowed_fields:
                 setattr(user, key, value)
 
         await session.commit()
@@ -223,19 +230,24 @@ async def update_user_profile(
             username=user.username,
             email=user.email,
             balance=user.balance,
-            birthday=user.birthday,
             is_active=user.is_active,
             avatar_path=user.avatar_path,
+            date_of_reg=user.date_of_reg,
+            last_login=user.last_login,
             description=user.description,
-            prom_status=user.prom_status
+            birthday=user.birthday,
+            prom_status=user.prom_status,
+            role=user.role
         )
-
+    except HTTPException:
+        await session.rollback()
+        raise
     except Exception as e:
         await session.rollback()
-        print(f"Error updating user: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Ошибка при обновлении профиля: {str(e)}")
+            detail=f"Ошибка при обновлении профиля: {str(e)}"
+        )
     
 
 
@@ -244,8 +256,9 @@ async def update_user_profile(
 @router.post("/{user_id}/avatar", tags = ["Аватарки"], summary="Загрузить аватарку пользователя")
 async def upload_avatar(
     user_id: int,
-    file: UploadFile = File(...),
-    session: SessionDep = None
+    session: SessionDep,
+    current_user: UsersModel = Depends(get_current_user),
+    file: UploadFile = File(...)
 ):
     try:
         from src.models.users import UsersModel
@@ -289,6 +302,9 @@ async def upload_avatar(
 
         return {"message": "Аватарка успешно загружена", "avatar_path": filename}
 
+    except HTTPException:
+        await session.rollback()
+        raise
     except Exception as e:
         await session.rollback()
         print(f"Error uploading avatar: {e}")
@@ -728,6 +744,79 @@ async def change_user_to_admin(
         )
 
 
+class RoleUpdateRequest(BaseModel):
+    role: str
+
+
+@router.patch(
+    "/{user_id}/role",
+    response_model=UserResponse,
+    tags=["Пользователи"],
+    summary="Изменить роль пользователя"
+)
+async def update_user_role(
+    user_id: int,
+    role_data: RoleUpdateRequest,
+    session: SessionDep,
+    current_user: UsersModel = Depends(get_current_user)
+):
+    try:
+        if current_user.role != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Только администратор может изменять роли пользователей"
+            )
+
+        allowed_roles = ["admin", "moderator", "top_beatmaker", "common"]
+        if role_data.role not in allowed_roles:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Недопустимая роль. Доступные роли: {', '.join(allowed_roles)}"
+            )
+
+        user_stmt = select(UsersModel).where(UsersModel.id == user_id)
+        user_result = await session.execute(user_stmt)
+        user = user_result.scalar_one_or_none()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Пользователь не найден"
+            )
+
+        old_role = user.role
+        user.role = role_data.role
+        await session.commit()
+        await session.refresh(user)
+
+        logger.info(f"Role changed for user {user_id}: {old_role} -> {role_data.role} by admin {current_user.id}")
+
+        return UserResponse(
+            id=user.id,
+            username=user.username,
+            email=user.email,
+            balance=user.balance,
+            birthday=user.birthday,
+            is_active=user.is_active,
+            avatar_path=user.avatar_path,
+            date_of_reg=user.date_of_reg,
+            last_login=user.last_login,
+            description=user.description,
+            prom_status=user.prom_status,
+            role=user.role
+        )
+
+    except HTTPException:
+        await session.rollback()
+        raise
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Ошибка при изменении роли: {str(e)}"
+        )
+
+
 @router.get("/{user_id}/stats", tags=["Пользователи"], summary="Получить статистику пользователя")
 async def get_user_stats(
     user_id: int,
@@ -749,7 +838,6 @@ async def get_user_stats(
         )
         sold_count = sold_count.scalar()
 
-        # Count how many times user's beats have been favorited
         from src.models.favorite import FavoriteModel
         liked_count = await session.execute(
             select(func.count(FavoriteModel.id)).where(
@@ -804,7 +892,6 @@ async def forgot_password(
                 detail="Аккаунта с указанной почтой не существует"
             )
 
-        # Delete any existing unused password reset tokens for this email
         await session.execute(
             delete(EmailVerificationModel).where(
                 and_(
@@ -815,7 +902,6 @@ async def forgot_password(
             )
         )
 
-        # Create new password reset token
         verification = EmailVerificationModel(
             email=forgot_data.email,
             verification_type="password_reset"
@@ -860,7 +946,6 @@ async def reset_password(
     session: SessionDep
 ):
     try:
-        # Find the verification token
         verification = await session.execute(
             select(EmailVerificationModel).where(
                 and_(
@@ -889,7 +974,6 @@ async def reset_password(
                     detail="Срок действия токена сброса пароля истек"
                 )
 
-        # Validate passwords match
         if reset_data.new_password != reset_data.confirm_password:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -902,7 +986,7 @@ async def reset_password(
                 detail="Пароль должен содержать минимум 6 символов"
             )
 
-        # Find the user
+
         user = await session.execute(
             select(UsersModel).where(UsersModel.email == verification.email)
         )
@@ -914,11 +998,9 @@ async def reset_password(
                 detail="Пользователь не найден"
             )
 
-        # Hash the new password
         hashed_password = get_password_hash(reset_data.new_password)
         user.password = hashed_password
 
-        # Mark the token as used
         verification.is_used = True
 
         await session.commit()
@@ -948,7 +1030,6 @@ async def get_user_history(
     current_user: UsersModel = Depends(get_current_user)
 ):
     try:
-        # Only allow users to see their own history
         if current_user.id != user_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -958,7 +1039,6 @@ async def get_user_history(
         from src.models.purchase import PurchaseModel
         from src.models.beats import BeatModel
 
-        # Get purchases (where user is purchaser)
         purchases_query = select(
             PurchaseModel.id,
             PurchaseModel.amount,
@@ -974,7 +1054,6 @@ async def get_user_history(
         purchases_result = await session.execute(purchases_query)
         purchases = purchases_result.all()
 
-        # Get sales (where user is seller)
         sales_query = select(
             PurchaseModel.id,
             PurchaseModel.amount,
@@ -990,7 +1069,6 @@ async def get_user_history(
         sales_result = await session.execute(sales_query)
         sales = sales_result.all()
 
-        # Combine and sort by date
         history_items = []
 
         for purchase in purchases:
@@ -1017,7 +1095,6 @@ async def get_user_history(
                 counterparty_username=sale.counterparty_username
             ))
 
-        # Sort by created_at descending
         history_items.sort(key=lambda x: x.created_at, reverse=True)
 
         return history_items

@@ -37,7 +37,6 @@ app = FastAPI(
 )
 app.include_router(main_router)
 
-# Allow all origins for development
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -46,14 +45,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+
 @app.middleware("http")
 async def add_cors_headers(request: Request, call_next):
-    # Handle CORS for all requests
     response = await call_next(request)
     
-    # Add CORS headers to response
     response.headers["Access-Control-Allow-Origin"] = "*"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
     response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization"
     
     return response
@@ -126,7 +125,6 @@ async def run_telegram_bot_with_error_handling():
         await run_telegram_bot()
     except Exception as e:
         print(f"Telegram bot failed: {e}")
-        # Reset flag to allow restart if needed
         global telegram_bot_started
         telegram_bot_started = False
 

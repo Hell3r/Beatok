@@ -17,10 +17,15 @@ const roleConfig: Record<string, { color: string; bgColor: string; label: string
     bgColor: 'bg-blue-600',
     label: 'Модератор',
   },
-  'top-author': {
+  top_beatmaker: {
     color: 'text-white',
-    bgColor: 'bg-green-600',
-    label: 'Топ-битмейкер',
+    bgColor: 'bg-green-700',
+    label: 'Топ-автор',
+  },
+  common: {
+    color: 'text-white',
+    bgColor: '',
+    label: '',
   }
 };
 

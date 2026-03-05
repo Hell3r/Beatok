@@ -125,7 +125,6 @@ const BeatsPage: React.FC = () => {
   }
 
   try {
-    // 1. Инкремент счётчика
     console.log('Increment download for beat', beat.id);
     const incResponse = await fetch(`http://localhost:8000/beats/${beat.id}/increment-download`, {
       method: 'POST',
@@ -136,7 +135,6 @@ const BeatsPage: React.FC = () => {
     });
     console.log('Increment response status:', incResponse.status);
 
-    // 2. Получение presigned URL
     console.log('Fetching audio URL from:', `${API_BASE_URL}/beats/${beat.id}/audio-url`);
     const urlResponse = await fetch(`${API_BASE_URL}/beats/${beat.id}/audio-url`);
     console.log('Audio URL response status:', urlResponse.status);
@@ -257,19 +255,7 @@ const BeatsPage: React.FC = () => {
             <div className="hidden md:block">
               {transitions((style, item) => (
                 <animated.div style={style}>
-                  {item === 'table' ? (
-                    <BeatTable
-                      beats={beats}
-                      loading={loading}
-                      currentPlayingBeat={currentBeat}
-                      isPlaying={isPlaying}
-                      onPlay={handlePlay}
-                      onDownload={handleDownload}
-                      filters={filters}
-                      onToggleFavorite={handleToggleFavorite}
-                      favoriteBeats={favoriteBeats}
-                    />
-                  ) : (
+                  {item === 'grid' ? (
                     <BeatList
                       beats={beats}
                       loading={loading}
@@ -281,6 +267,18 @@ const BeatsPage: React.FC = () => {
                       onToggleFavorite={handleToggleFavorite}
                       favoriteBeats={favoriteBeats}
                       maxColumns={4}
+                    />
+                  ) : (
+                    <BeatTable
+                      beats={beats}
+                      loading={loading}
+                      currentPlayingBeat={currentBeat}
+                      isPlaying={isPlaying}
+                      onPlay={handlePlay}
+                      onDownload={handleDownload}
+                      filters={filters}
+                      onToggleFavorite={handleToggleFavorite}
+                      favoriteBeats={favoriteBeats}
                     />
                   )}
                 </animated.div>
