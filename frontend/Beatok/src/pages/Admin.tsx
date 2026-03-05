@@ -13,7 +13,7 @@ const API_URL = 'http://localhost:8000';
 
 const Admin: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'moderation' | 'support'>('moderation');
+  const [activeTab, setActiveTab] = useState<'moderation' | 'support' | 'users'>('moderation');
   const [moderationBeats, setModerationBeats] = useState<Beat[]>([]);
   const [supportRequests, setSupportRequests] = useState<Request[]>([]);
   const [loading, setLoading] = useState(true);
@@ -241,7 +241,7 @@ const Admin: React.FC = () => {
       <div className="flex space-x-4 mb-6 border-b border-neutral-700">
         <button
           onClick={() => setActiveTab('moderation')}
-          className={`px-4 py-2 font-semibold transition-colors ${
+          className={`px-4 py-2 font-semibold transition-colors cursor-pointer select-none ${
             activeTab === 'moderation'
               ? 'text-red-500 border-b-2 border-red-500'
               : 'text-neutral-400 hover:text-white'
@@ -251,13 +251,23 @@ const Admin: React.FC = () => {
         </button>
         <button
           onClick={() => setActiveTab('support')}
-          className={`px-4 py-2 font-semibold transition-colors ${
+          className={`px-4 py-2 font-semibold transition-colors cursor-pointer select-none ${
             activeTab === 'support'
               ? 'text-red-500 border-b-2 border-red-500'
               : 'text-neutral-400 hover:text-white'
           }`}
         >
           Заявки поддержки ({supportRequests.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('users')}
+          className={`px-4 py-2 font-semibold transition-colors cursor-pointer select-none ${
+            activeTab === 'users'
+              ? 'text-red-500 border-b-2 border-red-500'
+              : 'text-neutral-400 hover:text-white'
+          }`}
+        >
+          Реестр пользователей ({supportRequests.length})
         </button>
       </div>
 
