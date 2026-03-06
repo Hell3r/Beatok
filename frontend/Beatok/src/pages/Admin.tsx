@@ -31,12 +31,14 @@ interface User {
 
 const Admin: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'moderation' | 'support' | 'users'>('moderation');
+  const [activeTab, setActiveTab] = useState<'moderation' | 'support' | 'users' | 'history'>('moderation');
   const [moderationBeats, setModerationBeats] = useState<Beat[]>([]);
   const [supportRequests, setSupportRequests] = useState<Request[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [usersLoading, setUsersLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyItems, setHistoryItems] = useState<any[]>([]);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [selectedBeat, setSelectedBeat] = useState<Beat | null>(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -44,6 +46,8 @@ const Admin: React.FC = () => {
   const [beatToShowInfo, setBeatToShowInfo] = useState<Beat | null>(null);
   
   const [usersSearchQuery, setUsersSearchQuery] = useState('');
+  const [historySearchQuery, setHistorySearchQuery] = useState('');
+  const [historyFilterType, setHistoryFilterType] = useState<string>('');
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [editForm, setEditForm] = useState({
@@ -145,13 +149,71 @@ const Admin: React.FC = () => {
   }, [currentUser]);
 
   useEffect(() => {
+    if (activeTab === 'history' && currentUser?.role === 'admin' && historyItems.length === 0) {
+      fetchBalanceHistory();
+    }
+  }, [activeTab, currentUser]);
+
+  const fetchBalanceHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const url = `${API_URL}/v1/users/admin/balance-history?limit=1000`;
+
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+    
+      if (response.ok) {
+        const data = await response.json();
+        setHistoryItems(data);
+      } else {
+        showError('Ошибка при загрузке истории');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      showError('Ошибка при загрузке истории');
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+  
+  // Фильтрация на клиенте
+  const filteredHistoryItems = historyItems.filter((item) => {
+    // Фильтр по типу операции
+    if (historyFilterType && item.operation_type !== historyFilterType) return false;
+    
+    // Фильтр по поисковому запросу
+    if (historySearchQuery) {
+      const query = historySearchQuery.toLowerCase();
+      
+      // Поиск по ID
+      if (item.user_id.toString().includes(query)) return true;
+      
+      // Поиск по имени
+      const username = (item.user?.username || item.username || '').toLowerCase();
+      if (username.includes(query)) return true;
+      
+      // Поиск по email
+      const email = (item.user?.email || item.email || '').toLowerCase();
+      if (email.includes(query)) return true;
+      
+      return false;
+    }
+    
+    return true;
+  });
+
+  useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['moderation', 'support', 'users'].includes(tab)) {
-      setActiveTab(tab as 'moderation' | 'support' | 'users');
+    if (tab && ['moderation', 'support', 'users', 'history'].includes(tab)) {
+      setActiveTab(tab as 'moderation' | 'support' | 'users' | 'history');
     }
   }, [searchParams]);
 
-  const handleTabChange = (tab: 'moderation' | 'support' | 'users') => {
+  const handleTabChange = (tab: 'moderation' | 'support' | 'users' | 'history') => {
     setActiveTab(tab);
     setSearchParams({ tab });
   };
@@ -538,13 +600,25 @@ const Admin: React.FC = () => {
             Реестр пользователей ({users.length})
           </button>
         )}
+        {isAdmin && (
+          <button
+            onClick={() => handleTabChange('history')}
+            className={`px-4 py-2 font-semibold transition-colors cursor-pointer select-none ${
+              activeTab === 'history'
+                ? 'text-red-500 border-b-2 border-red-500'
+                : 'text-neutral-400 hover:text-white'
+            }`}
+          >
+            История операций
+          </button>
+        )}
       </div>
 
       {activeTab === 'moderation' && (
         <div>
           {loading ? (
             <div className="space-y-4">
-              {[...Array(3)].map((_, i) => (
+              {Array.from({ length: 3 }).map((_, i) => (
                 <div key={i} className="bg-neutral-800 rounded-lg p-4 animate-pulse">
                   <div className="flex gap-4">
                     <div className="w-32 h-32 bg-neutral-700 rounded-lg"></div>
@@ -895,6 +969,126 @@ const Admin: React.FC = () => {
                       <td className="py-3 px-2 text-neutral-300">{user.balance?.toFixed(2) || '0.00'} ₽</td>
                       <td className="py-3 px-2 text-neutral-400 text-sm">
                         {user.date_of_reg ? new Date(user.date_of_reg).toLocaleDateString('ru-RU') : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'history' && (
+        <div>
+          <div className="mb-4 flex gap-4">
+            <div className="relative flex-1">
+              <input
+                type="text"
+                placeholder="Поиск по ID, имени или email пользователя..."
+                value={historySearchQuery}
+                onChange={(e) => {
+                  setHistorySearchQuery(e.target.value);
+                }}
+                className="w-full bg-neutral-800 text-white rounded-lg px-4 py-3 pl-10 focus:outline-none focus:ring-2 focus:ring-red-500"
+              />
+              <svg
+                className="absolute left-3 top-3.5 w-5 h-5 text-neutral-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <select
+              value={historyFilterType}
+              onChange={(e) => {
+                setHistoryFilterType(e.target.value);
+              }}
+              className="bg-neutral-800 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500"
+            >
+              <option value="">Все типы операций</option>
+              <option value="deposit">Пополнение</option>
+              <option value="purchase">Покупка</option>
+              <option value="withdrawal">Вывод</option>
+            </select>
+          </div>
+
+          {historyLoading ? (
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="bg-neutral-800 rounded-lg p-4 animate-pulse">
+                  <div className="h-16 bg-neutral-700 rounded"></div>
+                </div>
+              ))}
+            </div>
+          ) : filteredHistoryItems.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-neutral-400 text-lg">
+                {historySearchQuery || historyFilterType ? 'Операции не найдены' : 'Нет операций'}
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-left text-neutral-400 border-b border-neutral-700 select-none">
+                    <th className="pb-3 px-2">ID</th>
+                    <th className="pb-3 px-2">Пользователь</th>
+                    <th className="pb-3 px-2">Тип операции</th>
+                    <th className="pb-3 px-2">Сумма</th>
+                    <th className="pb-3 px-2">Баланс до</th>
+                    <th className="pb-3 px-2">Баланс после</th>
+                    <th className="pb-3 px-2">Дата</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredHistoryItems.map((item) => (
+                    <tr
+                      key={item.id}
+                      className="border-b border-neutral-800 hover:bg-neutral-800 cursor-pointer transition-colors"
+                    >
+                      <td className="py-3 px-2 text-neutral-300">{item.id}</td>
+                      <td className="py-3 px-2">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-white">{item.user?.username || item.username || '-'}</span>
+                          <span className="text-neutral-500 text-sm">#{item.user_id}</span>
+                        </div>
+                        <div className="text-neutral-500 text-sm">{item.user?.email || item.email || '-'}</div>
+                      </td>
+                      <td className="py-3 px-2">
+                        <span className={`px-2 py-1 rounded text-xs text-white select-none ${
+                          item.operation_type === 'deposit' || item.type === 'deposit' ? 'bg-green-600' :
+                          item.operation_type === 'purchase' || item.type === 'purchase' ? 'bg-blue-600' :
+                          item.operation_type === 'withdrawal' || item.type === 'withdrawal' ? 'bg-red-600' :
+                          'bg-neutral-600'
+                        }`}>
+                          {item.operation_type === 'deposit' || item.type === 'deposit' ? 'Пополнение' :
+                           item.operation_type === 'purchase' || item.type === 'purchase' ? 'Покупка' :
+                           item.operation_type === 'withdrawal' || item.type === 'withdrawal' ? 'Вывод' :
+                           item.operation_type === 'refund' || item.type === 'refund' ? 'Возврат' :
+                           item.operation_type === 'bonus' || item.type === 'bonus' ? 'Бонус' :
+                           item.operation_type || item.type || '-'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-2">
+                        <span className={
+                          item.operation_type === 'deposit' || item.type === 'deposit' ||
+                          item.operation_type === 'refund' || item.type === 'refund' ||
+                          item.operation_type === 'bonus' || item.type === 'bonus'
+                            ? 'text-green-400' : 'text-red-400'
+                        }>
+                          {item.operation_type === 'deposit' || item.type === 'deposit' ||
+                           item.operation_type === 'refund' || item.type === 'refund' ||
+                           item.operation_type === 'bonus' || item.type === 'bonus'
+                            ? '+' : '-'}{Math.abs(item.amount)?.toFixed(2) || '0.00'} ₽
+                        </span>
+                      </td>
+                      <td className="py-3 px-2 text-neutral-300">{item.balance_before?.toFixed(2) || '0.00'} ₽</td>
+                      <td className="py-3 px-2 text-neutral-300">{item.balance_after?.toFixed(2) || '0.00'} ₽</td>
+                      <td className="py-3 px-2 text-neutral-400 text-sm">
+                        {item.created_at ? new Date(item.created_at).toLocaleDateString('ru-RU') : '-'}
                       </td>
                     </tr>
                   ))}

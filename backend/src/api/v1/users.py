@@ -1378,3 +1378,74 @@ async def get_my_balance_history(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Ошибка при получении истории баланса"
         )
+
+
+@router.get(
+    "/admin/balance-history",
+    response_model=List[dict],
+    tags=["Админ-панель"],
+    summary="Получить историю баланса всех пользователей (только для админов)"
+)
+async def get_all_balance_history(
+    session: SessionDep,
+    current_user: UsersModel = Depends(get_current_user),
+    user_id: Optional[int] = None,
+    username: Optional[str] = None,
+    email: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 100
+):
+    try:
+        if current_user.role != "admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Доступ запрещен. Только администраторы могут просматривать историю всех пользователей."
+            )
+
+        from src.models.balance import UserBalanceModel
+        
+        # Базовый запрос с JOIN к пользователям
+        query = (
+            select(UserBalanceModel, UsersModel.username, UsersModel.email)
+            .join(UsersModel, UserBalanceModel.user_id == UsersModel.id)
+            .order_by(UserBalanceModel.created_at.desc())
+        )
+        
+        # Применяем фильтры
+        if user_id is not None:
+            query = query.where(UserBalanceModel.user_id == user_id)
+        if username:
+            query = query.where(UsersModel.username.ilike(f"%{username}%"))
+        if email:
+            query = query.where(UsersModel.email.ilike(f"%{email}%"))
+        
+        # Пагинация
+        query = query.offset(skip).limit(limit)
+        
+        result = await session.execute(query)
+        rows = result.all()
+        
+        return [
+        {
+            "id": op.id,
+            "user_id": op.user_id,
+            "username": username,
+            "email": email,
+            "operation_type": op.operation_type.value,
+            "amount": float(op.amount),
+            "balance_before": float(op.balance_before),
+            "balance_after": float(op.balance_after),
+            "description": op.description,
+            "created_at": op.created_at
+        }
+        for op, username, email in rows
+        ]
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Admin balance history error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Ошибка при получении истории баланса"
+        )

@@ -349,7 +349,7 @@ const ProfilePage: React.FC = () => {
 
     try {
       setHistoryLoading(true);
-      const history = await userService.getUserHistory(user.id);
+      const history = await userService.getBalanceHistory();
       setHistoryItems(history);
     } catch (error) {
       console.error('Failed to load user history:', error);
@@ -1308,7 +1308,7 @@ const ProfilePage: React.FC = () => {
 
                   {activeTab === 'history' && isOwnProfile && (
                     <div className='p-4'>
-                      <h2 className="text-xl font-semibold text-white mb-6">История</h2>
+                      <h2 className="text-xl font-semibold text-white mb-6">История баланса</h2>
 
                       {historyLoading ? (
                         <div className="flex justify-center py-8">
@@ -1317,45 +1317,68 @@ const ProfilePage: React.FC = () => {
                       ) : historyItems.length === 0 ? (
                         <div className="text-center py-8">
                           <p className="text-neutral-400">
-                            У вас пока нет истории покупок и продаж
+                            У вас пока нет истории баланса
                           </p>
                         </div>
                       ) : (
                         <div className="space-y-4">
-                          {historyItems.map((item) => (
-                            <div key={item.id} className="bg-neutral-750 rounded-lg p-4">
-                              <div className="flex justify-between items-start">
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <span className={`px-2 py-1 text-xs rounded-full ${
-                                      item.type === 'purchase'
-                                        ? 'bg-green-600 text-white'
-                                        : 'bg-blue-600 text-white'
+                          {historyItems.map((item) => {
+                            // Определяем тип операции и цвет
+                            const isPositive = ['deposit', 'refund', 'bonus'].includes(item.operation_type);
+                            const isNegative = ['withdrawal', 'purchase'].includes(item.operation_type);
+                            
+                            const getOperationTypeLabel = (type: string) => {
+                              switch (type) {
+                                case 'deposit': return 'Пополнение';
+                                case 'withdrawal': return 'Вывод';
+                                case 'purchase': return 'Покупка';
+                                case 'refund': return 'Возврат';
+                                case 'bonus': return 'Бонус';
+                                default: return type;
+                              }
+                            };
+
+                            const getOperationTypeColor = (type: string) => {
+                              switch (type) {
+                                case 'deposit': return 'bg-green-600';
+                                case 'withdrawal': return 'bg-orange-600';
+                                case 'purchase': return 'bg-red-600';
+                                case 'refund': return 'bg-blue-600';
+                                case 'bonus': return 'bg-purple-600';
+                                default: return 'bg-gray-600';
+                              }
+                            };
+
+                            return (
+                              <div key={item.id} className="bg-neutral-750 rounded-lg p-4">
+                                <div className="flex justify-between items-start">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <span className={`px-2 py-1 text-xs rounded-full ${getOperationTypeColor(item.operation_type)} text-white`}>
+                                        {getOperationTypeLabel(item.operation_type)}
+                                      </span>
+                                      <span className="text-neutral-400 text-sm">
+                                        {formatDate(item.created_at)}
+                                      </span>
+                                    </div>
+                                    <h3 className="text-white font-medium mb-1">
+                                      {item.description || getOperationTypeLabel(item.operation_type)}
+                                    </h3>
+                                    <p className="text-neutral-400 text-sm">
+                                      Баланс: {item.balance_before?.toFixed(2)} → {item.balance_after?.toFixed(2)} ₽
+                                    </p>
+                                  </div>
+                                  <div className="text-right">
+                                    <div className={`text-lg font-bold ${
+                                      isPositive ? 'text-green-500' : isNegative ? 'text-white' : 'text-white'
                                     }`}>
-                                      {item.type === 'purchase' ? 'Покупка' : 'Продажа'}
-                                    </span>
-                                    <span className="text-neutral-400 text-sm">
-                                      {formatDate(item.created_at)}
-                                    </span>
-                                  </div>
-                                  <h3 className="text-white font-medium mb-1">{item.beat_name}</h3>
-                                  <p className="text-neutral-400 text-sm">
-                                    {item.type === 'purchase' ? 'От' : 'Кому'}: {item.counterparty_username}
-                                  </p>
-                                </div>
-                                <div className="text-right">
-                                  <div className={`text-lg font-bold ${
-                                    item.type === 'purchase' ? 'text-red-500' : 'text-green-500'
-                                  }`}>
-                                    {item.type === 'purchase' ? '-' : '+'}{item.amount} ₽
-                                  </div>
-                                  <div className="text-neutral-400 text-sm">
-                                    {item.tariff_name === 'leasing' ? 'Аренда' : 'Эксклюзив'}
+                                      {isPositive ? '+' : isNegative ? '-' : ''}{item.amount.toFixed(2)} ₽
+                                    </div>
                                   </div>
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
                     </div>

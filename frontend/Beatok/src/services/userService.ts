@@ -89,6 +89,24 @@ async updateUserProfile(data: any) {
     return response.data;
   },
 
+  async getBalanceHistory() {
+    const token = localStorage.getItem('access_token');
+    const response = await fetch(`http://localhost:8000/v1/users/admin/balance-history`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Failed to load balance history');
+    }
+
+    return await response.json();
+  },
+
   async subscribe() {
     const token = localStorage.getItem('access_token');
     
