@@ -4,9 +4,9 @@ from sqlalchemy.pool import NullPool
 from src.models import *
 
 
-DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/beatok"
+DATABASE_URL = "postgresql+asyncpg://evgeniy:postgres@localhost:5432/beatok"
 
-engine = create_async_engine(DATABASE_URL, echo=True, poolclass=NullPool)
+engine = create_async_engine(DATABASE_URL, poolclass=NullPool)
 
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,

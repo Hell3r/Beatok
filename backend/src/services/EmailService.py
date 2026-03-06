@@ -547,7 +547,7 @@ class EmailService:
                                     <a href="{{ confirm_url }}" class="download-button">СКАЧАТЬ ⬇</a>
                                     <div class="download-url">
                                         Альтернативная ссылка:<br>
-                                        <a href="{{ direct_download_url }}">{{ direct_download_url }}</a>
+                                        <a href="{{ confirm_url }}">{{ confirm_url }}</a>
                                     </div>
                                 </div>
 

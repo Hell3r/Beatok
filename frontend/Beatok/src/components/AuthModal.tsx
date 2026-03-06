@@ -155,6 +155,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           setLoading(false);
           return;
         }
+        else if (errorData.detail === 'Неверный email или пароль')
+        {
+          throw new Error('Неверный email или пароль')
+        }
         throw new Error('Ошибка авторизации');
       }
 
@@ -180,7 +184,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       window.dispatchEvent(new Event('userUpdated'));
 
     } catch (err) {
-      setError('Произошла ошибка при авторизации');
+      setError(err instanceof Error ? err.message : 'Произошла ошибка при авторизации');
     } finally {
       setLoading(false);
     }
