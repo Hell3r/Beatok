@@ -43,6 +43,23 @@ class WithdrawalStatusResponse(BaseModel):
     created_at: datetime = Field(..., description="Дата создания")
     paid_at: Optional[datetime] = Field(None, description="Дата обработки")
     description: Optional[str] = Field(None, description="Описание")
+    card_number: Optional[str] = Field(None, description="Номер карты")
+    
+    class Config:
+        from_attributes = True
+
+
+class WithdrawalAdminResponse(BaseModel):
+    id: int = Field(..., description="ID запроса в БД")
+    user_id: int = Field(..., description="ID пользователя")
+    username: str = Field(..., description="Имя пользователя")
+    email: str = Field(..., description="Email пользователя")
+    amount: float = Field(..., description="Сумма")
+    status: str = Field(..., description="Статус")
+    card_number: str = Field(..., description="Номер карты")
+    description: Optional[str] = Field(None, description="Описание")
+    created_at: datetime = Field(..., description="Дата создания")
+    paid_at: Optional[datetime] = Field(None, description="Дата обработки")
     
     class Config:
         from_attributes = True

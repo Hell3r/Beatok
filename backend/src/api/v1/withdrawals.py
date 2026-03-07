@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from decimal import Decimal
-from typing import Optional
+from typing import Optional, List
 import logging
 
 from src.database.database import get_session
@@ -10,8 +10,10 @@ from src.schemas.withdrawal import (
     WithdrawalCreate, 
     WithdrawalResponse, 
     WithdrawalStatusResponse,
-    WithdrawalHistoryResponse
+    WithdrawalHistoryResponse,
+    WithdrawalAdminResponse
 )
+from src.dependencies.auth import get_current_admin_user
 from src.dependencies.auth import get_current_user
 from src.models.users import UsersModel
 
@@ -90,3 +92,47 @@ async def get_my_withdrawals(
     except Exception as e:
         logger.error(f"WITHDRAWAL_HISTORY_ERROR: {str(e)}")
         raise HTTPException(status_code=500, detail="Ошибка при получении истории")
+
+
+# Admin endpoints
+@router.get("/admin/pending", response_model=List[WithdrawalAdminResponse], summary="Получить все запросы на вывод со статусом 'в процессе' (только для админов)")
+async def get_pending_withdrawals(
+    session: AsyncSession = Depends(get_session),
+    current_user: UsersModel = Depends(get_current_admin_user),
+    limit: int = Query(100, ge=1, le=500, description="Количество записей"),
+    offset: int = Query(0, ge=0, description="Смещение")
+):
+    """Получить все запросы на вывод средств со статусом 'pending' (в процессе)"""
+    service = WithdrawalService(session)
+    
+    try:
+        items = await service.get_pending_withdrawals_for_admin(
+            limit=limit,
+            offset=offset
+        )
+        return items
+    except Exception as e:
+        logger.error(f"ADMIN_WITHDRAWAL_LIST_ERROR: {str(e)}")
+        raise HTTPException(status_code=500, detail="Ошибка при получении списка выводов")
+
+
+@router.post("/admin/{withdrawal_id}/approve", response_model=WithdrawalAdminResponse, summary="Подтвердить вывод средств (только для админов)")
+async def approve_withdrawal(
+    withdrawal_id: int,
+    session: AsyncSession = Depends(get_session),
+    current_user: UsersModel = Depends(get_current_admin_user)
+):
+    """Подтвердить запрос на вывод средств"""
+    service = WithdrawalService(session)
+    
+    try:
+        result = await service.approve_withdrawal(withdrawal_id=withdrawal_id)
+        await session.commit()
+        return result
+    except ValueError as e:
+        await session.rollback()
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        await session.rollback()
+        logger.error(f"ADMIN_WITHDRAWAL_APPROVE_ERROR: {str(e)}")
+        raise HTTPException(status_code=500, detail="Ошибка при подтверждении вывода")

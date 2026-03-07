@@ -6,7 +6,7 @@ from typing import Optional, List
 
 from src.models.withdrawal import WithdrawalModel, WithdrawalStatus
 from src.models.users import UsersModel
-from src.schemas.withdrawal import WithdrawalCreate, WithdrawalResponse, WithdrawalStatusResponse
+from src.schemas.withdrawal import WithdrawalCreate, WithdrawalResponse, WithdrawalStatusResponse, WithdrawalAdminResponse
 from src.services.BalanceService import BalanceService
 
 logger = logging.getLogger(__name__)
@@ -135,3 +135,73 @@ class WithdrawalService:
             .where(WithdrawalModel.user_id == user_id)
         )
         return result.scalar() or 0
+    
+    async def get_pending_withdrawals_for_admin(
+        self,
+        limit: int = 100,
+        offset: int = 0
+    ) -> List[WithdrawalAdminResponse]:
+        """Get all pending withdrawals for admin panel"""
+        result = await self.db.execute(
+            select(WithdrawalModel, UsersModel.username, UsersModel.email)
+            .join(UsersModel, WithdrawalModel.user_id == UsersModel.id)
+            .where(WithdrawalModel.status == WithdrawalStatus.PENDING)
+            .order_by(WithdrawalModel.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+        rows = result.all()
+        
+        return [
+            WithdrawalAdminResponse(
+                id=w.id,
+                user_id=w.user_id,
+                username=username,
+                email=email,
+                amount=float(w.amount),
+                status=w.status.value,
+                card_number=w.card_number,
+                description=w.description,
+                created_at=w.created_at,
+                paid_at=w.paid_at
+            )
+            for w, username, email in rows
+        ]
+    
+    async def approve_withdrawal(self, withdrawal_id: int) -> WithdrawalAdminResponse:
+        """Approve/complete a withdrawal request"""
+        result = await self.db.execute(
+            select(WithdrawalModel, UsersModel.username, UsersModel.email)
+            .join(UsersModel, WithdrawalModel.user_id == UsersModel.id)
+            .where(WithdrawalModel.id == withdrawal_id)
+        )
+        row = result.one_or_none()
+        
+        if not row:
+            raise ValueError("Запрос на вывод не найден")
+        
+        withdrawal, username, email = row
+        
+        if withdrawal.status != WithdrawalStatus.PENDING:
+            raise ValueError(f"Нельзя подтвердить вывод со статусом {withdrawal.status.value}")
+        
+        from datetime import datetime
+        withdrawal.status = WithdrawalStatus.SUCCEEDED
+        withdrawal.paid_at = datetime.utcnow()
+        
+        await self.db.flush()
+        
+        logger.info(f"WITHDRAWAL_APPROVED: Withdrawal {withdrawal_id} approved by admin, amount: {withdrawal.amount} RUB")
+        
+        return WithdrawalAdminResponse(
+            id=withdrawal.id,
+            user_id=withdrawal.user_id,
+            username=username,
+            email=email,
+            amount=float(withdrawal.amount),
+            status=withdrawal.status.value,
+            card_number=withdrawal.card_number,
+            description=withdrawal.description,
+            created_at=withdrawal.created_at,
+            paid_at=withdrawal.paid_at
+        )

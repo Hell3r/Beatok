@@ -11,6 +11,7 @@ import { useNotificationContext } from '../components/NotificationProvider';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import BeatInfoModal from '../components/BeatInfoModal';
 import { requestService } from '../services/requestService';
+import { withdrawalService } from '../services/withdrawalService';
 
 const API_URL = 'http://127.0.0.1:8000';
 
@@ -31,7 +32,7 @@ interface User {
 
 const Admin: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState<'moderation' | 'support' | 'users' | 'history'>('moderation');
+  const [activeTab, setActiveTab] = useState<'moderation' | 'support' | 'users' | 'history' | 'withdrawals'>('moderation');
   const [moderationBeats, setModerationBeats] = useState<Beat[]>([]);
   const [supportRequests, setSupportRequests] = useState<Request[]>([]);
   const [users, setUsers] = useState<User[]>([]);
@@ -58,10 +59,15 @@ const Admin: React.FC = () => {
   });
   const [savingUser, setSavingUser] = useState(false);
   
-  const [responseModalOpen, setResponseModalOpen] = useState(false);
+const [responseModalOpen, setResponseModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
   const [responseText, setResponseText] = useState('');
   const [sendingResponse, setSendingResponse] = useState(false);
+  
+  // Withdrawals state
+  const [pendingWithdrawals, setPendingWithdrawals] = useState<any[]>([]);
+  const [withdrawalsLoading, setWithdrawalsLoading] = useState(false);
+  const [approvingId, setApprovingId] = useState<number | null>(null);
   
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -154,6 +160,12 @@ const Admin: React.FC = () => {
     }
   }, [activeTab, currentUser]);
 
+  useEffect(() => {
+    if (activeTab === 'withdrawals' && currentUser?.role === 'admin') {
+      fetchPendingWithdrawals();
+    }
+  }, [activeTab, currentUser]);
+
   const fetchBalanceHistory = async () => {
     setHistoryLoading(true);
     try {
@@ -208,12 +220,12 @@ const Admin: React.FC = () => {
 
   useEffect(() => {
     const tab = searchParams.get('tab');
-    if (tab && ['moderation', 'support', 'users', 'history'].includes(tab)) {
-      setActiveTab(tab as 'moderation' | 'support' | 'users' | 'history');
+    if (tab && ['moderation', 'support', 'users', 'history', 'withdrawals'].includes(tab)) {
+      setActiveTab(tab as 'moderation' | 'support' | 'users' | 'history' | 'withdrawals');
     }
   }, [searchParams]);
 
-  const handleTabChange = (tab: 'moderation' | 'support' | 'users' | 'history') => {
+  const handleTabChange = (tab: 'moderation' | 'support' | 'users' | 'history' | 'withdrawals') => {
     setActiveTab(tab);
     setSearchParams({ tab });
   };
@@ -381,6 +393,33 @@ const Admin: React.FC = () => {
     } catch (error) {
       console.error('Error fetching support requests:', error);
       showError('Ошибка при загрузке заявок');
+    }
+  };
+
+  const fetchPendingWithdrawals = async () => {
+    setWithdrawalsLoading(true);
+    try {
+      const data = await withdrawalService.getPendingWithdrawals();
+      setPendingWithdrawals(data);
+    } catch (error) {
+      console.error('Error fetching pending withdrawals:', error);
+      showError('Ошибка при загрузке запросов на вывод');
+    } finally {
+      setWithdrawalsLoading(false);
+    }
+  };
+
+  const handleApproveWithdrawal = async (withdrawalId: number) => {
+    setApprovingId(withdrawalId);
+    try {
+      await withdrawalService.approveWithdrawal(withdrawalId);
+      setPendingWithdrawals(prev => prev.filter(w => w.id !== withdrawalId));
+      showSuccess('Вывод успешно подтверждён');
+    } catch (error) {
+      console.error('Error approving withdrawal:', error);
+      showError('Ошибка при подтверждении вывода');
+    } finally {
+      setApprovingId(null);
     }
   };
 
@@ -597,7 +636,7 @@ const Admin: React.FC = () => {
                 : 'text-neutral-400 hover:text-white'
             }`}
           >
-            Реестр пользователей ({users.length})
+            Реестр пользователей
           </button>
         )}
         {isAdmin && (
@@ -610,6 +649,18 @@ const Admin: React.FC = () => {
             }`}
           >
             История операций
+          </button>
+        )}
+        {isAdmin && (
+          <button
+            onClick={() => handleTabChange('withdrawals')}
+            className={`px-4 py-2 font-semibold transition-colors cursor-pointer select-none ${
+              activeTab === 'withdrawals'
+                ? 'text-red-500 border-b-2 border-red-500'
+                : 'text-neutral-400 hover:text-white'
+            }`}
+          >
+            Вывод средств
           </button>
         )}
       </div>
@@ -911,6 +962,9 @@ const Admin: React.FC = () => {
             </div>
           ) : (
             <div className="overflow-x-auto">
+              <div className="text-bold mb-3">
+                Всего пользователей: {users.length}
+              </div>
               <table className="w-full">
                 <thead>
                   <tr className="text-left text-neutral-400 border-b border-neutral-700 select-none">
@@ -1094,6 +1148,84 @@ const Admin: React.FC = () => {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'withdrawals' && (
+        <div>
+          {withdrawalsLoading ? (
+            <div className="space-y-4">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="bg-neutral-800 rounded-lg p-4 animate-pulse">
+                  <div className="h-16 bg-neutral-700 rounded"></div>
+                </div>
+              ))}
+            </div>
+          ) : pendingWithdrawals.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-neutral-400 text-lg">Нет запросов на вывод</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {pendingWithdrawals.map((withdrawal) => (
+                <div key={withdrawal.id} className="bg-neutral-900 rounded-lg p-4 border border-neutral-700 select-none">
+                  <div className="flex justify-between items-start mb-3 select-none">
+                    <div>
+                      <h3 className="text-white font-semibold text-lg select-none">
+                        Вывод #{withdrawal.id}
+                      </h3>
+                      <span className="px-2 py-1 rounded text-xs font-medium select-none bg-yellow-600 text-white">
+                        В процессе
+                      </span>
+                    </div>
+                    <div className="text-xs text-neutral-500">
+                      {new Date(withdrawal.created_at).toLocaleDateString('ru-RU')}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                    <div>
+                      <span className="text-neutral-500 text-sm">Пользователь: </span>
+                      <span 
+                        className="text-white text-sm cursor-pointer hover:text-red-400 transition-colors"
+                        onClick={() => navigate(`/profile/${withdrawal.user_id}`)}
+                      >
+                        {withdrawal.username}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-neutral-500 text-sm">Email: </span>
+                      <span className="text-neutral-300 text-sm">{withdrawal.email}</span>
+                    </div>
+                    <div>
+                      <span className="text-neutral-500 text-sm">Сумма: </span>
+                      <span className="text-green-400 font-semibold text-lg">{withdrawal.amount.toFixed(2)} ₽</span>
+                    </div>
+                    <div>
+                      <span className="text-neutral-500 text-sm">Карта: </span>
+                      <span className="text-white text-sm">•••• {withdrawal.card_number.slice(-4)}</span>
+                    </div>
+                  </div>
+
+                  {withdrawal.description && (
+                    <div className="mb-3 p-3 bg-neutral-800 rounded">
+                      <p className="text-neutral-400 text-sm">{withdrawal.description}</p>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end">
+                    <button
+                      onClick={() => handleApproveWithdrawal(withdrawal.id)}
+                      disabled={approvingId === withdrawal.id}
+                      className="bg-green-600 hover:bg-green-700 disabled:bg-neutral-600 disabled:cursor-not-allowed text-white font-semibold py-2 px-6 rounded transition-colors cursor-pointer"
+                    >
+                      {approvingId === withdrawal.id ? 'Подтверждение...' : 'Подтвердить'}
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
