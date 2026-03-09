@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { FaTelegram, FaEnvelope, FaVk } from 'react-icons/fa';
 import { useNotificationContext } from '../NotificationProvider';
 
@@ -47,13 +48,13 @@ const Footer: React.FC = () => {
         <div className="flex flex-col items-center space-y-8">
           <div className="flex flex-wrap justify-center space-x-6">
             {navItems.map((item) => (
-              <a
+              <Link
                 key={item.href}
-                href={item.href}
+                to={item.href}
                 className="text-gray-400 hover:text-gray-300 transition-colors duration-200 text-sm"
               >
                 {item.label}
-              </a>
+              </Link>
             ))}
           </div>
           <div className='justify-center spacw-x-8 text-center'>
@@ -111,13 +112,13 @@ const Footer: React.FC = () => {
         </div>
         <div className="flex flex-wrap justify-center space-x-6 mt-4">
           {legalItems.map((item) => (
-            <a
+            <Link
               key={item.href}
-              href={item.href}
+              to={item.href}
               className="text-gray-500 hover:text-gray-400 transition-colors duration-200 text-sm"
             >
               {item.label}
-            </a>
+            </Link>
           ))}
         </div>
         <div className="text-center mt-8 mb-20">

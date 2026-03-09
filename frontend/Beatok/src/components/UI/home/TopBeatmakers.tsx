@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { userService, type TopBeatmaker } from '../../../services/userService';
 import { getAvatarUrl } from '../../../utils/getAvatarURL';
 import RoleBadge from '../RoleBadge';
 
 const TopBeatmakers: React.FC = () => {
+  const navigate = useNavigate();
   const [beatmakers, setBeatmakers] = useState<TopBeatmaker[]>([]);
   const [loading, setLoading] = useState(true);
   const [avatarKey, setAvatarKey] = useState(0);
@@ -117,7 +119,7 @@ const TopBeatmakers: React.FC = () => {
             <div
               key={`${beatmaker.user_id}-${currentIndex}`}
               className="bg-neutral-900 rounded-lg overflow-hidden hover:bg-neutral-800 transition-all duration-300 cursor-pointer group border border-neutral-700 relative hover:shadow-2xl hover:shadow-red-500/20"
-              onClick={() => window.location.href = `/profile/${beatmaker.user_id}`}
+              onClick={() => navigate(`/profile/${beatmaker.user_id}`)}
             >
               <div className="relative w-full aspect-square bg-neutral-800 flex items-center justify-center overflow-hidden">
                 <img
@@ -161,12 +163,12 @@ const TopBeatmakers: React.FC = () => {
       </div>
 
       <div className="mt-6 text-center">
-        <a
-          href="/beatmakers"
+        <Link
+          to="/beatmakers"
           className="inline-block bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-lg font-medium transition-all duration-300"
         >
           Посмотреть всех битмейкеров
-        </a>
+        </Link>
       </div>
     </div>
   );

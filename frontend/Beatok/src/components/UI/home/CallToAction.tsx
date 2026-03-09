@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 
 const CallToAction: React.FC = () => {
     const [scale, setScale] = useState(1.5);
@@ -53,12 +54,12 @@ const CallToAction: React.FC = () => {
             Перейти на форум
           </a>
           */}
-          <a
-            href="/beats"
+          <Link
+            to="/beats"
             className="inline-block bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-md font-semibold transition-colors duration-200 shadow-lg"
           >
             Посмотреть биты
-          </a>
+          </Link>
         </div>
       </div>
     </div>
