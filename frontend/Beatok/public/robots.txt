@@ -1,0 +1,16 @@
+# https://robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+
+# Disallow admin and private routes
+Disallow: /admin
+Disallow: /profile?
+Disallow: /email-change
+Disallow: /reset-password
+
+# Sitemap
+Sitemap: https://beatok.ru/sitemap.xml
+
+# Crawl-delay (optional, for polite crawling)
+Crawl-delay: 1
+

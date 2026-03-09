@@ -1,8 +1,20 @@
 import React from 'react';
+import SEO, { generateBreadcrumbSchema } from '../components/SEO';
 
 const PrivacyPage: React.FC = () => {
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12">
+    <>
+      <SEO 
+        title="Политика конфиденциальности"
+        description="Политика конфиденциальности сервиса БИТОК. Как мы обрабатываем и защищаем ваши персональные данные. Политика в отношении обработки персональных данных."
+        keywords="политика конфиденциальности, персональные данные, обработка данных, GDPR, 152-ФЗ"
+        url="/privacy"
+        schema={generateBreadcrumbSchema([
+          { name: 'Главная', url: '/' },
+          { name: 'Политика конфиденциальности', url: '/privacy' }
+        ])}
+      />
+      <div className="max-w-4xl mx-auto px-4 py-12">
       <div className="bg-neutral-900 rounded-xl p-8 border border-neutral-800">
         <h1 className="text-3xl font-bold text-white mb-2">Политика конфиденциальности</h1>
         <p className="text-neutral-300 leading-relaxed mb-6">
@@ -72,6 +84,7 @@ const PrivacyPage: React.FC = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

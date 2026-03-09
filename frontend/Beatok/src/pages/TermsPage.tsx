@@ -1,8 +1,20 @@
 import React from 'react';
+import SEO, { generateBreadcrumbSchema } from '../components/SEO';
 
 const TermsPage: React.FC = () => {
   return (
-    <div className="max-w-4xl mx-auto px-4 py-12">
+    <>
+      <SEO 
+        title="Пользовательское соглашение"
+        description="Пользовательское соглашение сервиса БИТОК. Условия использования сайта для продажи и покупки битов. Правила размещения и распространения контента."
+        keywords="пользовательское соглашение, условия использования, правила, оферта"
+        url="/terms"
+        schema={generateBreadcrumbSchema([
+          { name: 'Главная', url: '/' },
+          { name: 'Пользовательское соглашение', url: '/terms' }
+        ])}
+      />
+      <div className="max-w-4xl mx-auto px-4 py-12">
       <div className="bg-neutral-900 rounded-xl p-8 border border-neutral-800">
         <h1 className="text-3xl font-bold text-white mb-8">Пользовательское соглашение</h1>
         
@@ -71,6 +83,7 @@ const TermsPage: React.FC = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

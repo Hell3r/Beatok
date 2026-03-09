@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { userService, type Beatmaker } from '../services/userService';
 import { getAvatarUrl } from '../utils/getAvatarURL';
 import RoleBadge from '../components/UI/RoleBadge';
+import SEO, { generateBreadcrumbSchema, generateBeatmakerPersonSchema } from '../components/SEO';
 
 const BeatmakersPage: React.FC = () => {
     const [beatmakers, setBeatmakers] = useState<Beatmaker[]>([]);
@@ -71,7 +72,18 @@ const BeatmakersPage: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen select-none p-6">
+        <>
+            <SEO 
+                title="Битмейкеры"
+                description="Топовые битмейкеры России и СНГ. Найди своего продюсера, слушай и покупай их биты. Профили известных авторов битов, рэп-музыкантов и музыкальных продюсеров."
+                keywords="битмейкеры, музыкальные продюсеры, рэп продюсеры, авторы битов, купить бит у продюсера, топ битмейкеры"
+                url="/beatmakers"
+                schema={generateBreadcrumbSchema([
+                    { name: 'Главная', url: '/' },
+                    { name: 'Битмейкеры', url: '/beatmakers' }
+                ])}
+            />
+            <div className="min-h-screen select-none p-6">
             <div className="max-w-7xl mx-auto">
                 
                 <div className='flex-column'>
@@ -132,6 +144,7 @@ const BeatmakersPage: React.FC = () => {
                 )}
             </div>
         </div>
+        </>
     );
 };
 

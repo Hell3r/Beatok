@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { requestService } from '../services/requestService';
 import { useNotificationContext } from '../components/NotificationProvider';
+import SEO, { generateBreadcrumbSchema, generateFAQSchema } from '../components/SEO';
 
 const SupportPage: React.FC = () => {
     const { showError } = useNotificationContext();
@@ -70,7 +71,14 @@ const SupportPage: React.FC = () => {
 
     if (isSubmitted) {
         return (
-            <div className="max-w-4xl mx-auto px-4 select-none">
+            <>
+                <SEO 
+                    title="Сообщение отправлено"
+                    description="Ваше обращение в службу поддержки БИТОК успешно отправлено. Мы ответим вам в ближайшее время."
+                    url="/support"
+                    noIndex
+                />
+                <div className="max-w-4xl mx-auto px-4 select-none">
                 <div className="bg-neutral-900 rounded-xl p-6 border border-neutral-800 shadow-lg">
                     <div className="flex justify-center">
                         <h2 className="text-white text-xl font-semibold mb-3">Сообщение отправлено!</h2>
@@ -88,11 +96,26 @@ const SupportPage: React.FC = () => {
                 </div>    
                 
             </div>
+            </>
         );
     }
 
     return (
-        <div className="max-w-4xl mx-auto px-4 select-none">
+        <>
+            <SEO 
+                title="Поддержка"
+                description="Служба поддержки БИТОК. Часто задаваемые вопросы, помощь с аккаунтом, техническая поддержка, вопросы по оплате. Свяжитесь с нами."
+                keywords="поддержка, help, FAQ, помощь, техническая поддержка, служба поддержки, вопросы по аккаунту"
+                url="/support"
+                schema={[
+                    generateBreadcrumbSchema([
+                        { name: 'Главная', url: '/' },
+                        { name: 'Поддержка', url: '/support' }
+                    ]),
+                    generateFAQSchema(faqItems)
+                ]}
+            />
+            <div className="max-w-4xl mx-auto px-4 select-none">
             <section className="mb-8">
                 <div className='flex justify-center'>
                     <h2 className="text-white text-2xl font-semibold mb-6">Свяжитесь с нами</h2>
@@ -160,6 +183,7 @@ const SupportPage: React.FC = () => {
 
 
         </div>
+        </>
     );
 };
 

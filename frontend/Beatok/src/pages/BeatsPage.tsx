@@ -8,6 +8,7 @@ import BeatList from '../components/UI/beats/BeatList';
 import Filter, { type Filters } from '../components/UI/beats/Filter';
 import { useTransition, animated } from '@react-spring/web';
 import { FaFilter } from 'react-icons/fa';
+import SEO, { generateBreadcrumbSchema } from '../components/SEO';
 
 type ViewMode = 'table' | 'grid';
 
@@ -172,7 +173,24 @@ const BeatsPage: React.FC = () => {
 
 
   return (
-    <div className="min-h-screen">
+    <>
+      <SEO 
+        title={filters.freeOnly ? 'Бесплатные биты' : 'Каталог битов'}
+        description={filters.freeOnly 
+          ? 'Скачай бесплатные биты для рэпа и музыки. Большая коллекция бесплатных минусов от топовых битмейкеров СНГ.'
+          : 'Купить и скачать биты для рэпа, роки, поп-музыки. Каталог качественных битов от битмейкеров России и СНГ. Фильтры по жанру, BPM, тональности.'
+        }
+        keywords={filters.freeOnly 
+          ? 'бесплатные биты, бесплатные минуса, скачать бесплатно биты, бесплатные биты для рэпа'
+          : 'биты, купить биты, минуса, биты для рэпа, каталог битов, купить минус'
+        }
+        url={filters.freeOnly ? '/beats?free=true' : '/beats'}
+        schema={generateBreadcrumbSchema([
+          { name: 'Главная', url: '/' },
+          { name: filters.freeOnly ? 'Бесплатные биты' : 'Биты', url: '/beats' }
+        ])}
+      />
+      <div className="min-h-screen">
       <div className="container mx-auto px-4">
         <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
           <div>
@@ -288,8 +306,8 @@ const BeatsPage: React.FC = () => {
         </div>
       </div>
 
-
     </div>
+    </>
   );
 };
 

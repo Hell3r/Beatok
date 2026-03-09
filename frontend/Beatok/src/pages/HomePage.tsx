@@ -8,6 +8,7 @@ import SecuritySection from '../components/UI/home/SecuritySection';
 import HorizontalLine from '../components/UI/home/HorizontalLine';
 import InverseHorizontalLine from '../components/UI/home/InverseHorizontalLine';
 import Footer from '../components/UI/Footer';
+import SEO, { generateOrganizationSchema, generateWebsiteSchema, generateBreadcrumbSchema } from '../components/SEO';
 
 const HomePage: React.FC = () => {
     const [scale, setScale] = useState(1.5);
@@ -24,7 +25,21 @@ const HomePage: React.FC = () => {
     }, []);
 
     return (
-        <div className="min-h-screen w-full">
+        <>
+            <SEO 
+                title="Главная"
+                description="БИТОК - сервис для продажи и покупки битов в СНГ. Свежие биты для рэпа, роки, поп-музыки и других жанров. Скачивай бесплатные биты или покупай премиум от топовых битмейкеров России и СНГ."
+                keywords="биты, купить биты, продать биты, биты для рэпа, бесплатные биты, минуса, битмейкеры, рэп музыка, минусовки, купить минус, продать минус"
+                url="/"
+                schema={[
+                    generateOrganizationSchema(),
+                    generateWebsiteSchema(),
+                    generateBreadcrumbSchema([
+                        { name: 'Главная', url: '/' }
+                    ])
+                ]}
+            />
+            <div className="min-h-screen w-full">
             <div className='w-full relative overflow-hidden' style={{ minHeight: '95vh' }}>
                 <img
                     src="http://localhost:8000/static/images/homepage-bg.jpg"
@@ -85,7 +100,8 @@ const HomePage: React.FC = () => {
             </div>
 
             <Footer />
-        </div>
+            </div>
+        </>
     );
 };
 
