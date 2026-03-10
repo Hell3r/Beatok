@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 
 interface AvatarDropdownProps {
   isOpen: boolean;
@@ -36,55 +37,55 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ isOpen, onClose }) => {
       className="absolute top-full right-0 mt-2 w-48 bg-neutral-900 border border-neutral-700 rounded-lg shadow-lg z-50 animate-in slide-in-from-top-2 fade-in duration-200"
     >
       <div className="py-2">
-        <a
-          href="/profile?tab=info"
+        <Link
+          to="/profile?tab=info"
           onClick={handleLinkClick}
           className="block px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors duration-200"
         >
           Профиль
-        </a>
-        <a
-          href="/profile?tab=balance"
+        </Link>
+        <Link
+          to="/profile?tab=balance"
           onClick={handleLinkClick}
           className="block px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors duration-200"
         >
           Баланс
-        </a>
-        <a
-          href="/profile?tab=mybeats"
+        </Link>
+        <Link
+          to="/profile?tab=mybeats"
           onClick={handleLinkClick}
           className="block px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors duration-200"
         >
           Мои биты
-        </a>
-        <a
-          href="/profile?tab=stats"
+        </Link>
+        <Link
+          to="/profile?tab=stats"
           onClick={handleLinkClick}
           className="block px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors duration-200"
         >
           Статистика
-        </a>
-        <a
-          href="/profile?tab=favorites"
+        </Link>
+        <Link
+          to="/profile?tab=favorites"
           onClick={handleLinkClick}
           className="block px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors duration-200"
         >
           Избранное
-        </a>
-        <a
-          href="/profile?tab=history"
+        </Link>
+        <Link
+          to="/profile?tab=history"
           onClick={handleLinkClick}
           className="block px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors duration-200"
         >
           История
-        </a>
-        <a
-          href="/profile?tab=requests"
+        </Link>
+        <Link
+          to="/profile?tab=requests"
           onClick={handleLinkClick}
           className="block px-4 py-2 text-sm text-neutral-300 hover:bg-neutral-800 hover:text-white transition-colors duration-200"
         >
           Заявки
-        </a>
+        </Link>
         <hr className="border-neutral-600 my-2" />
         <button
           onClick={() => {

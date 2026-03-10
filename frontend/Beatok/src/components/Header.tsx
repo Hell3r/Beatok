@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import AuthModal from './AuthModal';
 import AddBeatModal from './AddBeatModal';
 import AvatarDropdown from './AvatarDropdown';
@@ -20,6 +21,7 @@ interface NavItem {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
+  const navigate = useNavigate();
   const { showSuccess } = useNotificationContext();
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [addBeatModalOpen, setAddBeatModalOpen] = useState(false);
@@ -88,11 +90,6 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
     
 
 
-  const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    e.preventDefault();
-    window.location.href = '/';
-  };
-
   const handleCopyEmail = async () => {
     const email = 'beatok_service@mail.ru';
     try {
@@ -117,15 +114,18 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
       <header className="hidden md:block bg-neutral-950 border-b select-none border-neutral-700 sticky top-0 z-50 backdrop-blur-sm bg-opacity-90">
         <nav className="container mx-auto px-4 py-2 flex justify-between items-center">
           <div className="flex items-center space-x-10">
-            <a
-              href="/"
-              onClick={handleLogoClick}
+            <Link
+              to="/"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate('/');
+              }}
               className="text-2xl font-bold hover:scale-105 transition-all duration-200 focus:outline-none"
               aria-label="БИТОК - переход на главную"
             >
               <span className="text-white">БИТ</span>
               <span className="text-red-600">ОК</span>
-            </a>
+            </Link>
 
             <div className="flex space-x-6">
               {navItems.map((item) => {
@@ -146,32 +146,32 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
                   );
                 }
                 return (
-                  <a
+                  <Link
                     key={item.href}
-                    href={item.href}
+                    to={item.href}
                     className={`${isActive ? 'text-white' : 'text-gray-300'} hover:text-white transition-colors duration-200 font-medium focus:outline-none`}
                   >
                     {item.label}
-                  </a>
+                  </Link>
                 );
               })}
               {currentUser && (currentUser.role === 'admin' || currentUser.role === 'moderator') && (
-                <a
-                  href="/admin"
+                <Link
+                  to="/admin"
                   className={`${getCurrentPath() === '/admin' ? 'text-white' : 'text-gray-300'} hover:text-white transition-colors duration-200 font-medium focus:outline-none`}
                 >
                   АДМИН ПАНЕЛЬ
-                </a>
+                </Link>
               )}
               {currentUser && authNavItems.map((item) => (
-                <a
+                <Link
                   key={item.href}
-                  href={item.href}
+                  to={item.href}
                   className={`${window.location.search.includes('tab=requests') ? 'text-white' : 'text-gray-300'} hover:text-white transition-colors duration-200 font-medium focus:outline-none flex items-center gap-1`}
                 >
                   <FaClipboardList className="w-4 h-4" />
                   {item.label}
-                </a>
+                </Link>
               ))}
             </div>
           </div>
@@ -187,7 +187,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
                   >
                     Добавить бит
                   </button>
-                  <div className='bg-red-500 hover:bg-red-700 transition-colors font-bold px-3 py-2 rounded-full cursor-pointer' onClick={() => window.location.href = '/profile?tab=balance'}>
+                  <div className='bg-red-500 hover:bg-red-700 transition-colors font-bold px-3 py-2 rounded-full cursor-pointer' onClick={() => navigate('/profile?tab=balance')}>
                         {currentUser.balance?.toFixed(2)} ₽
                     </div>
                   <div className="relative flex items-center">
@@ -244,36 +244,35 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-neutral-950 border-t border-neutral-700 z-50">
         <div className="flex justify-around items-center py-2">
           <button
-            onClick={() => window.location.href = '/'}
+            onClick={() => navigate('/')}
             className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors hover:bg-neutral-800 ${getCurrentPath() === '/' ? 'bg-red-600' : ''}`}
           >
             <FaHome className={`w-5 h-5 ${getCurrentPath() === '/' ? 'text-white' : 'text-gray-300'}`} />
             <span className={`text-xs ${getCurrentPath() === '/' ? 'text-white' : 'text-gray-300'}`}></span>
           </button>
           <button
-            onClick={() => window.location.href = '/beats'}
+            onClick={() => navigate('/beats')}
             className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors hover:bg-neutral-800 ${getCurrentPath() === '/beats' ? 'bg-red-600' : ''}`}
           >
             <FaMusic className={`w-5 h-5 ${getCurrentPath() === '/beats' ? 'text-white' : 'text-gray-300'}`} />
             <span className={`text-xs ${getCurrentPath() === '/beats' ? 'text-white' : 'text-gray-300'}`}></span>
           </button>
           <button
-            onClick={() => window.location.href = '/beatmakers'}
+            onClick={() => navigate('/beatmakers')}
             className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors hover:bg-neutral-800 ${getCurrentPath() === '/beatmakers' ? 'bg-red-600' : ''}`}
           >
             <FaUsers className={`w-5 h-5 ${getCurrentPath() === '/beatmakers' ? 'text-white' : 'text-gray-300'}`} />
             <span className={`text-xs ${getCurrentPath() === '/beatmakers' ? 'text-white' : 'text-gray-300'}`}></span>
           </button>
           <button
-            onClick={() => window.location.href = currentUser ? '/profile' : '#'}
-            onClickCapture={currentUser ? undefined : () => setAuthModalOpen(true)}
+            onClick={() => currentUser ? navigate('/profile') : setAuthModalOpen(true)}
             className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors hover:bg-neutral-800 ${getCurrentPath() === '/profile' ? 'bg-red-600' : ''}`}
           >
             <FaUser className={`w-5 h-5 ${getCurrentPath() === '/profile' ? 'text-white' : 'text-gray-300'}`} />
             <span className={`text-xs ${getCurrentPath() === '/profile' ? 'text-white' : 'text-gray-300'}`}></span>
           </button>
           <button
-            onClick={() => window.location.href = '/support'}
+            onClick={() => navigate('/support')}
             className={`flex flex-col items-center space-y-1 p-2 rounded-lg transition-colors hover:bg-neutral-800 ${getCurrentPath() === '/support' ? 'bg-red-600' : ''}`}
           >
             <FaQuestionCircle className={`w-5 h-5 ${getCurrentPath() === '/support' ? 'text-white' : 'text-gray-300'}`} />
