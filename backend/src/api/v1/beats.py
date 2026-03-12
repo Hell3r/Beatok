@@ -29,8 +29,6 @@ from botocore.config import Config
 from src.core.config import settings
 import tempfile
 
-# stat commit zhenya vonyuchka
-
 s3_client = boto3.client(
     's3',
     endpoint_url=settings.S3_ENDPOINT,
