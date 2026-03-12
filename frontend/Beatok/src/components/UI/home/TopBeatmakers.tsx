@@ -67,7 +67,7 @@ const TopBeatmakers: React.FC = () => {
     return (
       <div className="bg-neutral-800 rounded-lg p-6">
         <h2 className="text-2xl font-bold text-white mb-4">Лучшие битмейкеры</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[...Array(6)].map((_, i) => (
             <div key={i} className="bg-neutral-700 rounded-lg p-4 animate-pulse">
               <div className="flex items-center space-x-3">
@@ -112,7 +112,7 @@ const TopBeatmakers: React.FC = () => {
           </div>
         </button>
 
-        <div className={`grid grid-cols-5 gap-6 transition-all duration-300 ${
+        <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 transition-all duration-300 ${
           isTransitioning ? 'opacity-50' : 'opacity-100'
         }`}>
           {visibleBeatmakers.map((beatmaker, index) => (

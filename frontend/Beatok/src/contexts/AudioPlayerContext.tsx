@@ -111,13 +111,6 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
             localStorage.setItem('isPlaying', 'false');
           }
         }, 100);
-      } else if (!document.hidden && pausedDueToVisibility.current && audioRef.current) {
-        pausedDueToVisibility.current = false;
-        setIsPlaying(true);
-        localStorage.setItem('isPlaying', 'true');
-        audioRef.current.play().catch(error => {
-          console.error('Error resuming playback on visibility change:', error);
-        });
       }
     };
 
@@ -130,24 +123,13 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
       }
     };
 
-    const handleWindowFocus = () => {
-      if (pausedDueToVisibility.current && audioRef.current) {
-        pausedDueToVisibility.current = false;
-        setIsPlaying(true);
-        localStorage.setItem('isPlaying', 'true');
-        audioRef.current.play().catch(error => {
-          console.error('Error resuming playback on window focus:', error);
-        });
-      }
-    };
-
     audioRef.current.addEventListener('timeupdate', updateTime);
     audioRef.current.addEventListener('loadedmetadata', updateDuration);
     audioRef.current.addEventListener('ended', handleEnded);
     audioRef.current.addEventListener('error', handleError);
     document.addEventListener('visibilitychange', handleVisibilityChange);
     window.addEventListener('blur', handleWindowBlur);
-    window.addEventListener('focus', handleWindowFocus);
+
 
     // Восстанавливаем состояние из localStorage
     const initAudio = async () => {
@@ -193,7 +175,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
       }
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('blur', handleWindowBlur);
-      window.removeEventListener('focus', handleWindowFocus);
+
     };
   }, []); // пустой массив – инициализация один раз
 

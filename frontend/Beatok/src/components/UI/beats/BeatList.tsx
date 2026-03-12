@@ -182,7 +182,7 @@ const BeatList: React.FC<BeatListProps> = ({
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
         {[...Array(8)].map((_, i) => (
           <div key={i} className="bg-neutral-800 rounded-lg p-4 animate-pulse">
             <div className="h-4 bg-neutral-700 rounded mb-3"></div>
@@ -203,15 +203,11 @@ const BeatList: React.FC<BeatListProps> = ({
     );
   }
 
-  const gridStyle = {
-    display: 'grid',
-    gridTemplateColumns: `repeat(${maxColumns}, 1fr)`,
-    gap: '1.5rem',
-  };
+  const gridCols = `grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-${maxColumns} gap-6`;
   
   return (
     <>
-      <div style={gridStyle}>
+      <div className={gridCols}>
         {trail.map((style, index) => {
           const beat = sortedBeats[index];
           const isOwnBeat = currentUser && getAuthorId(beat) === currentUser.id;
