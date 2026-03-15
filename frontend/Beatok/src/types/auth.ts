@@ -11,6 +11,9 @@ export interface User {
   last_login?: string;
   description?: string;
   prom_status?: string;
+  agreed_to_offer?: boolean;
+  agreed_to_privacy_policy?: boolean;
+  agreed_to_terms?: boolean;
 }
 
 export interface LoginFormData {
@@ -24,6 +27,9 @@ export interface RegisterFormData {
   password: string;
   confirmPassword: string;
   birthday: string;
+  agreed_to_offer: boolean;
+  agreed_to_privacy_policy: boolean;
+  agreed_to_terms: boolean;
 }
 
 export interface AuthResponse {

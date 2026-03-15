@@ -7,6 +7,9 @@ class UserCreate(BaseModel):
     email: EmailStr
     birthday: date
     password: str
+    agreed_to_offer: bool = True
+    agreed_to_privacy_policy: bool = True
+    agreed_to_terms: bool = True
 
     @field_validator('username')
     @classmethod
@@ -42,6 +45,9 @@ class UserResponse(BaseModel):
     description: Optional[str] = None
     prom_status: Optional[str] = None
     role: Optional[str] = None
+    agreed_to_offer: bool = False
+    agreed_to_privacy_policy: bool = False
+    agreed_to_terms: bool = False
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -60,6 +66,9 @@ class UserUpdate(BaseModel):
     birthday: Optional[date] = None
     description: Optional[str] = None
     prom_status: Optional[str] = None
+    agreed_to_offer: Optional[bool] = None
+    agreed_to_privacy_policy: Optional[bool] = None
+    agreed_to_terms: Optional[bool] = None
 
     model_config = ConfigDict(from_attributes=True)
     

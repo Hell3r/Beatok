@@ -28,7 +28,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     email: '',
     password: '',
     confirmPassword: '',
-    birthday: ''
+    birthday: '',
+    agreed_consents: true
   });
 
   useEffect(() => {
@@ -118,7 +119,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   });
 
   const modalHeightSpring = useSpring({
-    height: mode === 'login' ? (error ? '505px' : '445px') : mode === 'register' ? (error ? '780px' : '700px') : mode === 'forgotPassword' ? '390px' : mode === 'forgotPasswordSuccess' ? '540px' : '450px',
+    height: mode === 'login' ? (error ? '505px' : '445px') : mode === 'register' ? (error ? '865px' : '785px') : mode === 'forgotPassword' ? '390px' : mode === 'forgotPasswordSuccess' ? '540px' : '450px',
     config: { tension: 300, friction: 30 }
   });
 
@@ -223,7 +224,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           username: registerData.username,
           email: registerData.email,
           password: registerData.password,
-          birthday: registerData.birthday
+          birthday: registerData.birthday,
+          agreed_to_offer: registerData.agreed_consents,
+          agreed_to_privacy_policy: registerData.agreed_consents,
+          agreed_to_terms: registerData.agreed_consents
         })
       });
 
@@ -443,9 +447,32 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                           />
                         </div>
 
+
+                        <div className="pt-4 border-t border-neutral-800 p-3 bg-neutral-850 rounded-lg">
+                          <label className="flex items-start cursor-pointer group">
+                            <input
+                              type="checkbox"
+                              checked={registerData.agreed_consents}
+                              onChange={(e) => setRegisterData({ ...registerData, agreed_consents: e.target.checked })}
+                              className="mt-1 w-4 h-4 text-red-600 bg-neutral-800 border-neutral-600 rounded focus:ring-red-500 focus:ring-2 flex-shrink-0"
+                            />
+                            <div className="ml-3 text-sm">
+                              <span className="font-medium text-neutral-200 group-hover:text-white">
+                                Согласен с офертой и политикой конфиденциальности
+                              </span>
+                              <div className="mt-1 text-xs text-neutral-400 space-x-2">
+                                <a href="/terms" target="_blank" rel="noopener noreferrer" className="hover:text-red-300 transition-colors">Оферта</a>
+                                 
+                                <a href="/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-red-300 transition-colors">Конфиденциальность</a>
+                                 
+                              </div>
+                            </div>
+                          </label>
+                        </div>
+
                         <button
                           type="submit"
-                          disabled={loading}
+                          disabled={loading || !registerData.agreed_consents}
                           className="w-full select-none bg-red-600 cursor-pointer hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {loading ? 'Регистрация...' : 'Зарегистрироваться'}

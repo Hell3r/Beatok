@@ -23,6 +23,10 @@ class UsersModel(Base):
     prom_status: Mapped[str] = mapped_column(String(500), nullable= False, default= "standard")
     subscription_start: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     subscription_end: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    
+    agreed_to_offer: Mapped[bool] = mapped_column(Boolean, default=True)
+    agreed_to_privacy_policy: Mapped[bool] = mapped_column(Boolean, default=True)
+    agreed_to_terms: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
     

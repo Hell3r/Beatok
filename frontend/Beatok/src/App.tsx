@@ -21,6 +21,7 @@ import EmailChange from './pages/success/EmailChange';
 import PasswordResetPage from './pages/PasswordResetPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
+import CookieConsentBanner from './components/UI/CookieConsentBanner';
 
 const PageLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <div className="container mx-auto px-4 py-8">
@@ -90,6 +91,7 @@ const App: React.FC = () => {
 
             <AudioPlayer />
             <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} />
+            <CookieConsentBanner />
           </div>
         </NotificationProvider>
       </AudioPlayerProvider>
@@ -98,3 +100,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+
