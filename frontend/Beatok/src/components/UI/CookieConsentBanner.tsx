@@ -3,7 +3,7 @@ import { useCookieConsent } from '../../hooks/useCookieConsent';
 import { animated, useTransition } from '@react-spring/web';
 
 const CookieConsentBanner: React.FC = () => {
-  const { status, accept, reject, openSettings, showSettings, closeSettings, isLoaded } = useCookieConsent();
+  const { status, accept, reject, openSettings, showSettings, closeSettings, isLoaded, consents, updateConsent } = useCookieConsent();
 
   const transitions = useTransition(showSettings, {
     from: { opacity: 0, transform: 'translateY(100%)' },
@@ -18,7 +18,7 @@ const CookieConsentBanner: React.FC = () => {
     <>
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-neutral-900 to-neutral-800 border-t border-neutral-700 shadow-2xl p-4 md:p-6">
         <div className="max-w-4xl mx-auto">
-          <div className="text-white text-sm md:text-base leading-relaxed">
+          <div className="text-white text-sm md:text-base leading-relaxed select-none">
             <p className="mb-3">
               Мы используем <span className="font-semibold text-red-400">cookies</span> для персонализации контента, 
               аналитики и улучшения работы сайта.
@@ -32,19 +32,19 @@ const CookieConsentBanner: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
               <button
                 onClick={accept}
-                className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                className="px-6 cursor-pointer py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
               >
                 Принять все
               </button>
               <button
                 onClick={openSettings}
-                className="px-6 py-2.5 bg-neutral-700 hover:bg-neutral-600 text-white font-medium rounded-lg transition-all duration-200"
+                className="px-6 cursor-pointer py-2.5 bg-neutral-700 hover:bg-neutral-600 text-white font-medium rounded-lg transition-all duration-200"
               >
                 Настройки
               </button>
               <button
                 onClick={reject}
-                className="px-6 py-2.5 bg-transparent hover:bg-neutral-800 border border-neutral-600 text-neutral-300 hover:text-white font-medium rounded-lg transition-all duration-200"
+                className="px-6 cursor-pointer py-2.5 bg-transparent hover:bg-neutral-800 border border-neutral-600 text-neutral-300 hover:text-white font-medium rounded-lg transition-all duration-200"
               >
                 Отклонить
               </button>
@@ -60,7 +60,7 @@ const CookieConsentBanner: React.FC = () => {
             className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-end p-6"
             onClick={closeSettings}
           >
-            <div className="bg-neutral-900 w-full max-w-md mx-auto border border-neutral-700 rounded-t-2xl p-6 max-h-[80vh] overflow-y-auto"
+            <div className="bg-neutral-900 select-none w-full max-w-md min-w-130 mx-auto border border-neutral-700 rounded-t-2xl p-6 max-h-[80vh] overflow-y-auto"
               onClick={e => e.stopPropagation()}>
               <h3 className="text-xl font-bold text-white mb-6">Настройки cookies</h3>
               
@@ -84,10 +84,10 @@ const CookieConsentBanner: React.FC = () => {
                   <input 
                       type="checkbox" 
                       className="sr-only peer" 
-                      defaultChecked={true}
-                      onChange={(e) => e.target.checked ? accept() : reject()} 
+                      checked={consents.analytics}
+                      onChange={(e) => updateConsent('analytics', e.target.checked)} 
                     />
-                    <div className="w-11 h-6 bg-neutral-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                    <div className="w-11 h-6 bg-neutral-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
                   </label>
                 </div>
               </div>
@@ -95,19 +95,19 @@ const CookieConsentBanner: React.FC = () => {
               <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-neutral-800">
                 <button
                   onClick={accept}
-                  className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-all duration-200"
+                  className="flex-1 cursor-pointer px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-all duration-200"
                 >
                   Принять все
                 </button>
                 <button
                   onClick={reject}
-                  className="flex-1 px-6 py-3 bg-neutral-700 hover:bg-neutral-600 text-white font-medium rounded-lg transition-all duration-200"
+                  className="flex-1 cursor-pointer px-6 py-3 bg-neutral-700 hover:bg-neutral-600 text-white font-medium rounded-lg transition-all duration-200"
                 >
                   Отклонить
                 </button>
                 <button
                   onClick={closeSettings}
-                  className="flex-1 px-6 py-3 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-medium rounded-lg transition-all duration-200 border border-neutral-600"
+                  className="flex-1 cursor-pointer px-6 py-3 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-medium rounded-lg transition-all duration-200 border border-neutral-600"
                 >
                   Закрыть
                 </button>

@@ -44,7 +44,7 @@ const HomePage: React.FC = () => {
                 <img
                     src="http://localhost:8000/static/images/homepage-bg.jpg"
                     alt="Homepage Background"
-                    className="absolute inset-0 w-full h-full object-cover"
+                    className="absolute inset-0 w-full h-full object-cover select-none"
                     style={{
                         transform: `scale(${scale})`,
                         transformOrigin: 'center center',

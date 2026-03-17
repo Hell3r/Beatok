@@ -90,7 +90,7 @@ const SupportPage: React.FC = () => {
                 <div className='flex justify-center'>
                     <button 
                         onClick={() => setIsSubmitted(false)}
-                        className="bg-red-600 hover:bg-red-700 cursor-pointer text-white px-6 py-3 rounded-lg transition-all duration-300 mt-6 shadow-md hover:shadow-lg transform ">
+                        className="bg-red-600 hover:bg-red-700 cursor-pointer text-white px-6 py-2 rounded-lg transition-all duration-300 mt-6 shadow-md hover:shadow-lg transform ">
                         Отправить еще одну заявку
                     </button>
                 </div>    
@@ -122,7 +122,7 @@ const SupportPage: React.FC = () => {
                 </div>
                 <form onSubmit={handleSubmit} className="space-y-6 bg-neutral-900 rounded-xl p-6 border border-neutral-900 shadow-lg">
                     <div>
-                        <label htmlFor="problemType" className="block text-neutral-300 text-sm font-medium mb-3">
+                        <label htmlFor="problemType" className="block text-neutral-300 text-sm font-medium mb-3 cursor-pointer">
                             Тип проблемы
                         </label>
                         <select
@@ -131,11 +131,11 @@ const SupportPage: React.FC = () => {
                             value={formData.problemType}
                             onChange={handleChange}
                             required
-                            className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
+                            className="w-full px-4 cursor-pointer py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
                         >
-                            <option value="" className="text-neutral-400">Выберите тип проблемы</option>
+                            <option value="" className="text-neutral-400 cursor-pointer">Выберите тип проблемы</option>
                             {problemTypes.map((type, index) => (
-                                <option key={index} value={type} className="text-white bg-neutral-800">{type}</option>
+                                <option key={index} value={type} className="text-white cursor-pointer bg-neutral-800">{type}</option>
                             ))}
                         </select>
                     </div>
@@ -159,7 +159,7 @@ const SupportPage: React.FC = () => {
                         <button
                             type="submit"
                             disabled={isSubmitting}
-                            className="w-80 mx-auto bg-red-600 hover:bg-red-700 disabled:bg-neutral-700 text-white font-semibold py-4 px-6 rounded-lg shadow-md transition-all duration-300 transform  cursor-pointer disabled:scale-100 disabled:cursor-not-allowed">
+                            className="w-80 mx-auto bg-red-600 hover:bg-red-700 disabled:bg-neutral-700 text-white font-semibold py-2 px-2 rounded-lg shadow-md transition-all duration-300 transform  cursor-pointer disabled:scale-100 disabled:cursor-not-allowed">
                             {isSubmitting ? 'Отправка...' : 'Отправить заявку'}
                         </button>
                     </div>
