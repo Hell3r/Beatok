@@ -4,7 +4,7 @@ from sqlalchemy.pool import NullPool
 from src.models import *
 
 
-DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/beatok"
+DATABASE_URL = "postgresql+asyncpg://admin:CzosFgElyKAF@master.a9806fa5-1071-481d-9dc2-3373c4f577a5.c.dbaas.selcloud.ru:5432/beatok_db"
 
 engine = create_async_engine(DATABASE_URL, poolclass=NullPool)
 
@@ -24,4 +24,3 @@ async def get_session():
 
 class Base(DeclarativeBase):
     pass
-
