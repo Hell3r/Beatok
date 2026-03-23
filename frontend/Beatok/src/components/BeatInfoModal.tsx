@@ -14,7 +14,7 @@ interface BeatInfoModalProps {
 
 const getCoverUrl = (beat: Beat): string | null => {
   if (!beat.cover_path) return null;
-  return `http://localhost:8000/static/covers/${beat.cover_path}`;
+  return `http://http://185.55.59.6/:8000/static/covers/${beat.cover_path}`;
 };
 
 const BeatInfoModal: React.FC<BeatInfoModalProps> = ({ isOpen, onClose, beat }) => {
@@ -61,13 +61,13 @@ const BeatInfoModal: React.FC<BeatInfoModalProps> = ({ isOpen, onClose, beat }) 
 
   const getAuthorAvatar = (beat: Beat): string => {
     const authorId = getAuthorId(beat);
-    if (!authorId) return 'http://localhost:8000/static/default_avatar.png';
+    if (!authorId) return 'http://http://185.55.59.6/:8000/static/default_avatar.png';
 
     if (beat.owner?.avatar_path) return getAvatarUrl(authorId, beat.owner.avatar_path);
     if (beat.author?.avatar_path) return getAvatarUrl(authorId, beat.author.avatar_path);
     if (beat.user?.avatar_path) return getAvatarUrl(authorId, beat.user.avatar_path);
 
-    return 'http://localhost:8000/static/default_avatar.png';
+    return 'http://http://185.55.59.6/:8000/static/default_avatar.png';
   };
 
   const getAuthorName = (beat: Beat): string => {
@@ -187,7 +187,7 @@ const BeatInfoModal: React.FC<BeatInfoModalProps> = ({ isOpen, onClose, beat }) 
                             alt="Аватар автора"
                             className="w-6 h-6 rounded-full object-cover"
                             onError={(e) => {
-                              e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
+                              e.currentTarget.src = 'http://185.55.59.6/:8000/static/default_avatar.png';
                             }}
                           />
                           <p className="text-neutral-400 text-sm hover:text-red-400 transition-colors">

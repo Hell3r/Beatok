@@ -51,7 +51,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     if (resendCooldown > 0) return;
 
     try {
-      const response = await fetch('http://localhost:8000/v1/users/resend-verification', {
+      const response = await fetch('http://http://185.55.59.6/:8000/v1/users/resend-verification', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,7 +75,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     if (resendCooldown > 0) return;
 
     try {
-      const response = await fetch('http://localhost:8000/v1/users/forgot-password', {
+      const response = await fetch('http://http://185.55.59.6/:8000/v1/users/forgot-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -140,7 +140,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       formData.append('username', loginData.email);
       formData.append('password', loginData.password);
 
-      const response = await fetch('http://localhost:8000/v1/users/login', {
+      const response = await fetch('http://http://185.55.59.6/:8000/v1/users/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -215,7 +215,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/v1/users/register', {
+      const response = await fetch('http://http://185.55.59.6/:8000/v1/users/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -252,7 +252,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:8000/v1/users/forgot-password', {
+      const response = await fetch('http://185.55.59.6/:8000/v1/users/forgot-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

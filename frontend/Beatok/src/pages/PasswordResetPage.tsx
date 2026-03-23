@@ -39,7 +39,7 @@ const PasswordResetPage: React.FC = () => {
     }
 
     try {
-      const response = await fetch('http://localhost:8000/v1/users/reset-password', {
+      const response = await fetch('http://185.55.59.6/:8000/v1/users/reset-password', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

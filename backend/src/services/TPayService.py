@@ -25,7 +25,7 @@ class TPayService:
         self.password = settings.TPAY_PASSWORD
         self.api_url = "https://securepay.tinkoff.ru/v2"
 
-        self.callback_url = f"http://127.0.0.1:8000/pay/callback"
+        self.callback_url = f"http://185.55.59.6:8000/pay/callback"
         
         logger.info(f"✅ T-Pay service initialized. Terminal: {self.terminal_key[:8]}...")
         logger.info(f"   Success URL: {self.callback_url}")

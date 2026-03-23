@@ -1,6 +1,6 @@
 export const authService = {
   async login(email: string, password: string) {
-    const response = await fetch('http://localhost:8000/v1/users/login', {
+    const response = await fetch('http://185.55.59.6:8000/v1/users/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -20,7 +20,7 @@ export const authService = {
 
 
   async register(userData: unknown) {
-    const response = await fetch('http://localhost:8000/v1/users/register', {
+    const response = await fetch('http://185.55.59.6:8000/v1/users/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -36,7 +36,7 @@ export const authService = {
   },
 
   async logout(token: string) {
-    const response = await fetch('http://localhost:8000/v1/users/logout', {
+    const response = await fetch('http://185.55.59.6:8000/v1/users/logout', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`

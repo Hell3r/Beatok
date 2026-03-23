@@ -45,7 +45,7 @@ const FeaturedBeats: React.FC = () => {
     }
     
     try {
-        await fetch(`http://localhost:8000/beats/${beat.id}/increment-download`, {
+        await fetch(`http://185.55.59.6:8000/beats/${beat.id}/increment-download`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -61,7 +61,7 @@ const FeaturedBeats: React.FC = () => {
       return;
     }
 
-    const baseUrl = 'http://localhost:8000';
+    const baseUrl = 'http://185.55.59.6:8000';
     const audioUrl = `${baseUrl}/audio_storage/${beat.audio_file_path}`;
     const fileExtension = beat.audio_file_path.split('.').pop()?.toLowerCase() || 'mp3';
 

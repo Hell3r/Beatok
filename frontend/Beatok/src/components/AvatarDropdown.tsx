@@ -92,7 +92,7 @@ const AvatarDropdown: React.FC<AvatarDropdownProps> = ({ isOpen, onClose }) => {
             handleLinkClick();
             const token = localStorage.getItem('access_token');
             if (token) {
-              fetch('http://localhost:8000/api/v1/users/logout', {
+              fetch('http://185.55.59.6/:8000/api/v1/users/logout', {
                 method: 'POST',
                 headers: {
                   'Authorization': `Bearer ${token}`

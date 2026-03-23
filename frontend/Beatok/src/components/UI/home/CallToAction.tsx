@@ -27,7 +27,7 @@ const CallToAction: React.FC = () => {
     <div className="w-full p-8 text-center overflow-hidden min-h-[400px] flex items-center justify-center relative">
       <img
         ref={imgRef}
-        src="http://localhost:8000/static/images/first-beat-bg.jpg"
+        src="http://185.55.59.6:8000/static/images/first-beat-bg.jpg"
         alt="First Beat Background"
         className="absolute inset-0 w-full h-full object-cover"
         style={{

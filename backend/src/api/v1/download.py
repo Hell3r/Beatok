@@ -44,7 +44,7 @@ async def download_confirm(
 
         beat = download_token.beat
 
-        BASE_URL = os.getenv("BASE_URL", "http://localhost:8000")
+        BASE_URL = os.getenv("BASE_URL", "http://185.55.59.6:8000")
         download_action_url = f"{BASE_URL}/purchase/download/zip/{token}"
         direct_download_url = f"{BASE_URL}/purchase/download/direct/{token}"
 

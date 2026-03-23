@@ -1,4 +1,4 @@
-const API_URL = 'http://localhost:8000';
+const API_URL = 'http://185.55.59.6:8000';
 
 interface PaymentCreateRequest {
   amount: number;
