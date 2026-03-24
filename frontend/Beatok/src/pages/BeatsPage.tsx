@@ -136,8 +136,8 @@ const BeatsPage: React.FC = () => {
     });
     console.log('Increment response status:', incResponse.status);
 
-    console.log('Fetching audio URL from:', `${API_BASE_URL}/beats/${beat.id}/audio-url`);
-    const urlResponse = await fetch(`${API_BASE_URL}/beats/${beat.id}/audio-url`);
+    console.log('Fetching audio URL from:', `${API_BASE_URL}/api/beats/${beat.id}/audio-url`);
+    const urlResponse = await fetch(`${API_BASE_URL}/api/beats/${beat.id}/audio-url`);
     console.log('Audio URL response status:', urlResponse.status);
     
     if (!urlResponse.ok) {
