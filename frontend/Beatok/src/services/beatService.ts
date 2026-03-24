@@ -50,7 +50,8 @@ export interface PurchaseBeatResponse {
 
 class BeatService {
   private async fetchApi(endpoint: string, options: RequestInit = {}) {
-    const url = `${API_BASE_URL}${endpoint}`;
+    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    const url = `${API_BASE_URL}${cleanEndpoint}`;
 
     try {
       const response = await fetch(url, {
@@ -82,18 +83,18 @@ class BeatService {
   }
 
   async getBeatById(id: number): Promise<Beat> {
-    return this.fetchApi(`/api/beats/${id}`);
+    return this.fetchApi(`/beats/${id}`);
   }
 
   async searchBeats(query: string, genre?: string): Promise<Beat[]> {
     const params = new URLSearchParams({ q: query });
     if (genre) params.append('genre', genre);
 
-    return this.fetchApi(`/api/beats/search?${params.toString()}`);
+    return this.fetchApi(`/beats/search?${params.toString()}`);
   }
 
   async getBeatPricings(beatId: number) {
-    return this.fetchApi(`/api/v1/pricing/${beatId}/pricings`);
+    return this.fetchApi(`/v1/pricing/${beatId}/pricings`);
   }
 
   async getUserBeats(userId: number): Promise<Beat[]> {
@@ -101,11 +102,11 @@ class BeatService {
   }
 
   async getTariffs(): Promise<Tariff[]> {
-    return this.fetchApi('/api/v1/tarrifs');
+    return this.fetchApi('/v1/tarrifs');
   }
 
   async createBeatPricing(pricing: BeatPricingCreate) {
-    return this.fetchApi('/api/v1/pricing/', {
+    return this.fetchApi('/v1/pricing/', {
       method: 'POST',
       body: JSON.stringify(pricing),
     });
@@ -117,7 +118,7 @@ class BeatService {
       throw new Error('Не авторизован');
     }
 
-    const response = await this.fetchApi(`/api/v1/favorite`, {
+    const response = await this.fetchApi(`/v1/favorite`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
