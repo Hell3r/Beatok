@@ -128,64 +128,46 @@ class BeatService {
     return response;
   }
 
-  async deleteBeat(beatId: number): Promise<void> {
+async deleteBeat(beatId: number): Promise<void> {
     const token = localStorage.getItem('access_token');
     if (!token) {
       throw new Error('Не авторизован');
     }
 
-    const response = await fetch(`${API_BASE_URL}/beats/${beatId}`, {
+    await this.fetchApi(`/beats/${beatId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
       },
     });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Ошибка при удалении бита' }));
-      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-    }
   }
 
-  async toggleFavorite(beatId: number): Promise<void> {
+async toggleFavorite(beatId: number): Promise<void> {
     const token = localStorage.getItem('access_token');
     if (!token) {
       throw new Error('Не авторизован');
     }
 
-    const response = await fetch(`${API_BASE_URL}/v1/favorite/${beatId}`, {
+    await this.fetchApi(`/v1/favorite/${beatId}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
       },
     });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Ошибка при добавлении в избранное' }));
-      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-    }
   }
 
-  async removeFromFavorites(beatId: number): Promise<void> {
+async removeFromFavorites(beatId: number): Promise<void> {
     const token = localStorage.getItem('access_token');
     if (!token) {
       throw new Error('Не авторизован');
     }
 
-    const response = await fetch(`${API_BASE_URL}/v1/favorite/${beatId}`, {
+    await this.fetchApi(`/v1/favorite/${beatId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
       },
     });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Ошибка при удалении из избранного' }));
-      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-    }
   }
 
   async getPromotedBeats(): Promise<Beat[]> {
@@ -193,30 +175,24 @@ class BeatService {
     return response;
   }
 
-  async purchaseBeat(request: PurchaseBeatRequest): Promise<PurchaseBeatResponse> {
+async purchaseBeat(request: PurchaseBeatRequest): Promise<PurchaseBeatResponse> {
     const token = localStorage.getItem('access_token');
     if (!token) {
       throw new Error('Не авторизован');
     }
 
-    const response = await fetch(`${API_BASE_URL}/purchase/beat`, {
+    const responseData = await this.fetchApi('/purchase/beat', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
       },
       body: JSON.stringify(request),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Ошибка при покупке бита' }));
-      throw new Error(errorData.detail || errorData.message || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
+    return responseData;
   }
 
-  async promoteBeat(beatId: number): Promise<{
+async promoteBeat(beatId: number): Promise<{
     success: boolean;
     message: string;
     beat_id: number;
@@ -231,21 +207,15 @@ class BeatService {
       throw new Error('Не авторизован');
     }
 
-    const response = await fetch(`${API_BASE_URL}/promotion/promote`, {
+    const responseData = await this.fetchApi('/promotion/promote', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
       },
       body: JSON.stringify({ beat_id: beatId }),
     });
 
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ message: 'Ошибка при продвижении бита' }));
-      throw new Error(errorData.detail || errorData.message || `HTTP error! status: ${response.status}`);
-    }
-
-    return await response.json();
+    return responseData;
   }
 }
 
