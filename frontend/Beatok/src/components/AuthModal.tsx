@@ -119,7 +119,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
   });
 
   const modalHeightSpring = useSpring({
-    height: mode === 'login' ? (error ? '505px' : '445px') : mode === 'register' ? (error ? '865px' : '785px') : mode === 'forgotPassword' ? '390px' : mode === 'forgotPasswordSuccess' ? '540px' : '450px',
+    height: mode === 'login' ? (error ? '505px' : '445px') : mode === 'register' ? (error ? '760px' : '680px') : mode === 'forgotPassword' ? '390px' : mode === 'forgotPasswordSuccess' ? '540px' : '450px',
     config: { tension: 300, friction: 30 }
   });
 
@@ -377,7 +377,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                         </div>
                       </form>
                     ) : item === 'register' ? (
-                      <form onSubmit={handleRegister} className="space-y-4">
+                      <form onSubmit={handleRegister} className="space-y-3">
                         <div>
                           <label className="block text-sm font-medium text-neutral-300 mb-2">
                             Имя пользователя
@@ -387,7 +387,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                             placeholder="Придумайте имя (мин. 3 символа)"
                             value={registerData.username}
                             onChange={(e) => setRegisterData({...registerData, username: e.target.value})}
-                            className="w-full p-3 bg-neutral-800 border border-neutral-700 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
+                            className="w-full p-2 h-11 bg-neutral-800 border border-neutral-700 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
                             required
                           />
                         </div>
@@ -401,7 +401,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                             placeholder="your@email.com"
                             value={registerData.email}
                             onChange={(e) => setRegisterData({...registerData, email: e.target.value})}
-                            className="w-full p-3 bg-neutral-800 border border-neutral-700 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
+                            className="w-full p-2 h-11 bg-neutral-800 border border-neutral-700 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
                             required
                           />
                         </div>
@@ -414,7 +414,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                             type="date"
                             value={registerData.birthday}
                             onChange={(e) => setRegisterData({...registerData, birthday: e.target.value})}
-                            className="w-full p-3 bg-neutral-800 border border-neutral-700 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
+                            className="w-full p-2 h-11 bg-neutral-800 border border-neutral-700 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
                             required
                           />
                         </div>
@@ -428,7 +428,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                             placeholder="Не менее 6 символов"
                             value={registerData.password}
                             onChange={(e) => setRegisterData({...registerData, password: e.target.value})}
-                            className="w-full p-3 bg-neutral-800 border border-neutral-700 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
+                            className="w-full p-2 h-11 bg-neutral-800 border border-neutral-700 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
                             required
                           />
                         </div>
@@ -442,22 +442,22 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                             placeholder="Повторите пароль"
                             value={registerData.confirmPassword}
                             onChange={(e) => setRegisterData({...registerData, confirmPassword: e.target.value})}
-                            className="w-full p-3 bg-neutral-800 border border-neutral-700 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
+                            className="w-full p-2 h-11 bg-neutral-800 border border-neutral-700 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
                             required
                           />
                         </div>
 
 
-                        <div className="pt-4 border-t border-neutral-800 p-3 bg-neutral-850 rounded-lg">
+                        <div className="pt-4 border-t border-neutral-800 p-3 bg-neutral-850 rounded-lg select-none">
                           <label className="flex items-start cursor-pointer group">
                             <input
                               type="checkbox"
                               checked={registerData.agreed_consents}
                               onChange={(e) => setRegisterData({ ...registerData, agreed_consents: e.target.checked })}
-                              className="mt-1 w-4 h-4 text-red-600 bg-neutral-800 border-neutral-600 rounded focus:ring-red-500 focus:ring-2 flex-shrink-0"
+className="mt-1 mr-2 w-4 h-4 rounded accent-red-600 flex-shrink-0"
                             />
                             <div className="ml-3 text-sm">
-                              <span className="font-medium text-neutral-200 group-hover:text-white">
+  <span className="font-medium text-sm text-neutral-200 group-hover:text-white">
                                 Согласен с офертой и политикой конфиденциальности
                               </span>
                               <div className="mt-1 text-xs text-neutral-400 space-x-2">
