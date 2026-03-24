@@ -1,7 +1,7 @@
 import type { Beat } from "../types/Beat";
 
 
-const API_BASE_URL = 'https://beatokservice.ru/api';
+const API_BASE_URL = 'https://beatokservice.ru';
 
 export interface BeatsResponse {
   beats: Beat[];
@@ -82,18 +82,18 @@ class BeatService {
   }
 
   async getBeatById(id: number): Promise<Beat> {
-    return this.fetchApi(`/beats/${id}`);
+    return this.fetchApi(`/api/beats/${id}`);
   }
 
   async searchBeats(query: string, genre?: string): Promise<Beat[]> {
     const params = new URLSearchParams({ q: query });
     if (genre) params.append('genre', genre);
 
-    return this.fetchApi(`/beats/search?${params.toString()}`);
+    return this.fetchApi(`/api/beats/search?${params.toString()}`);
   }
 
   async getBeatPricings(beatId: number) {
-    return this.fetchApi(`/v1/pricing/${beatId}/pricings`);
+    return this.fetchApi(`/api/v1/pricing/${beatId}/pricings`);
   }
 
   async getUserBeats(userId: number): Promise<Beat[]> {
@@ -101,11 +101,11 @@ class BeatService {
   }
 
   async getTariffs(): Promise<Tariff[]> {
-    return this.fetchApi('/v1/tarrifs');
+    return this.fetchApi('/api/v1/tarrifs');
   }
 
   async createBeatPricing(pricing: BeatPricingCreate) {
-    return this.fetchApi('/v1/pricing/', {
+    return this.fetchApi('/api/v1/pricing/', {
       method: 'POST',
       body: JSON.stringify(pricing),
     });
@@ -117,7 +117,7 @@ class BeatService {
       throw new Error('Не авторизован');
     }
 
-    const response = await this.fetchApi(`/v1/favorite`, {
+    const response = await this.fetchApi(`/api/v1/favorite`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -132,7 +132,7 @@ class BeatService {
       throw new Error('Не авторизован');
     }
 
-    const response = await fetch(`${API_BASE_URL}/beats/${beatId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/beats/${beatId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -152,7 +152,7 @@ class BeatService {
       throw new Error('Не авторизован');
     }
 
-    const response = await fetch(`${API_BASE_URL}/v1/favorite/${beatId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/v1/favorite/${beatId}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -172,7 +172,7 @@ class BeatService {
       throw new Error('Не авторизован');
     }
 
-    const response = await fetch(`${API_BASE_URL}/v1/favorite/${beatId}`, {
+    const response = await fetch(`${API_BASE_URL}/api/v1/favorite/${beatId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -197,7 +197,7 @@ class BeatService {
       throw new Error('Не авторизован');
     }
 
-    const response = await fetch(`${API_BASE_URL}/purchase/beat`, {
+    const response = await fetch(`${API_BASE_URL}/api/purchase/beat`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -229,7 +229,7 @@ class BeatService {
       throw new Error('Не авторизован');
     }
 
-    const response = await fetch(`${API_BASE_URL}/promotion/promote`, {
+    const response = await fetch(`${API_BASE_URL}/api/promotion/promote`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
