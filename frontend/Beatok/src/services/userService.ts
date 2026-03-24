@@ -70,7 +70,7 @@ async updateUserProfile(data: any) {
   },
 
   async getTopBeatmakers(limit: number = 10): Promise<TopBeatmaker[]> {
-    const response = await api.get(`/api/beats/top-beatmakers?limit=${limit}`);
+    const response = await api.get(`/beats/top-beatmakers?limit=${limit}`);
     return response.data;
   },
 
