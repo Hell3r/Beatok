@@ -239,7 +239,7 @@ async def tpay_callback(
                 const timerElement = document.getElementById('seconds');
                 
                 function redirectNow() {{
-                    window.location.href = 'http://185.55.59.6:5173';
+                    window.location.href = 'https://beatokservice.ru';
                 }}
                 
                 function updateTimer() {{

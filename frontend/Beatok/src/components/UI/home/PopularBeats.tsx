@@ -32,7 +32,7 @@ const PopularBeats: React.FC = () => {
     }
     
     try {
-        await fetch(`http://185.55.59.6:8000/beats/${beat.id}/increment-download`, {
+        await fetch(`https://beatokservice.ru/api/beats/${beat.id}/increment-download`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -42,7 +42,7 @@ const PopularBeats: React.FC = () => {
     } catch (error) {
         console.log('Не удалось увеличить счетчик скачиваний, но продолжаем скачивание:', error);
     }
-    const baseUrl = 'http://185.55.59.6:8000'
+    const baseUrl = 'https://beatokservice.ru'
     const beatFolder = `beats/${beat.id}`;
 
     const wavUrl = `${baseUrl}/audio_storage/${beatFolder}/audio.wav`;

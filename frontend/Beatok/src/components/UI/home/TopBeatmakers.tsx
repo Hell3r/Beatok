@@ -127,7 +127,7 @@ const TopBeatmakers: React.FC = () => {
                   alt={beatmaker.username}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                   onError={(e) => {
-                    e.currentTarget.src = 'http://185.55.59.6:8000/static/default_avatar.png'
+                    e.currentTarget.src = 'https://beatokservice.ru/api/static/default_avatar.png'
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 via-transparent to-transparent"></div>

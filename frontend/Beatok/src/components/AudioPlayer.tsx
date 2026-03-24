@@ -5,7 +5,7 @@ import { useModal } from '../hooks/useModal';
 
 const getCoverUrl = (beat: any): string | null => {
   if (!beat?.cover_path) return null;
-  return `http://185.55.59.6/:8000/static/covers/${beat.cover_path}`;
+  return `https://beatokservice.ru/api/static/covers/${beat.cover_path}`;
 };
 
 const getAudioFormat = (beat: any): string => {

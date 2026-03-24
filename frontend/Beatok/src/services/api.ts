@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://185.55.59.6:8000';
+const API_BASE_URL = 'https://beatokservice.ru';
 
 const api = axios.create({
   baseURL: API_BASE_URL,

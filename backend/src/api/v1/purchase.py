@@ -70,7 +70,7 @@ async def purchase_beat(
             validity_hours=72
         )
 
-        BASE_URL = os.getenv("BASE_URL", "http://185.55.59.6:8000")
+        BASE_URL = os.getenv("BASE_URL", "https://beatokservice.ru/api")
         confirm_url = f"{BASE_URL}/purchase/download/confirm/{download_token}"
  
         direct_download_url = f"{BASE_URL}/purchase/download/direct/{download_token}"

@@ -43,7 +43,7 @@ async updateUserProfile(data: any) {
 
   console.log('Sending update data:', formattedData);
 
-  const response = await fetch(`http://185.55.59.6:8000/v1/users/me`, {
+  const response = await fetch(`https://beatokservice.ru/api/v1/users/me`, {
     method: 'PATCH',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -91,7 +91,7 @@ async updateUserProfile(data: any) {
 
   async getBalanceHistory() {
     const token = localStorage.getItem('access_token');
-    const response = await fetch(`http://185.55.59.6:8000/v1/users/admin/balance-history`, {
+    const response = await fetch(`https://beatokservice.ru/api/v1/users/admin/balance-history`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -110,7 +110,7 @@ async updateUserProfile(data: any) {
   async subscribe() {
     const token = localStorage.getItem('access_token');
     
-    const response = await fetch(`http://185.55.59.6:8000/v1/users/subscribe`, {
+    const response = await fetch(`https://beatokservice.ru/api/v1/users/subscribe`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

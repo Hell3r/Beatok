@@ -29,7 +29,7 @@ const BeatCard: React.FC<BeatCardProps> = ({ beat, onPlay, onDownload }) => {
 
   const getCoverUrl = (beat: Beat): string | null => {
     if (!beat.cover_path) return null;
-    return `http://185.55.59.6:8000/static/covers/${beat.cover_path}`;
+    return `https://beatokservice.ru/api/static/covers/${beat.cover_path}`;
   };
 
   const coverUrl = getCoverUrl(beat);

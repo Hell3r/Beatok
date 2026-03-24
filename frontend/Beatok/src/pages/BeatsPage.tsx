@@ -117,7 +117,7 @@ const BeatsPage: React.FC = () => {
 
   const handleDownload = async (beat: Beat) => {
   const token = localStorage.getItem("access_token");
-  const API_BASE_URL = 'http://185.55.59.6/:8000';
+  const API_BASE_URL = 'https://beatokservice.ru';
 
   if (isFreeBeat(beat) && !token) {
     const event = new CustomEvent('openAuthModal');
@@ -127,7 +127,7 @@ const BeatsPage: React.FC = () => {
 
   try {
     console.log('Increment download for beat', beat.id);
-    const incResponse = await fetch(`http://185.55.59.6/:8000/beats/${beat.id}/increment-download`, {
+    const incResponse = await fetch(`https://beatokservice.ru/api/beats/${beat.id}/increment-download`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

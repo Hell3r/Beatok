@@ -10,8 +10,8 @@ class Settings():
     RATE_LIMIT_ENABLED: bool = True
     RATE_LIMIT_STRICT: bool = False 
 
-    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "http://185.55.59.6:3000")
-    BACKEND_URL: str = os.getenv("BACKEND_URL", "http://185.55.59.6:8000")
+    FRONTEND_URL: str = os.getenv("FRONTEND_URL", "https://beatokservice.ru")
+    BACKEND_URL: str = os.getenv("BACKEND_URL", "https://beatokservice.ru")
     
 
     ENCRYPTION_KEY: Optional[str] = os.getenv("ENCRYPTION_KEY")

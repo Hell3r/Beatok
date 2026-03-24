@@ -250,7 +250,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
         formData.append('cover_file', beatData.cover_file);
       }
 
-      const response = await fetch('http://185.55.59.6/:8000/beats/create', {
+      const response = await fetch('https://beatokservice.ru/api/beats/create', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

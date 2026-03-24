@@ -45,7 +45,7 @@ const FeaturedBeats: React.FC = () => {
     }
     
     try {
-        await fetch(`http://185.55.59.6:8000/beats/${beat.id}/increment-download`, {
+        await fetch(`https://beatokservice.ru/api/beats/${beat.id}/increment-download`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -61,7 +61,7 @@ const FeaturedBeats: React.FC = () => {
       return;
     }
 
-    const baseUrl = 'http://185.55.59.6:8000';
+    const baseUrl = 'https://beatokservice.ru';
     const audioUrl = `${baseUrl}/audio_storage/${beat.audio_file_path}`;
     const fileExtension = beat.audio_file_path.split('.').pop()?.toLowerCase() || 'mp3';
 

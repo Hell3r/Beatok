@@ -67,7 +67,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
 
   const fetchAudioUrl = async (beatId: number): Promise<{ audio_url: string; audio_format: string } | null> => {
     try {
-      const response = await fetch(`http://185.55.59.6/:8000/beats/${beatId}/audio-url`);
+      const response = await fetch(`https://beatokservice.ru/api/beats/${beatId}/audio-url`);
       if (!response.ok) {
         console.error('Failed to fetch audio URL');
         return null;

@@ -39,7 +39,7 @@ app.include_router(main_router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://185.55.59.6:5173", "http://185.55.59.6:3000", "http://185.55.59.6:8000","*"],
+    allow_origins=["https://beatokservice.ru", "http://185.55.59.6:3000", "http://185.55.59.6:8000","*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

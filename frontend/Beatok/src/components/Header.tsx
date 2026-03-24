@@ -198,7 +198,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated = false }) => {
                           alt="Аватар"
                           className={`w-8 h-8 rounded-full object-cover ${currentUser.prom_status === 'subscription' ? 'border-2 border-none' : ''}`}
                           onError={(e) => {
-                            e.currentTarget.src = 'http://185.55.59.6/:8000/static/default_avatar.png'
+                            e.currentTarget.src = 'https://beatokservice.ru/api/static/default_avatar.png'
                           }}
                         />
                       </div>

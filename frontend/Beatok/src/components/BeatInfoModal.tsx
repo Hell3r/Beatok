@@ -14,7 +14,7 @@ interface BeatInfoModalProps {
 
 const getCoverUrl = (beat: Beat): string | null => {
   if (!beat.cover_path) return null;
-  return `http://http://185.55.59.6/:8000/static/covers/${beat.cover_path}`;
+  return `https://beatokservice.ru/api/static/covers/${beat.cover_path}`;
 };
 
 const BeatInfoModal: React.FC<BeatInfoModalProps> = ({ isOpen, onClose, beat }) => {

@@ -42,7 +42,7 @@ const HomePage: React.FC = () => {
             <div className="min-h-screen w-full">
             <div className='w-full relative overflow-hidden' style={{ minHeight: '95vh' }}>
                 <img
-                    src="http://185.55.59.6/:8000/static/images/homepage-bg.jpg"
+                    src="https://beatokservice.ru/api/static/images/homepage-bg.jpg"
                     alt="Homepage Background"
                     className="absolute inset-0 w-full h-full object-cover select-none"
                     style={{

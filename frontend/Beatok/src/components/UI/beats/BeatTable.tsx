@@ -15,7 +15,7 @@ import RoleBadge from '../RoleBadge';
 
 const getCoverUrl = (beat: Beat): string | null => {
   if (!beat.cover_path) return null;
-  return `http://185.55.59.6:8000/static/covers/${beat.cover_path}`;
+  return `https://beatokservice.ru/api/static/covers/${beat.cover_path}`;
 };
 
 const getAudioFormat = (beat: Beat): string => {
@@ -92,11 +92,11 @@ const BeatTable: React.FC<BeatTableProps> = ({
 
   const getAuthorAvatar = (beat: Beat): string => {
     const authorId = getAuthorId(beat);
-    if (!authorId) return 'http://185.55.59.6:8000/static/default_avatar.png';
+    if (!authorId) return 'https://beatokservice.ru/api/static/default_avatar.png';
     if (beat.owner?.avatar_path) return getAvatarUrl(authorId, beat.owner.avatar_path);
     if (beat.author?.avatar_path) return getAvatarUrl(authorId, beat.author.avatar_path);
     if (beat.user?.avatar_path) return getAvatarUrl(authorId, beat.user.avatar_path);
-    return 'http://185.55.59.6:8000/static/default_avatar.png';
+    return 'https://beatokservice.ru/api/static/default_avatar.png';
   };
 
   const getAuthorRole = (beat: Beat): string | undefined => {
@@ -594,7 +594,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
                               alt="Аватар автора"
                               className="w-6 h-6 rounded-full object-cover"
                               onError={(e) => {
-                                e.currentTarget.src = 'http://185.55.59.6:8000/static/default_avatar.png';
+                                e.currentTarget.src = 'https://beatokservice.ru/api/static/default_avatar.png';
                               }}
                             />
                             <span className="hover:text-red-400 transition-colors">
