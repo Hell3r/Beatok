@@ -117,7 +117,7 @@ const BeatsPage: React.FC = () => {
 
   const handleDownload = async (beat: Beat) => {
   const token = localStorage.getItem("access_token");
-  const API_BASE_URL = 'https://beatokservice.ru';
+  const API_BASE_URL = 'https://beatokservice.ru/api';
 
   if (isFreeBeat(beat) && !token) {
     const event = new CustomEvent('openAuthModal');

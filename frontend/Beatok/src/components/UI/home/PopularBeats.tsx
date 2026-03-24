@@ -42,7 +42,7 @@ const PopularBeats: React.FC = () => {
     } catch (error) {
         console.log('Не удалось увеличить счетчик скачиваний, но продолжаем скачивание:', error);
     }
-    const baseUrl = 'https://beatokservice.ru'
+    const baseUrl = 'https://beatokservice.ru/api'
     const beatFolder = `beats/${beat.id}`;
 
     const wavUrl = `${baseUrl}/audio_storage/${beatFolder}/audio.wav`;

@@ -61,7 +61,7 @@ const FeaturedBeats: React.FC = () => {
       return;
     }
 
-    const baseUrl = 'https://beatokservice.ru';
+    const baseUrl = 'https://beatokservice.ru/api';
     const audioUrl = `${baseUrl}/audio_storage/${beat.audio_file_path}`;
     const fileExtension = beat.audio_file_path.split('.').pop()?.toLowerCase() || 'mp3';
 
