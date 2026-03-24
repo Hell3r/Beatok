@@ -1,7 +1,5 @@
 import type { Beat } from "../types/Beat";
-
-
-const API_BASE_URL = 'https://beatokservice.ru';
+import api from './api';
 
 export interface BeatsResponse {
   beats: Beat[];
@@ -49,53 +47,32 @@ export interface PurchaseBeatResponse {
 }
 
 class BeatService {
-  private async fetchApi(endpoint: string, options: RequestInit = {}) {
-    const apiPath = endpoint.startsWith('/api') ? endpoint : `/api${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
-    
-    const url = `https://beatokservice.ru${apiPath}`;
-
-    try {
-      const response = await fetch(url, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...options.headers,
-        },
-        ...options,
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('API request failed:', error);
-      throw error;
-    }
-  }
 
   async getBeats(skip: number = 0, limit: number = 100, authorId?: number): Promise<Beat[]> {
     const params = new URLSearchParams({ skip: skip.toString(), limit: limit.toString() });
     if (authorId !== undefined) {
       params.append('author_id', authorId.toString());
     }
-    const response = await this.fetchApi(`/beats?${params.toString()}`);
-    return response;
+    const { data } = await api.get(`/beats?${params.toString()}`);
+    return data;
   }
 
   async getBeatById(id: number): Promise<Beat> {
-    return this.fetchApi(`/beats/${id}`);
+    const { data } = await api.get(`/beats/${id}`);
+    return data;
   }
 
   async searchBeats(query: string, genre?: string): Promise<Beat[]> {
     const params = new URLSearchParams({ q: query });
     if (genre) params.append('genre', genre);
 
-    return this.fetchApi(`/beats/search?${params.toString()}`);
+    const { data } = await api.get(`/beats/search?${params.toString()}`);
+    return data;
   }
 
   async getBeatPricings(beatId: number) {
-    return this.fetchApi(`/v1/pricing/${beatId}/pricings`);
+    const { data } = await api.get(`/v1/pricing/${beatId}/pricings`);
+    return data;
   }
 
   async getUserBeats(userId: number): Promise<Beat[]> {
@@ -103,93 +80,40 @@ class BeatService {
   }
 
   async getTariffs(): Promise<Tariff[]> {
-    return this.fetchApi('/v1/tarrifs');
+    const { data } = await api.get('/v1/tarrifs');
+    return data;
   }
 
   async createBeatPricing(pricing: BeatPricingCreate) {
-    return this.fetchApi('/v1/pricing/', {
-      method: 'POST',
-      body: JSON.stringify(pricing),
-    });
+    const { data } = await api.post('/v1/pricing/', pricing);
+    return data;
   }
 
   async getFavoriteBeats(): Promise<Beat[]> {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      throw new Error('Не авторизован');
-    }
-
-    const response = await this.fetchApi(`/v1/favorite`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-
-    return response;
+    const { data } = await api.get('/v1/favorite');
+    return data;
   }
 
 async deleteBeat(beatId: number): Promise<void> {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      throw new Error('Не авторизован');
-    }
-
-    await this.fetchApi(`/beats/${beatId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+    await api.delete(`/beats/${beatId}`);
   }
 
 async toggleFavorite(beatId: number): Promise<void> {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      throw new Error('Не авторизован');
-    }
-
-    await this.fetchApi(`/v1/favorite/${beatId}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+    await api.post(`/v1/favorite/${beatId}`);
   }
 
 async removeFromFavorites(beatId: number): Promise<void> {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      throw new Error('Не авторизован');
-    }
-
-    await this.fetchApi(`/v1/favorite/${beatId}`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
+    await api.delete(`/v1/favorite/${beatId}`);
   }
 
   async getPromotedBeats(): Promise<Beat[]> {
-    const response = await this.fetchApi('/beats?promotion_status=promoted&limit=10');
-    return response;
+    const { data } = await api.get('/beats?promotion_status=promoted&limit=10');
+    return data;
   }
 
 async purchaseBeat(request: PurchaseBeatRequest): Promise<PurchaseBeatResponse> {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      throw new Error('Не авторизован');
-    }
-
-    const responseData = await this.fetchApi('/purchase/beat', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(request),
-    });
-
-    return responseData;
+    const { data } = await api.post('/purchase/beat', request);
+    return data;
   }
 
 async promoteBeat(beatId: number): Promise<{
@@ -202,20 +126,8 @@ async promoteBeat(beatId: number): Promise<{
     new_balance: number;
     promotion_id: number;
   }> {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      throw new Error('Не авторизован');
-    }
-
-    const responseData = await this.fetchApi('/promotion/promote', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify({ beat_id: beatId }),
-    });
-
-    return responseData;
+    const { data } = await api.post('/promotion/promote', { beat_id: beatId });
+    return data;
   }
 }
 
