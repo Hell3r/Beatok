@@ -137,6 +137,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
   };
 
   const filteredBeats = useMemo(() => {
+    if (!Array.isArray(beats)) return []; 
     return beats.filter((beat) => {
       if (!isProfileView && beat.status !== 'available') {
         return false;
