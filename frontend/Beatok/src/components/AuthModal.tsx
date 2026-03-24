@@ -377,7 +377,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                         </div>
                       </form>
                     ) : item === 'register' ? (
-                      <form onSubmit={handleRegister} className="space-y-3">
+                      <form onSubmit={handleRegister} className="space-y-2">
                         <div>
                           <label className="block text-sm font-medium text-neutral-300 mb-2">
                             Имя пользователя
@@ -448,7 +448,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                         </div>
 
 
-                        <div className="pt-4 border-t border-neutral-800 p-3 bg-neutral-850 rounded-lg select-none">
+                        <div className="pt-2 border-neutral-800 p-3 bg-neutral-850 rounded-lg select-none">
                           <label className="flex items-start cursor-pointer group">
                             <input
                               type="checkbox"
@@ -457,7 +457,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
 className="mt-1 mr-2 w-4 h-4 rounded accent-red-600 flex-shrink-0"
                             />
                             <div className="ml-3 text-sm">
-  <span className="font-medium text-sm text-neutral-200 group-hover:text-white">
+  <span className="font-medium text-xs text-neutral-200 group-hover:text-white">
                                 Согласен с офертой и политикой конфиденциальности
                               </span>
                               <div className="mt-1 text-xs text-neutral-400 space-x-2">
