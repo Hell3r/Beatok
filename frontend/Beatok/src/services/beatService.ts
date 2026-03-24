@@ -1,7 +1,7 @@
 import type { Beat } from "../types/Beat";
 
 
-const API_BASE_URL = 'https://beatokservice.ru';
+const API_BASE_URL = 'https://beatokservice.ru/api';
 
 export interface BeatsResponse {
   beats: Beat[];
@@ -132,7 +132,7 @@ class BeatService {
       throw new Error('Не авторизован');
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/beats/${beatId}`, {
+    const response = await fetch(`${API_BASE_URL}/beats/${beatId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -152,7 +152,7 @@ class BeatService {
       throw new Error('Не авторизован');
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/favorite/${beatId}`, {
+    const response = await fetch(`${API_BASE_URL}/v1/favorite/${beatId}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -172,7 +172,7 @@ class BeatService {
       throw new Error('Не авторизован');
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/v1/favorite/${beatId}`, {
+    const response = await fetch(`${API_BASE_URL}/v1/favorite/${beatId}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -197,7 +197,7 @@ class BeatService {
       throw new Error('Не авторизован');
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/purchase/beat`, {
+    const response = await fetch(`${API_BASE_URL}/purchase/beat`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -229,7 +229,7 @@ class BeatService {
       throw new Error('Не авторизован');
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/promotion/promote`, {
+    const response = await fetch(`${API_BASE_URL}/promotion/promote`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

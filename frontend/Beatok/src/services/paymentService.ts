@@ -1,4 +1,4 @@
-const API_URL = 'https://beatokservice.ru';
+const API_URL = 'https://beatokservice.ru/api';
 
 interface PaymentCreateRequest {
   amount: number;
