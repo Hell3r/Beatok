@@ -50,11 +50,9 @@ export interface PurchaseBeatResponse {
 
 class BeatService {
   private async fetchApi(endpoint: string, options: RequestInit = {}) {
-
-    const targetPath = endpoint.startsWith('/api') 
-      ? endpoint.replace('/api', '') 
-      : endpoint;
-    const url = `${API_BASE_URL}${targetPath}`;
+    const apiPath = endpoint.startsWith('/api') ? endpoint : `/api${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`;
+    
+    const url = `https://beatokservice.ru${apiPath}`;
 
     try {
       const response = await fetch(url, {
