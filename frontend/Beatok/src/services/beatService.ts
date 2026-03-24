@@ -1,7 +1,7 @@
 import type { Beat } from "../types/Beat";
 
 
-const API_BASE_URL = 'https://beatokservice.ru/api';
+const API_BASE_URL = 'https://beatokservice.ru';
 
 export interface BeatsResponse {
   beats: Beat[];
@@ -50,8 +50,11 @@ export interface PurchaseBeatResponse {
 
 class BeatService {
   private async fetchApi(endpoint: string, options: RequestInit = {}) {
-    const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    const url = `${API_BASE_URL}${cleanEndpoint}`;
+
+    const targetPath = endpoint.startsWith('/api') 
+      ? endpoint.replace('/api', '') 
+      : endpoint;
+    const url = `${API_BASE_URL}${targetPath}`;
 
     try {
       const response = await fetch(url, {
