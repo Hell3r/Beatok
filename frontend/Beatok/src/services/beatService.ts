@@ -54,6 +54,7 @@ class BeatService {
       params.append('author_id', authorId.toString());
     }
     const { data } = await api.get(`/beats?${params.toString()}`);
+    console.log(data);
     return data;
   }
 
