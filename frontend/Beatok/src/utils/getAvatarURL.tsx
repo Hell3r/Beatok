@@ -6,7 +6,7 @@ export const getAvatarUrl = (userId: number, avatarPath?: string | null) => {
     return avatarPath;
   }
   if (avatarPath.startsWith('static/avatars/')) {
-    return `https://beatokservice.ru/${avatarPath}`;
+    return `https://beatokservice.ru/api/${avatarPath}`;
   }
   return `https://beatokservice.ru/api/static/avatars/${avatarPath}`;
 };

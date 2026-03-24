@@ -17,7 +17,7 @@ export const paymentService = {
   async createPayment(data: PaymentCreateRequest): Promise<PaymentResponse> {
     const token = localStorage.getItem('access_token');
     
-    const response = await fetch(`${API_URL}/payment/tpay/create`, {
+    const response = await fetch(`${API_URL}/api/payment/tpay/create`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

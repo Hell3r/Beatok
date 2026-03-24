@@ -1,7 +1,7 @@
 import type { Beat } from "../types/Beat";
 
 
-const API_BASE_URL = 'https://beatokservice.ru';
+const API_BASE_URL = 'https://beatokservice.ru/api';
 
 export interface BeatsResponse {
   beats: Beat[];
