@@ -37,7 +37,7 @@ const BeatsPage: React.FC = () => {
   });
   const [favoriteBeats, setFavoriteBeats] = useState<Beat[]>([]);
 
-  const { playBeat, currentBeat, isPlaying, setBeats } = useAudioPlayer();
+  const { playBeat, currentBeat, isPlaying, togglePlayPause, setBeats } = useAudioPlayer();
 
   const transitions = useTransition(viewMode, {
     from: { opacity: 0 },
@@ -105,7 +105,11 @@ const BeatsPage: React.FC = () => {
 
 
   const handlePlay = async (beat: Beat) => {
-    playBeat(beat);
+    if (currentBeat?.id === beat.id) {
+      togglePlayPause();
+    } else {
+      playBeat(beat);
+    }
   };
 
   const isFreeBeat = (beat: Beat): boolean => {
@@ -117,7 +121,7 @@ const BeatsPage: React.FC = () => {
 
   const handleDownload = async (beat: Beat) => {
   const token = localStorage.getItem("access_token");
-  const API_BASE_URL = 'https://beatokservice.ru/api';
+  const API_BASE_URL = 'https://beatokservice.ru/';
 
   if (isFreeBeat(beat) && !token) {
     const event = new CustomEvent('openAuthModal');

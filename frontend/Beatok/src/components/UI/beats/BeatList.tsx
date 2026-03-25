@@ -218,7 +218,7 @@ const BeatList: React.FC<BeatListProps> = ({
               <div className="mb-3">
                 {coverUrl ? (
                   <div className="relative inline-block w-full">
-                    {beat.promotion_status !== 'standard' && (
+                    {beat.promotion_status === 'promoted' && (
                       <div className="mb-1">
                         <svg className="w-5 h-5 mx-auto text-yellow-400 drop-shadow-lg" viewBox="0 0 24 24" fill="currentColor">
                           <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
@@ -226,10 +226,10 @@ const BeatList: React.FC<BeatListProps> = ({
                       </div>
                     )}
                     <div 
-                      className={`relative rounded-lg overflow-hidden cursor-pointer group ${beat.promotion_status !== 'standard' ? 'p-1 bg-gradient-to-r from-yellow-400 via-yellow-400 to-yellow-600' : ''} ${beat.promotion_status === 'standard' ? 'mt-6' : ''}`}
+                      className={`relative rounded-lg overflow-hidden cursor-pointer group ${beat.promotion_status === 'promoted' ? 'p-1 bg-gradient-to-r from-yellow-400 via-yellow-400 to-yellow-600' : ''} ${beat.promotion_status === 'standard' || !beat.promotion_status ? 'mt-6' : ''}`}
                       onClick={() => onPlay?.(beat)}
                     >
-                      <div className="relative w-full aspect-square rounded-lg overflow-hidden group">
+                      <div className="relative w-full aspect-square rounded-lg overflow-hidden group select-none">
                         <img 
                           src={coverUrl} 
                           alt="Обложка" 
@@ -273,7 +273,7 @@ const BeatList: React.FC<BeatListProps> = ({
                       setInfoModalOpen(true);
                     }}
                   >
-                    {truncateText(beat.name, 16)}
+                    {truncateText(beat.name, 20)}
                   </h3>
                   <div 
                     className="flex items-center space-x-2 cursor-pointer hover:opacity-80 transition-opacity"

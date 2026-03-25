@@ -53,7 +53,7 @@ class BeatService {
     if (authorId !== undefined) {
       params.append('author_id', authorId.toString());
     }
-    const { data } = await api.get(`/beats?${params.toString()}`);
+    const { data } = await api.get(`/beats/?${params.toString()}`);
     console.log(data);
     return data;
   }
@@ -81,7 +81,8 @@ class BeatService {
   }
 
   async getTariffs(): Promise<Tariff[]> {
-    const { data } = await api.get('/v1/tarrifs');
+    const { data } = await api.get('/v1/tarrifs/');
+    console.log(data);
     return data;
   }
 
@@ -108,7 +109,7 @@ async removeFromFavorites(beatId: number): Promise<void> {
   }
 
   async getPromotedBeats(): Promise<Beat[]> {
-    const { data } = await api.get('/beats?promotion_status=promoted&limit=10');
+    const { data } = await api.get('/beats/?promotion_status=promoted&limit=10');
     return data;
   }
 

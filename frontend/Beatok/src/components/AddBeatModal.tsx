@@ -681,7 +681,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                     </div>
                     {!beatData.is_free && (
                       <div className="grid grid-cols-1 gap-4">
-                        {tariffs.map((tariff) => (
+                        {tariffs?.length && tariffs.map((tariff) => (
                           <div key={tariff.name} className="flex items-center space-x-4">
                             <label className="flex-1 text-sm font-medium text-neutral-300">
                               {tariff.display_name}

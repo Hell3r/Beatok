@@ -142,10 +142,14 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  const { playBeat, currentBeat, isPlaying } = useAudioPlayer();
+  const { playBeat, currentBeat, isPlaying, togglePlayPause } = useAudioPlayer();
 
-  const handlePlayBeat = (beat: Beat) => {
-    playBeat(beat);
+  const handlePlayBeat = async (beat: Beat) => {
+    if (currentBeat?.id === beat.id) {
+      togglePlayPause();
+    } else {
+      playBeat(beat);
+    }
   };
 
   const isFreeBeat = (beat: Beat): boolean => {
@@ -165,7 +169,7 @@ const ProfilePage: React.FC = () => {
     }
     
     try {
-        await fetch(`http://localhost:8000/beats/${beat.id}/increment-download`, {
+        await fetch(`https://beatokservice.ru/api/beats/${beat.id}/increment-download`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -175,7 +179,7 @@ const ProfilePage: React.FC = () => {
     } catch (error) {
         console.log('Не удалось увеличить счетчик скачиваний, но продолжаем скачивание:', error);
     }
-    const baseUrl = 'http://localhost:8000'
+    const baseUrl = 'https://beatokservice.ru/api'
     const beatFolder = `beats/${beat.id}`;
 
     const wavUrl = `${baseUrl}/audio_storage/${beatFolder}/audio.wav`;
@@ -682,7 +686,7 @@ const ProfilePage: React.FC = () => {
                   alt="Аватар"
                   className="w-16 h-16 rounded-full object-cover border-2 border-neutral-600"
                   onError={(e) => {
-                    e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
+                    e.currentTarget.src = 'https://beatokservice.ru/api/static/default_avatar.png';
                   }}
                 />
                 <span className="flex items-center gap-2">
@@ -708,7 +712,7 @@ const ProfilePage: React.FC = () => {
                     alt="Аватар"
                     className={`w-32 h-32 rounded-full object-cover border-4 select-none ${user.prom_status === 'subscription' ? 'border-none' : 'border-neutral-700'}`}
                     onError={(e) => {
-                      e.currentTarget.src = 'http://localhost:8000/static/default_avatar.png';
+                      e.currentTarget.src = 'https://beatokservice.ru/api/static/default_avatar.png';
                     }}
                   />
                 </div>

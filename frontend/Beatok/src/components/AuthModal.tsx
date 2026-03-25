@@ -51,7 +51,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     if (resendCooldown > 0) return;
 
     try {
-      const response = await fetch('https://beatokservice.ru/api/v1/users/resend-verification', {
+      const response = await fetch('https://beatokservice.ru/v1/users/resend-verification', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

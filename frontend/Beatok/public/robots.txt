@@ -9,7 +9,7 @@ Disallow: /email-change
 Disallow: /reset-password
 
 # Sitemap
-Sitemap: https://beatok.ru/sitemap.xml
+Sitemap: https://beatokservice.ru/sitemap.xml
 
 # Crawl-delay (optional, for polite crawling)
 Crawl-delay: 1

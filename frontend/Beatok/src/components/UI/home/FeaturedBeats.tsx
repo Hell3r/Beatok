@@ -7,11 +7,16 @@ import { useAudioPlayer } from '../../../hooks/useAudioPlayer';
 const FeaturedBeats: React.FC = () => {
   const [featuredBeats, setFeaturedBeats] = useState<Beat[]>([]);
   const [loading, setLoading] = useState(true);
-  const { playBeat, currentBeat, isPlaying, toggleFavorite, favoriteBeats, setBeats: setGlobalBeats } = useAudioPlayer();
+  const { playBeat, currentBeat, isPlaying, toggleFavorite, togglePlayPause, favoriteBeats, setBeats: setGlobalBeats } = useAudioPlayer();
 
-  const handlePlay = (beat: Beat) => {
-    playBeat(beat);
+  const handlePlay = async (beat: Beat) => {
+    if (currentBeat?.id === beat.id) {
+      togglePlayPause();
+    } else {
+      playBeat(beat);
+    }
   };
+
 
   const handleToggleFavorite = async (beat: Beat) => {
     const token = localStorage.getItem('access_token');
