@@ -516,7 +516,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
                     onContextMenu={(e) => handleContextMenu(e, beat)}
                   >
                     <td className="p-4 text-center">
-                      {beat.promotion_status !== 'standard' && (
+                      {beat.promotion_status === 'promoted' && (
                         <div className="mb-1">
                           <svg className="w-5 h-5 mx-auto text-yellow-400 drop-shadow-lg" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z"/>
@@ -524,14 +524,14 @@ const BeatTable: React.FC<BeatTableProps> = ({
                         </div>
                       )}
                       <div 
-                        className={`relative w-16 h-16 rounded overflow-hidden mx-auto cursor-pointer group ${beat.promotion_status !== 'standard' ? 'p-0.5 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600' : ''} ${beat.promotion_status === 'standard' ? 'mt-1' : ''}`}
+                        className={`relative w-16 h-16 rounded overflow-hidden mx-auto cursor-pointer group ${beat.promotion_status === 'promoted' ? 'p-0.5 bg-gradient-to-r from-yellow-400 via-yellow-500 to-yellow-600' : ''}`}
                         onClick={() => onPlay?.(beat)}
                       >
                         {coverUrl ? (
                           <img
                             src={coverUrl}
                             alt="Обложка"
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover select-none"
                           />
                         ) : (
                           <div className="w-full h-full bg-neutral-700 flex items-center justify-center">

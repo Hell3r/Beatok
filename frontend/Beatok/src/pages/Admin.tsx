@@ -13,7 +13,7 @@ import BeatInfoModal from '../components/BeatInfoModal';
 import { requestService } from '../services/requestService';
 import { withdrawalService } from '../services/withdrawalService';
 
-const API_URL = 'http://127.0.0.1:8000';
+const API_URL = 'https://beatokservice.ru/api';
 
 interface User {
   id: number;
@@ -521,15 +521,15 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
 
   const getCoverUrl = (beat: Beat): string | null => {
     if (!beat.cover_path) return null;
-    return `http://127.0.0.1:8000/static/covers/${beat.cover_path}`;
+    return `https://beatokservice.ru/api/static/covers/${beat.cover_path}`;
   };
 
   const getAuthorAvatar = (beat: Beat): string => {
     const authorId = beat.owner?.id || beat.author?.id || beat.user?.id || beat.author_id;
     const avatarPath = beat.owner?.avatar_path || beat.author?.avatar_path || beat.user?.avatar_path;
-    if (!authorId) return 'http://127.0.0.1:8000/static/default_avatar.png';
+    if (!authorId) return 'https://beatokservice.ru/api/static/default_avatar.png';
     if (avatarPath) return getAvatarUrl(authorId, avatarPath);
-    return 'http://127.0.0.1:8000/static/default_avatar.png';
+    return 'https://beatokservice.ru/api/static/default_avatar.png';
   };
 
   const getAuthorName = (beat: Beat): string => {
@@ -753,7 +753,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
                                 alt="Аватар"
                                 className="w-5 h-5 rounded-full"
                                 onError={(e) => {
-                                  e.currentTarget.src = 'http://127.0.0.1:8000/static/default_avatar.png';
+                                  e.currentTarget.src = 'https://beatokservice.ru/api/static/default_avatar.png';
                                 }}
                               />
                               <span className="text-neutral-400 text-sm hover:text-red-400 transition-colors">by {getAuthorName(beat)}</span>
@@ -988,7 +988,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
                       <td className="py-3 px-2 text-neutral-300">{user.id}</td>
                       <td className="py-3 px-2">
                         <img
-                          src={user.avatar_path ? getAvatarUrl(user.id, user.avatar_path) : 'http://127.0.0.1:8000/static/default_avatar.png'}
+                          src={user.avatar_path ? getAvatarUrl(user.id, user.avatar_path) : 'https://beatokservice.ru/api/static/default_avatar.png'}
                           alt="Аватар"
                           className="w-10 h-10 rounded-full cursor-pointer hover:ring-2 hover:ring-red-500 transition-all"
                           onClick={(e) => {
@@ -996,7 +996,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
                             navigate(`/profile/${user.id}`);
                           }}
                           onError={(e) => {
-                            e.currentTarget.src = 'http://127.0.0.1:8000/static/default_avatar.png';
+                            e.currentTarget.src = 'https://beatokservice.ru/api/static/default_avatar.png';
                           }}
                         />
                       </td>
@@ -1303,11 +1303,11 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
                   
                   <div className="flex items-center space-x-3 mb-6 p-3 bg-neutral-700 rounded-lg">
                     <img
-                      src={selectedUser.avatar_path ? getAvatarUrl(selectedUser.id, selectedUser.avatar_path) : 'http://127.0.0.1host:8000/static/default_avatar.png'}
+                      src={selectedUser.avatar_path ? getAvatarUrl(selectedUser.id, selectedUser.avatar_path) : 'https://beatokservice.ru/api/static/default_avatar.png'}
                       alt="Аватар"
                       className="w-12 h-12 rounded-full"
                       onError={(e) => {
-                        e.currentTarget.src = 'http://127.0.0.1:8000/static/default_avatar.png';
+                        e.currentTarget.src = 'https://beatokservice.ru/api/static/default_avatar.png';
                       }}
                     />
                     <div>

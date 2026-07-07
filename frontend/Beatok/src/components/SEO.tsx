@@ -21,7 +21,7 @@ const DEFAULT_SEO = {
   title: 'БИТОК - Продажа и покупка битов',
   description: 'БИТОК - сервис для продажи и покупки битов в СНГ. Свежие биты для рэпа, роки, поп-музыки и других жанров. Скачивай бесплатные биты или покупай премиум.',
   keywords: 'биты, купить биты, продать биты, биты для рэпа, бесплатные биты, минуса, битмейкеры, рэп, музыка',
-  image: 'https://beatok.ru/og-image.png',
+  image: 'https://beatokservice.ru/og-image.png',
   siteName: 'БИТОК',
 };
 
@@ -42,7 +42,7 @@ const SEO: React.FC<SEOProps> = ({
   tags,
 }) => {
   const fullTitle = title ? `${title} | ${DEFAULT_SEO.title}` : DEFAULT_SEO.title;
-  const canonicalUrl = canonical || (url ? `https://beatok.ru${url}` : 'https://beatok.ru/');
+  const canonicalUrl = canonical || (url ? `https://beatokservice.ru${url}` : 'https://beatokservice.ru/');
   
   // Build robots meta
   const robots: string[] = [];
@@ -102,7 +102,7 @@ const SEO: React.FC<SEOProps> = ({
     updateMetaTag('twitter:title', fullTitle);
     updateMetaTag('twitter:description', description);
     updateMetaTag('twitter:image', image);
-    updateMetaTag('twitter:domain', 'beatok.ru');
+    updateMetaTag('twitter:domain', 'beatokservice.ru');
 
     // Canonical URL
     let canonicalLink = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
@@ -146,7 +146,7 @@ export const generateBreadcrumbSchema = (items: { name: string; url: string }[])
       '@type': 'ListItem',
       position: index + 1,
       name: item.name,
-      item: `https://beatok.ru${item.url}`,
+      item: `https://beatokservice.ru${item.url}`,
     })),
   };
 };
@@ -157,8 +157,8 @@ export const generateOrganizationSchema = () => {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: 'БИТОК',
-    url: 'https://beatok.ru',
-    logo: 'https://beatok.ru/og-image.png',
+    url: 'https://beatokservice.ru',
+    logo: 'https://beatokservice.ru/og-image.png',
     description: 'Сервис для продажи и покупки битов в СНГ',
     sameAs: [
       'https://t.me/beatok_service',
@@ -189,12 +189,12 @@ export const generateWebsiteSchema = () => {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: 'БИТОК',
-    url: 'https://beatok.ru',
+    url: 'https://beatokservice.ru',
     potentialAction: {
       '@type': 'SearchAction',
       target: {
         '@type': 'EntryPoint',
-        urlTemplate: 'https://beatok.ru/beats?name={search_term_string}',
+        urlTemplate: 'https://beatokservice.ru/beats?name={search_term_string}',
       },
       'query-input': 'required name=search_term_string',
     },
@@ -229,7 +229,7 @@ export const generateBeatProductSchema = (beat: {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: beat.name,
-    image: beat.image || 'https://beatok.ru/og-image.png',
+    image: beat.image || 'https://beatokservice.ru/og-image.png',
     description: `Бит "${beat.name}" от ${beat.author}${beat.bpm ? `, ${beat.bpm} BPM` : ''}${beat.key ? `, ${beat.key} ключ` : ''}${beat.genre ? `, жанр ${beat.genre}` : ''}`,
     brand: {
       '@type': 'Brand',
@@ -250,7 +250,7 @@ export const generateBeatmakerPersonSchema = (user: {
     '@context': 'https://schema.org',
     '@type': 'Person',
     name: user.username,
-    url: `https://beatok.ru/profile/${user.username}`,
+    url: `https://beatokservice.ru/profile/${user.username}`,
     image: user.avatarUrl,
     description: user.description,
     worksCreated: user.beatCount ? {
