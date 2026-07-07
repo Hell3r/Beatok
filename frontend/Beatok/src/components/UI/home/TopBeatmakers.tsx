@@ -115,7 +115,7 @@ const TopBeatmakers: React.FC = () => {
         <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 transition-all duration-300 ${
           isTransitioning ? 'opacity-50' : 'opacity-100'
         }`}>
-          {visibleBeatmakers.map((beatmaker, index) => (
+          {Array.isArray(visibleBeatmakers) && visibleBeatmakers.map((beatmaker, index) => (
             <div
               key={`${beatmaker.user_id}-${currentIndex}`}
               className="bg-neutral-900 rounded-lg overflow-hidden hover:bg-neutral-800 transition-all duration-300 cursor-pointer group border border-neutral-700 relative hover:shadow-2xl hover:shadow-red-500/20"

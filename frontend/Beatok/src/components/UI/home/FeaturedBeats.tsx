@@ -25,7 +25,9 @@ const FeaturedBeats: React.FC = () => {
 
   const isFreeBeat = (beat: Beat): boolean => {
     if (!beat.pricings || beat.pricings.length === 0) return true;
-    const availablePrices = beat.pricings.filter(p => p.price !== null && p.is_available);
+    const availablePrices = Array.isArray(beat?.pricings) 
+    ? beat.pricings.filter(p => p.price !== null && p.is_available) 
+    : [];
     if (availablePrices.length === 0) return true;
     return Math.min(...availablePrices.map(p => p.price!)) === 0;
   };

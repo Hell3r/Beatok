@@ -111,7 +111,7 @@ const BeatmakersPage: React.FC = () => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
-                        {filteredBeatmakers.map((beatmaker) => (
+                        {Array.isArray(filteredBeatmakers) && filteredBeatmakers.map((beatmaker) => (
                             <div
                                 key={beatmaker.id}
                                 className="bg-neutral-900 rounded-lg overflow-hidden hover:bg-neutral-800 transition-all duration-300 cursor-pointer group border border-neutral-700 relative hover:shadow-2xl hover:shadow-red-500/20"

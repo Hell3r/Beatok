@@ -17,7 +17,9 @@ const PopularBeats: React.FC = () => {
 
   const isFreeBeat = (beat: Beat): boolean => {
     if (!beat.pricings || beat.pricings.length === 0) return true;
-    const availablePrices = beat.pricings.filter(p => p.price !== null && p.is_available);
+    const availablePrices = Array.isArray(beat?.pricings) 
+    ? beat.pricings.filter(p => p.price !== null && p.is_available) 
+    : [];
     if (availablePrices.length === 0) return true;
     return Math.min(...availablePrices.map(p => p.price!)) === 0;
   };
@@ -127,7 +129,9 @@ const PopularBeats: React.FC = () => {
     try {
       setLoading(true);
       const data = await beatService.getBeats(0, 10);
-      const availableBeats = data.filter(beat => beat.status === 'available');
+      const availableBeats = Array.isArray(data) 
+    ? data.filter(beat => beat.status === 'available') 
+    : [];
       availableBeats.sort((a, b) => b.likes_count - a.likes_count);
       setBeats(availableBeats);
       setGlobalBeats(availableBeats);

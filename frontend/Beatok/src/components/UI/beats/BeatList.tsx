@@ -54,9 +54,9 @@ const BeatList: React.FC<BeatListProps> = ({
 
   const isFree = (beat: Beat): boolean => {
     if (!beat.pricings || beat.pricings.length === 0) return true;
-    const availablePrices = beat.pricings.filter(p => p.price !== null && p.is_available);
+    const availablePrices = beat.pricings.filter((p: { price: number | null; is_available: boolean }) => p.price !== null && p.is_available);
     if (availablePrices.length === 0) return true;
-    return Math.min(...availablePrices.map(p => p.price!)) === 0;
+    return Math.min(...availablePrices.map((p: { price: number | null; is_available: boolean }) => p.price!)) === 0;
   };
 
   const getAuthorName = (beat: Beat): string => {
@@ -104,20 +104,20 @@ const BeatList: React.FC<BeatListProps> = ({
 
   const getBeatMinPrice = (beat: Beat): number | null => {
     if (!beat.pricings || beat.pricings.length === 0) return null;
-    const availablePrices = beat.pricings.filter(p => p.price !== null && p.is_available);
+    const availablePrices = beat.pricings.filter((p: { price: number | null; is_available: boolean }) => p.price !== null && p.is_available);
     if (availablePrices.length === 0) return null;
-    return Math.min(...availablePrices.map(p => p.price!));
+    return Math.min(...availablePrices.map((p: { price: number | null; is_available: boolean }) => p.price!));
   };
 
   const filteredBeats = useMemo(() => {
-    return beats.filter((beat) => {
+    return Array.isArray(beats) ? beats.filter((beat: Beat) => {
       if (!isProfileView && beat.status !== 'available') {
         return false;
       }
       if (filters.name) {
         const searchLower = filters.name.toLowerCase();
         const nameMatch = beat.name.toLowerCase().includes(searchLower);
-        const tagMatch = beat.tags?.some(tag => 
+        const tagMatch = beat.tags?.some((tag: any) => 
           tag.name.toLowerCase().includes(searchLower)
         );
         if (!nameMatch && !tagMatch) return false;
@@ -154,7 +154,7 @@ const BeatList: React.FC<BeatListProps> = ({
         }
       }
       return true;
-    });
+    }) : [];
   }, [beats, filters, isProfileView]);
 
   const sortedBeats = useMemo(() => {
@@ -393,7 +393,7 @@ const BeatList: React.FC<BeatListProps> = ({
                       style={{ minWidth: '120px' }}
                       title="Купить"
                     >
-                      от {Math.min(...beat.pricings!.filter(p => p.price !== null && p.is_available).map(p => p.price!))} ₽
+                      от {Math.min(...beat.pricings!.filter((p: { price: number | null; is_available: boolean }) => p.price !== null && p.is_available).map((p: { price: number | null; is_available: boolean }) => p.price!))} ₽
                     </button>
                   )}
 

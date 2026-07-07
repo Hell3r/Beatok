@@ -195,7 +195,7 @@ const BeatsPage: React.FC = () => {
         <div className="mb-8 flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
           <div>
             <p className="text-neutral-400">
-              Всего битов: <span className="text-white font-semibold">{beats.filter(beat => beat.status === 'available').length}</span>
+              Всего битов: <span className="text-white font-semibold">{Array.isArray(beats) ? beats.filter(beat => beat.status === 'available').length : 0}</span>
             </p>
             {currentBeat && (
               <p className="text-xs text-neutral-500 mt-1">
