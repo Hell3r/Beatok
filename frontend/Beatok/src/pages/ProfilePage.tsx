@@ -674,7 +674,7 @@ const ProfilePage: React.FC = () => {
 
       return (
         <div className="page-shell pb-24">
-          <div className="section-shell mb-8 overflow-hidden px-6 py-8 sm:px-8 lg:px-10">
+          <div className="section-shell mb-8 overflow-hidden px-6 py-8 sm:px-8 lg:px-10 mt-4">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(220,38,38,0.18),transparent_26%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.08),transparent_24%)]" />
             <div className="relative text-center select-none">
           <h1 className="mx-auto flex items-center justify-center gap-3 text-3xl font-bold text-white sm:text-4xl">

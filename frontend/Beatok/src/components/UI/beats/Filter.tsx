@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 
 export interface Filters {
   name: string;
@@ -58,11 +58,11 @@ const genres = [
 ];
 
 const fieldClassName =
-  'field-shell w-full px-4 py-3 text-white placeholder-neutral-500 transition-colors focus:outline-none';
+  'field-shell w-full px-4 py-2 text-sm text-white placeholder-neutral-500 transition-colors focus:outline-none';
 
 const SelectArrow = () => (
   <svg
-    className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500"
+    className="hidden pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500"
     fill="none"
     stroke="currentColor"
     viewBox="0 0 24 24"
@@ -103,26 +103,25 @@ const Filter: React.FC<FilterProps> = ({ filters, onFiltersChange }) => {
   const hasActiveFilters = Object.values(filters).some((value) => value !== '' && value !== false);
 
   return (
-    <div className="glass-panel-strong relative z-20 overflow-visible p-5 md:p-6 select-none">
-      <div className="mb-5 flex items-center justify-between gap-3">
+    <div className="glass-panel-strong relative z-20 overflow-visible p-4 md:p-5 select-none">
+      <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <p className="section-kicker mb-2">Каталог</p>
-          <h3 className="text-lg font-semibold text-white">Фильтры</h3>
+          <p className="section-kicker">Фильтры</p>
         </div>
         {hasActiveFilters && (
           <button
             type="button"
             onClick={clearFilters}
-            className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-neutral-200 transition hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white"
+            className="rounded-full border border-white/10 bg-white/5 px-2 py-1 text-sm text-neutral-200 transition hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white"
           >
             Сбросить
           </button>
         )}
       </div>
 
-      <div className="space-y-5 overflow-visible">
+      <div className="space-y-4 overflow-visible">
         <div>
-          <label className="mb-2 block text-sm text-neutral-400">Поиск по названию или тегу</label>
+          <label className="mb-1 block text-sm text-neutral-400">Поиск по названию или тегу</label>
           <input
             type="text"
             value={filters.name}
@@ -133,7 +132,7 @@ const Filter: React.FC<FilterProps> = ({ filters, onFiltersChange }) => {
         </div>
 
         <div>
-          <label className="mb-2 block text-sm text-neutral-400">Автор</label>
+          <label className="mb-1 block text-sm text-neutral-400">Автор</label>
           <input
             type="text"
             value={filters.author}
@@ -144,7 +143,7 @@ const Filter: React.FC<FilterProps> = ({ filters, onFiltersChange }) => {
         </div>
 
         <div>
-          <label className="mb-2 block text-sm text-neutral-400">Темп (BPM)</label>
+          <label className="mb-1 block text-sm text-neutral-400">Темп (BPM)</label>
           <input
             type="text"
             value={filters.bpm}
@@ -155,7 +154,7 @@ const Filter: React.FC<FilterProps> = ({ filters, onFiltersChange }) => {
         </div>
 
         <div className="relative z-30 overflow-visible">
-          <label className="mb-2 block text-sm text-neutral-400">Тональность</label>
+          <label className="mb-1 block text-sm text-neutral-400">Тональность</label>
           <div className="relative">
             <select
               value={filters.key}
@@ -174,7 +173,7 @@ const Filter: React.FC<FilterProps> = ({ filters, onFiltersChange }) => {
         </div>
 
         <div className="relative z-30 overflow-visible">
-          <label className="mb-2 block text-sm text-neutral-400">Жанр</label>
+          <label className="mb-1 block text-sm text-neutral-400">Жанр</label>
           <div className="relative">
             <select
               value={filters.genre}
@@ -193,13 +192,13 @@ const Filter: React.FC<FilterProps> = ({ filters, onFiltersChange }) => {
         </div>
 
         <div className="rounded-[22px] border border-white/[0.08] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-          <label htmlFor="freeOnly" className="flex cursor-pointer items-center gap-3 text-neutral-300">
+          <label htmlFor="freeOnly" className="flex cursor-pointer items-center gap-3 text-neutral-300 text-sm">
             <input
               type="checkbox"
               id="freeOnly"
               checked={filters.freeOnly}
               onChange={(event) => handleFreeOnlyChange(event.target.checked)}
-              className="h-5 w-5 cursor-pointer rounded border-white/[0.15] bg-black/30 text-red-600"
+              className="h-4 w-4 cursor-pointer rounded border-white/[0.15] bg-black/30 text-red-600"
             />
             Только бесплатные биты
           </label>
@@ -207,7 +206,7 @@ const Filter: React.FC<FilterProps> = ({ filters, onFiltersChange }) => {
           {!filters.freeOnly && (
             <div className="mt-4 grid grid-cols-2 gap-3">
               <div>
-                  <label className="mb-2 block text-sm text-neutral-400">Цена от</label>
+                  <label className="mb-1 block text-sm text-neutral-400">Цена от</label>
                 <input
                   type="number"
                   value={filters.minPrice}
@@ -219,7 +218,7 @@ const Filter: React.FC<FilterProps> = ({ filters, onFiltersChange }) => {
               </div>
 
               <div>
-                  <label className="mb-2 block text-sm text-neutral-400">Цена до</label>
+                  <label className="mb-1 block text-sm text-neutral-400">Цена до</label>
                 <input
                   type="number"
                   value={filters.maxPrice}

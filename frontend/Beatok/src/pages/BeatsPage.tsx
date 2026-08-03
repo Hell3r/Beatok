@@ -263,7 +263,7 @@ const BeatsPage: React.FC = () => {
         ])}
       />
 
-      <div className="space-y-6 select-none">
+      <div className="space-y-6 select-none mt-4">
         <div className="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]">
           <aside className="sticky top-28 hidden self-start overflow-visible xl:block">
             <Filter filters={filters} onFiltersChange={setFilters} />
@@ -274,9 +274,6 @@ const BeatsPage: React.FC = () => {
               <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="section-kicker mb-2">Каталог битов</p>
-                  <h1 className="text-2xl font-bold text-white">
-                    {filters.freeOnly ? 'Бесплатные биты' : 'Все биты'}
-                  </h1>
                   <div className="mt-3 flex flex-wrap gap-2 text-sm text-neutral-300">
                     <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1">
                       {loading ? 'Загрузка...' : `${filteredBeatsCount} из ${availableBeats.length}`}

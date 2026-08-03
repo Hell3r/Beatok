@@ -268,7 +268,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
     const currentUser = getCurrentUser();
     const isOwnBeat = currentUser && getAuthorId(beat) === currentUser.id;
     const isFavorite = favoriteBeats.some((fav) => fav.id === beat.id);
-    const minPrice = beat.pricings?.filter((p) => p.price !== null && p.is_available).map((p) => p.price!);
+    const minPrice = getBeatMinPrice(beat);
 
     if (isProfileView) {
       return (
@@ -285,7 +285,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
             {beat.status === 'available' && beat.promotion_status !== 'promoted' && (
               <button
                 onClick={() => handlePromoteClick(beat)}
-                className="flex items-center gap-2 rounded-full border border-yellow-400/30 bg-[linear-gradient(135deg,rgba(250,204,21,0.96),rgba(202,138,4,0.92))] px-3 py-2 text-sm font-semibold text-black shadow-[0_14px_28px_rgba(234,179,8,0.18)] transition duration-300 hover:-translate-y-0.5"
+                className="flex items-center gap-2 rounded-full border border-yellow-400/30 px-3 py-2 text-sm font-semibold text-yellow shadow-[0_14px_28px_rgba(234,179,8,0.18)] transition duration-300 hover:-translate-y-0.5"
                 title="Продвигать бит"
               >
                 <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
@@ -305,7 +305,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
           {isOwnBeat ? (
             <button
               onClick={() => onDownload?.(beat)}
-              className="rounded-full border border-white/12 bg-white/6 px-5 py-2.5 text-sm font-medium text-white transition duration-300 hover:border-white/20 hover:bg-white/10"
+              className="action-button-secondary mt-1 action-button-slim beat-table-action min-w-[120px] text-sm font-medium"
               style={{ minWidth: '120px' }}
               title="Скачать"
             >
@@ -314,7 +314,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
           ) : isFree(beat) ? (
             <button
               onClick={() => onDownload?.(beat)}
-              className="rounded-full border border-white/12 bg-white/6 px-5 py-2.5 text-sm font-medium text-white transition duration-300 hover:border-white/20 hover:bg-white/10"
+              className="action-button-secondary mt-1 action-button-slim beat-table-action min-w-[120px] text-sm font-medium"
               style={{ minWidth: '120px' }}
               title="Скачать"
             >
@@ -331,11 +331,11 @@ const BeatTable: React.FC<BeatTableProps> = ({
                 setBeatToPurchase(beat);
                 setPurchaseModalOpen(true);
               }}
-              className="rounded-full border border-red-500/30 bg-[linear-gradient(135deg,rgba(220,38,38,0.95),rgba(127,29,29,0.92))] px-5 py-2.5 text-sm font-semibold text-white shadow-[0_16px_30px_rgba(220,38,38,0.22)] transition duration-300 hover:-translate-y-0.5"
+              className="beat-table-price mt-1 beat-table-action min-w-[120px] rounded-full border text-sm font-semibold transition duration-300 hover:-translate-y-0.5"
               style={{ minWidth: '120px' }}
               title="Купить"
             >
-              от {Math.min(...(minPrice || [0]))} ₽
+              от {minPrice?.toLocaleString('ru-RU') ?? 0} ₽
             </button>
           )}
 
@@ -348,10 +348,10 @@ const BeatTable: React.FC<BeatTableProps> = ({
               }
               onToggleFavorite?.(beat);
             }}
-            className={`flex h-12 w-12 items-center justify-center rounded-full border transition duration-300 ${isFavorite ? 'border-red-500/30 bg-red-500/12 text-red-400 shadow-[0_0_24px_rgba(220,38,38,0.18)]' : 'border-white/10 bg-white/5 text-white hover:border-white/20 hover:bg-white/10'}`}
+            className={`beat-table-favorite flex h-11 w-11 items-center justify-center rounded-full border transition duration-300 ${isFavorite ? 'border-red-500/30 bg-red-500/12 text-red-400 shadow-[0_0_24px_rgba(220,38,38,0.18)]' : 'border-white/10 bg-white/5 text-white hover:border-white/20 hover:bg-white/10'}`}
             title={isFavorite ? 'Убрать из избранного' : 'Добавить в избранное'}
           >
-            <svg className="h-6 w-6" fill={isFavorite ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="h-7 w-7" fill={isFavorite ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
           </button>
@@ -362,7 +362,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
 
   if (loading) {
     return (
-      <div className="overflow-hidden rounded-[30px] border border-white/10 bg-[rgba(15,18,28,0.84)] shadow-[0_24px_60px_rgba(0,0,0,0.32)] backdrop-blur-2xl">
+      <div className="beat-table-shell">
         <table className="w-full">
           <thead>
             <tr className="border-b border-white/8 bg-white/4 text-[11px] uppercase tracking-[0.24em] text-[var(--text-muted)]">
@@ -380,7 +380,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
           </thead>
           <tbody>
             {[...Array(5)].map((_, i) => (
-              <tr key={i} className="border-b border-white/6 animate-pulse">
+              <tr key={i} className="animate-pulse border-b border-white/6">
                 <td className="px-4 py-4"><div className="mx-auto h-16 w-16 rounded-2xl bg-white/8" /></td>
                 <td className="px-4 py-4"><div className="mx-auto h-4 w-3/4 rounded-full bg-white/8" /></td>
                 {!isProfileView && !hideAuthorColumn && <td className="px-4 py-4"><div className="mx-auto h-4 w-2/3 rounded-full bg-white/8" /></td>}
@@ -401,7 +401,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
 
   return (
     <>
-      <div className="overflow-hidden rounded-[30px] border border-white/10 bg-[linear-gradient(180deg,rgba(15,18,28,0.94),rgba(10,12,18,0.96))] shadow-[0_24px_60px_rgba(0,0,0,0.32)] backdrop-blur-2xl">
+      <div className="beat-table-shell">
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1080px]">
             <thead>
@@ -504,15 +504,15 @@ const BeatTable: React.FC<BeatTableProps> = ({
                           )}
                           <div className={`absolute inset-0 flex items-center justify-center bg-[linear-gradient(180deg,rgba(4,6,10,0.26),rgba(4,6,10,0.82))] transition duration-300 ${currentPlayingBeat?.id === beat.id && isPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
                             <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-black/10 text-white shadow-[0_10px_24px_rgba(0,0,0,0.18)] backdrop-blur-sm">
-                            {currentPlayingBeat?.id === beat.id && isPlaying ? (
-                              <svg className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M6 4h4v16H6zm8 0h4v16h-4z" />
-                              </svg>
-                            ) : (
-                              <svg className="h-6 w-6 translate-x-0.5 text-white" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M8 5v14l11-7z" />
-                              </svg>
-                            )}
+                              {currentPlayingBeat?.id === beat.id && isPlaying ? (
+                                <svg className="h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M6 4h4v16H6zm8 0h4v16h-4z" />
+                                </svg>
+                              ) : (
+                                <svg className="h-6 w-6 translate-x-0.5 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M8 5v14l11-7z" />
+                                </svg>
+                              )}
                             </div>
                           </div>
                         </button>

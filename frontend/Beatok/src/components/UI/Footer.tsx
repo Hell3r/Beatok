@@ -38,7 +38,7 @@ const Footer: React.FC = () => {
 
   return (
     <footer className="page-shell pb-28 md:pb-10">
-      <div className="section-shell px-5 py-8 md:px-8 md:py-10">
+      <div className="section-shell px-5 py-8 md:px-8 md:py-10 mt-4">
         <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-6">
             <div className="section-heading">

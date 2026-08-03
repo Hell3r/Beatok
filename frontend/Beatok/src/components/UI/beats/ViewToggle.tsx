@@ -12,10 +12,10 @@ const ViewToggle: React.FC<ViewToggleProps> = ({ currentView, onViewChange }) =>
     <div className="nav-shell flex items-center gap-1 rounded-full p-1.5">
       <button
         onClick={() => onViewChange('grid')}
-        className={`flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition cursor-pointer ${
+        className={`beat-view-toggle-button flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition cursor-pointer ${
           currentView === 'grid'
-            ? 'bg-red-600/90 text-white shadow-[0_12px_34px_rgba(220,38,38,0.32)]'
-            : 'text-neutral-300 hover:bg-white/6 hover:text-white'
+            ? 'beat-view-toggle-button--active'
+            : 'beat-view-toggle-button--inactive'
         }`}
         title="Сетка"
       >
@@ -27,10 +27,10 @@ const ViewToggle: React.FC<ViewToggleProps> = ({ currentView, onViewChange }) =>
 
       <button
         onClick={() => onViewChange('table')}
-        className={`flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition cursor-pointer ${
+        className={`beat-view-toggle-button flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-semibold transition cursor-pointer ${
           currentView === 'table'
-            ? 'bg-red-600/90 text-white shadow-[0_12px_34px_rgba(220,38,38,0.32)]'
-            : 'text-neutral-300 hover:bg-white/6 hover:text-white'
+            ? 'beat-view-toggle-button--active'
+            : 'beat-view-toggle-button--inactive'
         }`}
         title="Таблица"
       >

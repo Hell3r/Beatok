@@ -309,7 +309,7 @@ const BeatList: React.FC<BeatListProps> = ({
                       }
                       onToggleFavorite?.(beat);
                     }}
-                    className={`hidden absolute right-2.5 top-2.5 z-10 h-9 w-9 items-center justify-center rounded-full border transition ${
+                    className={`hidden absolute right-2.5 top-2.5 z-10 h-11 w-11 items-center justify-center rounded-full border transition ${
                       isFavorite
                         ? 'border-red-500/25 bg-red-500/[0.16] text-red-300'
                         : 'border-white/10 bg-black/30 text-white/80 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white'
@@ -317,7 +317,7 @@ const BeatList: React.FC<BeatListProps> = ({
                     title={isFavorite ? 'Убрать из избранного' : 'Добавить в избранное'}
                   >
                     <svg
-                      className="h-4 w-4"
+                      className="h-8 w-8"
                       fill={isFavorite ? 'currentColor' : 'none'}
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -325,7 +325,7 @@ const BeatList: React.FC<BeatListProps> = ({
                       <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        strokeWidth={2}
+                        strokeWidth={2.2}
                         d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
                       />
                     </svg>
@@ -455,18 +455,6 @@ const BeatList: React.FC<BeatListProps> = ({
                   </div>
                 </div>
 
-                {displayTags.length > 0 && (
-                  <div className="mb-3 flex flex-wrap gap-2">
-                    {displayTags.map((tag) => (
-                      <span
-                        key={tag.id ?? tag.name}
-                        className="rounded-full border border-white/[0.08] bg-white/5 px-3 py-1 text-xs text-neutral-300"
-                      >
-                        #{tag.name}
-                      </span>
-                    ))}
-                  </div>
-                )}
 
                 {isProfileView && beat.status === 'available' && beat.promotion_status !== 'promoted' && (
                   <button
@@ -485,12 +473,8 @@ const BeatList: React.FC<BeatListProps> = ({
                   </button>
                 )}
 
-                <div className="mt-auto flex items-end justify-between gap-3">
-                  <div className="min-w-0 text-xs text-neutral-500">
-                    {new Date(beat.created_at).toLocaleDateString('ru-RU')}
-                  </div>
-
-                  <div className="flex flex-1 items-center justify-end gap-2">
+                <div className="mt-auto space-y-3">
+                  <div className="flex items-stretch gap-2">
                     {isOwnBeat ? (
                       <button
                         type="button"
@@ -533,15 +517,15 @@ const BeatList: React.FC<BeatListProps> = ({
                         }
                         onToggleFavorite?.(beat);
                       }}
-                      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition ${
+                      className={`beat-card-action flex h-12 w-12 shrink-0 items-center justify-center rounded-full border px-0 transition ${
                         isFavorite
                           ? 'border-red-500/25 bg-red-500/[0.16] text-red-300'
-                          : 'border-white/10 bg-black/30 text-white/80 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white'
+                          : 'border-white/10 bg-black/30 text-white/75 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white'
                       }`}
                       title={isFavorite ? 'РЈР±СЂР°С‚СЊ РёР· РёР·Р±СЂР°РЅРЅРѕРіРѕ' : 'Р”РѕР±Р°РІРёС‚СЊ РІ РёР·Р±СЂР°РЅРЅРѕРµ'}
                     >
                       <svg
-                        className="h-4 w-4"
+                        className="h-10 w-10"
                         fill={isFavorite ? 'currentColor' : 'none'}
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -549,7 +533,7 @@ const BeatList: React.FC<BeatListProps> = ({
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          strokeWidth={2}
+                          strokeWidth={2.2}
                           d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
                         />
                       </svg>
@@ -564,6 +548,10 @@ const BeatList: React.FC<BeatListProps> = ({
                         Удалить
                       </button>
                     )}
+                  </div>
+
+                  <div className="text-xs text-neutral-500">
+                    {new Date(beat.created_at).toLocaleDateString('ru-RU')}
                   </div>
 
                 </div>

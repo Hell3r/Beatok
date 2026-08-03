@@ -118,11 +118,10 @@ const SupportPage: React.FC = () => {
         ]}
       />
 
-      <div className="space-y-6 select-none">
+      <div className="space-y-6 select-none mt-4">
         <section className="page-hero">
           <div className="relative z-10 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
             <div className="section-heading">
-              <div className="glass-pill w-fit">Центр поддержки</div>
               <div>
                 <p className="section-kicker mb-3">Аккаунт, оплата, заявки</p>
                 <h1 className="text-4xl font-black text-white md:text-6xl">Поддержка</h1>

@@ -84,11 +84,10 @@ const BeatmakersPage: React.FC = () => {
         ])}
       />
 
-      <div className="space-y-6 select-none">
+      <div className="space-y-6 select-none mt-4">
         <section className="page-hero">
           <div className="relative z-10 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
             <div className="section-heading">
-              <div className="glass-pill w-fit">Каталог авторов</div>
               <div>
                 <p className="section-kicker mb-3">Продюсеры, команды, звук</p>
                 <h1 className="text-4xl font-black text-white md:text-6xl">Битмейкеры</h1>

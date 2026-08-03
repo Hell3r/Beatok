@@ -99,6 +99,58 @@ const App: React.FC = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const surfaceSelector = '.page-hero, .section-shell, .glass-panel, .glass-panel-strong, .nav-shell, .glass-card, .beat-table-shell';
+    let activeSurface: HTMLElement | null = null;
+
+    const resetSurfacePointer = (surface: HTMLElement | null) => {
+      if (!surface) return;
+      surface.style.removeProperty('--surface-pointer-x');
+      surface.style.removeProperty('--surface-pointer-y');
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) {
+        resetSurfacePointer(activeSurface);
+        activeSurface = null;
+        return;
+      }
+
+      const surface = target.closest(surfaceSelector);
+      if (!(surface instanceof HTMLElement)) {
+        resetSurfacePointer(activeSurface);
+        activeSurface = null;
+        return;
+      }
+
+      if (activeSurface && activeSurface !== surface) {
+        resetSurfacePointer(activeSurface);
+      }
+
+      const rect = surface.getBoundingClientRect();
+      surface.style.setProperty('--surface-pointer-x', `${event.clientX - rect.left}px`);
+      surface.style.setProperty('--surface-pointer-y', `${event.clientY - rect.top}px`);
+      activeSurface = surface;
+    };
+
+    const handlePointerLeaveDocument = () => {
+      resetSurfacePointer(activeSurface);
+      activeSurface = null;
+    };
+
+    window.addEventListener('pointermove', handlePointerMove, { passive: true });
+    window.addEventListener('pointerleave', handlePointerLeaveDocument);
+    window.addEventListener('blur', handlePointerLeaveDocument);
+
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerleave', handlePointerLeaveDocument);
+      window.removeEventListener('blur', handlePointerLeaveDocument);
+      resetSurfacePointer(activeSurface);
+    };
+  }, []);
+
   const isUserAuthenticated = !!localStorage.getItem('access_token');
 
   return (
