@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTransition, animated, useSpring } from '@react-spring/web';
 import type { User, AuthResponse } from '../types/auth';
 import { useModal } from '../hooks/useModal';
+import { apiUrl } from '../services/api';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -51,7 +52,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     if (resendCooldown > 0) return;
 
     try {
-      const response = await fetch('https://beatokservice.ru/v1/users/resend-verification', {
+      const response = await fetch(apiUrl('/v1/users/resend-verification'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,7 +76,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     if (resendCooldown > 0) return;
 
     try {
-      const response = await fetch('https://beatokservice.ru/api/v1/users/forgot-password', {
+      const response = await fetch(apiUrl('/v1/users/forgot-password'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -140,7 +141,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
       formData.append('username', loginData.email);
       formData.append('password', loginData.password);
 
-      const response = await fetch('https://beatokservice.ru/api/v1/users/login', {
+      const response = await fetch(apiUrl('/v1/users/login'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
@@ -215,7 +216,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     }
 
     try {
-      const response = await fetch('https://beatokservice.ru/api/v1/users/register', {
+      const response = await fetch(apiUrl('/v1/users/register'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -252,7 +253,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
     setError('');
 
     try {
-      const response = await fetch('https://beatokservice.ru/api/v1/users/forgot-password', {
+      const response = await fetch(apiUrl('/v1/users/forgot-password'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -284,7 +285,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
         item && (
           <animated.div
             style={style}
-            className="fixed inset-0 bg-black/30 backdrop-blur-md z-40"
+            className="modal-backdrop z-40"
             onClick={onClose}
           />
         )
@@ -298,9 +299,9 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
           >
             <animated.div
               style={modalHeightSpring}
-              className="bg-neutral-900 rounded-lg w-full max-w-md border border-neutral-800 shadow-2xl"
+              className="modal-shell w-full max-w-md"
             >
-              <div className="p-6 border-b border-neutral-800">
+              <div className="modal-divider border-b p-6">
                 <div className="flex justify-between items-start">
                   <div>
                     <h2 className="text-xl font-bold text-white select-none">
@@ -361,7 +362,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                         <button
                           type="submit"
                           disabled={loading}
-                          className="w-full select-none cursor-pointer bg-red-600 hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="action-button-primary action-button-block"
                         >
                           {loading ? 'Вход...' : 'Войти'}
                         </button>
@@ -448,7 +449,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose }) => {
                         </div>
 
 
-                        <div className="pt-2 border-neutral-800 p-3 bg-neutral-850 rounded-lg select-none">
+                        <div className="modal-subpanel p-3 select-none">
                           <label className="flex items-start cursor-pointer group">
                             <input
                               type="checkbox"
@@ -473,7 +474,7 @@ className="mt-1 mr-2 w-4 h-4 rounded accent-red-600 flex-shrink-0"
                         <button
                           type="submit"
                           disabled={loading || !registerData.agreed_consents}
-                          className="w-full select-none bg-red-600 cursor-pointer hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="action-button-primary action-button-block"
                         >
                           {loading ? 'Регистрация...' : 'Зарегистрироваться'}
                         </button>
@@ -497,7 +498,7 @@ className="mt-1 mr-2 w-4 h-4 rounded accent-red-600 flex-shrink-0"
                         <button
                           type="submit"
                           disabled={loading}
-                          className="w-full cursor-pointer bg-red-600 hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="action-button-primary action-button-block"
                         >
                           {loading ? 'Отправка...' : 'Отправить письмо'}
                         </button>
@@ -525,7 +526,7 @@ className="mt-1 mr-2 w-4 h-4 rounded accent-red-600 flex-shrink-0"
                                 setError('');
                                 setResendCooldown(0);
                               }}
-                              className="w-full select-none cursor-pointer bg-red-600 hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200"
+                              className="action-button-primary action-button-block"
                             >
                               Понятно
                             </button>
@@ -533,7 +534,7 @@ className="mt-1 mr-2 w-4 h-4 rounded accent-red-600 flex-shrink-0"
                             <button
                               onClick={handleResendForgotPassword}
                               disabled={resendCooldown > 0}
-                              className="w-full select-none cursor-pointer bg-neutral-700 hover:bg-neutral-600 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="action-button-secondary action-button-block"
                             >
                               {resendCooldown > 0 ? `Отправить ещё раз (${resendCooldown} сек)` : 'Отправить ещё раз'}
                             </button>
@@ -563,7 +564,7 @@ className="mt-1 mr-2 w-4 h-4 rounded accent-red-600 flex-shrink-0"
                                 setError('');
                                 setResendCooldown(0);
                               }}
-                              className="w-full select-none cursor-pointer bg-red-600 hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200"
+                              className="action-button-primary action-button-block"
                             >
                               Понятно
                             </button>
@@ -571,7 +572,7 @@ className="mt-1 mr-2 w-4 h-4 rounded accent-red-600 flex-shrink-0"
                             <button
                               onClick={handleResend}
                               disabled={resendCooldown > 0}
-                              className="w-full select-none cursor-pointer bg-neutral-700 hover:bg-neutral-600 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="action-button-secondary action-button-block"
                             >
                               {resendCooldown > 0 ? `Отправить ещё раз (${resendCooldown} сек)` : 'Отправить ещё раз'}
                             </button>

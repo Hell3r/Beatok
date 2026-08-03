@@ -35,7 +35,7 @@ const EmailConfirmed: React.FC = () => {
 
                 <button 
                     onClick={handleLoginRedirect}
-                    className="bg-red-600 hover:bg-red-700 cursor-pointer text-white px-6 py-3 rounded-md font-medium transition-colors duration-200 focus:outline-none text-base"
+                    className="action-button-primary"
                 >
                     Перейти к входу
                 </button>

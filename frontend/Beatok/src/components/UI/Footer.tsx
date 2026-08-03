@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaTelegram, FaEnvelope, FaVk } from 'react-icons/fa';
+import { FaEnvelope, FaTelegram, FaVk } from 'react-icons/fa';
 import { useNotificationContext } from '../NotificationProvider';
 
 interface NavItem {
@@ -12,11 +12,10 @@ const Footer: React.FC = () => {
   const { showSuccess } = useNotificationContext();
 
   const navItems: NavItem[] = [
-    { href: '/', label: 'ГЛАВНАЯ' },
-    { href: '/beats', label: 'БИТЫ' },
-    { href: '/beats?free=true', label: 'БЕСПЛАТНЫЕ' },
-    { href: '/beatmakers', label: 'БИТМЕЙКЕРЫ' },
-    { href: '/about', label: 'О НАС' },
+    { href: '/', label: 'Главная' },
+    { href: '/beats', label: 'Биты' },
+    { href: '/beats?free=true', label: '0 ₽' },
+    { href: '/beatmakers', label: 'Битмейкеры' },
     { href: '/support', label: 'FAQ' },
   ];
 
@@ -35,96 +34,118 @@ const Footer: React.FC = () => {
     }
   };
 
-  const getCurrentYear = () => {
-    const currentDate = new Date;
-    const currentYear = currentDate.getFullYear()
-    
-    return currentYear
-  }
+  const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-neutral-950 border-t w-full border-neutral-700 py-16 mt-8">
-      <div className="container mx-auto px-4">
-        <div className="flex flex-col items-center space-y-8">
-          <div className="flex flex-wrap justify-center space-x-6">
-            {navItems.map((item) => (
-              <Link
-                key={item.href}
-                to={item.href}
-                className="text-gray-400 hover:text-gray-300 transition-colors duration-200 text-sm"
-              >
-                {item.label}
-              </Link>
-            ))}
-          </div>
-          <div className='justify-center spacw-x-8 text-center'>
-            <p className='text-gray-400 text-sm'>
-              ИП Репьев Евгений Алексеевич
-            </p>
-            <p className='text-gray-400 text-sm'>
-              ОГРН/ОГРНИП: 324508100488650 
-            </p>
-            <p className='text-gray-400 text-sm'>
-              ЮРИДИЧЕСКИЙ АДРЕС: 141060, РОССИЯ, МОСКОВСКАЯ ОБЛ, Г КОРОЛЁВ,<br /> МКР БОЛШЕВО, ПРОЕЗД БУРКОВСКИЙ, Д 36, КОРП 1, КВ 18 
-            </p>
-            <p className='text-gray-400 text-sm'>
-              ИНН: 592061978176 
-            </p>
-            <p className='text-gray-400 text-sm'>
-              ПОЧТА: repiev.evgeny@yandex.ru  
-            </p>
-          </div>
-          <div className="flex justify-center space-x-8">
-            <a
-              href="https://t.me/beatok_service"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex flex-col items-center transition-all duration-300 hover:scale-110"
-              title="Написать в Telegram"
-            >
-              <div className="w-16 h-16 bg-transparent rounded-full flex items-center justify-center transition-all duration-300 group-hover:bg-red-500/10">
-                <FaTelegram className="w-10 h-10 text-white/80 transition-all duration-300 group-hover:text-red-500 group-hover:scale-110" />
-              </div>
-            </a>
+    <footer className="page-shell pb-28 md:pb-10">
+      <div className="section-shell px-5 py-8 md:px-8 md:py-10">
+        <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="space-y-6">
+            <div className="section-heading">
+              <p className="section-kicker">Beatok</p>
+              <h2 className="text-3xl font-black text-white md:text-4xl">
+                Живой маркетплейс для битов
+              </h2>
+              <p className="section-summary">
+                Площадка для артистов и битмейкеров СНГ. Каталог, покупки, продвижение,
+                избранное и личный кабинет в одном рабочем пространстве.
+              </p>
+            </div>
 
-            <button
-              onClick={handleCopyEmail}
-              className="group flex flex-col items-center transition-all duration-300 hover:scale-110 cursor-pointer"
-              title="Скопировать почту"
-            >
-              <div className="w-16 h-16 bg-transparent rounded-full flex items-center justify-center transition-all duration-300 group-hover:bg-red-500/10">
-                <FaEnvelope className="w-10 h-10 text-white/80 transition-all duration-300 group-hover:text-red-500 group-hover:scale-110" />
-              </div>
-            </button>
+            <div className="flex flex-wrap gap-2">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  className="glass-pill text-sm transition hover:-translate-y-0.5 hover:text-white"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
 
-            <a
-              href="https://vk.com/beatok_service"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex flex-col items-center transition-all duration-300 hover:scale-110"
-              title="Написать в VK"
-            >
-              <div className="w-16 h-16 bg-transparent rounded-full flex items-center justify-center transition-all duration-300 group-hover:bg-red-500/10">
-                <FaVk className="w-10 h-10 text-white/80 transition-all duration-300 group-hover:text-red-500 group-hover:scale-110" />
+            <div className="grid gap-3 text-sm text-neutral-300">
+              <div className="glass-panel p-4">
+                ИП Репьев Евгений Алексеевич
+                <br />
+                ОГРН/ОГРНИП: 324508100488650
               </div>
-            </a>
+              <div className="glass-panel p-4">
+                Юридический адрес: 141060, Россия, Московская обл, г Королёв,
+                мкр Болшево, проезд Бурковский, д 36, корп 1, кв 18
+              </div>
+              <div className="glass-panel p-4">
+                ИНН: 592061978176
+                <br />
+                Почта: repiev.evgeny@yandex.ru
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="glass-panel-strong p-6">
+              <p className="text-sm uppercase tracking-[0.24em] text-neutral-400">
+                Контакты
+              </p>
+              <h3 className="mt-3 text-2xl font-bold text-white">
+                Быстрый выход на связь
+              </h3>
+              <p className="mt-3 text-sm leading-7 text-neutral-300">
+                Поддержка, партнерства, вопросы по платформе и платежам. Ответим там,
+                где вам удобнее.
+              </p>
+
+              <div className="mt-5 flex gap-3">
+                <a
+                  href="https://t.me/beatok_service"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="glass-pill transition hover:-translate-y-0.5 hover:text-white"
+                  title="Написать в Telegram"
+                >
+                  <FaTelegram className="h-5 w-5" />
+                  Telegram
+                </a>
+                <button
+                  onClick={handleCopyEmail}
+                  className="glass-pill transition hover:-translate-y-0.5 hover:text-white"
+                  title="Скопировать почту"
+                >
+                  <FaEnvelope className="h-5 w-5" />
+                  Email
+                </button>
+                <a
+                  href="https://vk.com/beatok_service"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="glass-pill transition hover:-translate-y-0.5 hover:text-white"
+                  title="Написать в VK"
+                >
+                  <FaVk className="h-5 w-5" />
+                  VK
+                </a>
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              {legalItems.map((item) => (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  className="glass-panel px-4 py-3 text-sm text-neutral-300 transition hover:-translate-y-0.5 hover:text-white"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
-        <div className="flex flex-wrap justify-center space-x-6 mt-4">
-          {legalItems.map((item) => (
-            <Link
-              key={item.href}
-              to={item.href}
-              className="text-gray-500 hover:text-gray-400 transition-colors duration-200 text-sm"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </div>
-        <div className="text-center mt-8 mb-20">
-          <p className="text-gray-400 text-sm">
-            © БИТОК {getCurrentYear()}  - Все права защищены
-          </p>
+
+        <div className="soft-divider my-6" />
+
+        <div className="flex flex-col gap-2 text-sm text-neutral-400 md:flex-row md:items-center md:justify-between">
+          <p>© БИТОК {currentYear} — все права защищены</p>
+          <p>Сделано с упором на артистов, битмейкеров и чистый пользовательский опыт.</p>
         </div>
       </div>
     </footer>

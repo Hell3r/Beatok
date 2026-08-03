@@ -2,6 +2,7 @@ import React, { createContext, useState, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import type { Beat } from '../types/Beat';
 import { beatService } from '../services/beatService';
+import { apiUrl } from '../services/api';
 
 interface AudioPlayerContextType {
   currentBeat: Beat | null;
@@ -67,7 +68,7 @@ export const AudioPlayerProvider: React.FC<AudioPlayerProviderProps> = ({ childr
 
   const fetchAudioUrl = async (beatId: number): Promise<{ audio_url: string; audio_format: string } | null> => {
     try {
-      const response = await fetch(`https://beatokservice.ru/api/beats/${beatId}/audio-url`);
+      const response = await fetch(apiUrl(`/beats/${beatId}/audio-url`));
       if (!response.ok) {
         console.error('Failed to fetch audio URL');
         return null;

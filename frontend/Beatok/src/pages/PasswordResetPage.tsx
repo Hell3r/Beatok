@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { apiUrl } from '../services/api';
 
 const PasswordResetPage: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -39,7 +40,7 @@ const PasswordResetPage: React.FC = () => {
     }
 
     try {
-      const response = await fetch('https://beatokservice.ru/api/v1/users/reset-password', {
+      const response = await fetch(apiUrl('/v1/users/reset-password'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -70,8 +71,8 @@ const PasswordResetPage: React.FC = () => {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-neutral-900 flex items-center justify-center p-4">
-        <div className="bg-neutral-800 rounded-lg p-8 w-full max-w-md text-center">
+      <div className="min-h-screen flex items-center justify-center bg-neutral-900 p-4">
+        <div className="modal-shell w-full max-w-md p-8 text-center">
           <div className="mb-4">
             <svg className="mx-auto h-12 w-12 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -85,15 +86,15 @@ const PasswordResetPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-900 flex items-center justify-center p-4">
-      <div className="bg-neutral-800 rounded-lg p-8 w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-neutral-900 p-4">
+      <div className="modal-shell w-full max-w-md p-8">
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-white">Сброс пароля</h1>
           <p className="text-neutral-400 mt-2">Введите новый пароль</p>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-900/80 border border-red-700 rounded text-red-200 text-sm">
+          <div className="mb-4 rounded-2xl border border-red-500/35 bg-red-500/14 p-3 text-sm text-red-100">
             {error}
           </div>
         )}
@@ -108,7 +109,7 @@ const PasswordResetPage: React.FC = () => {
               placeholder="Не менее 6 символов"
               value={formData.newPassword}
               onChange={(e) => setFormData({...formData, newPassword: e.target.value})}
-              className="w-full p-3 bg-neutral-700 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
+              className="w-full p-3 text-white transition-colors"
               required
             />
           </div>
@@ -122,7 +123,7 @@ const PasswordResetPage: React.FC = () => {
               placeholder="Повторите пароль"
               value={formData.confirmPassword}
               onChange={(e) => setFormData({...formData, confirmPassword: e.target.value})}
-              className="w-full p-3 bg-neutral-700 border border-neutral-600 rounded text-white focus:outline-none focus:border-red-500 transition-colors"
+              className="w-full p-3 text-white transition-colors"
               required
             />
           </div>
@@ -130,7 +131,7 @@ const PasswordResetPage: React.FC = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full cursor-pointer bg-red-600 hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="action-button-primary action-button-block"
           >
             {loading ? 'Сброс пароля...' : 'Сбросить пароль'}
           </button>

@@ -79,7 +79,7 @@ const BeatPromotionModal: React.FC<BeatPromotionModalProps> = ({
   return (
     <>
       <animated.div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+        className="modal-backdrop z-40"
         style={overlaySpring}
         onClick={handleClose}
       />
@@ -88,7 +88,7 @@ const BeatPromotionModal: React.FC<BeatPromotionModalProps> = ({
         className="fixed inset-0 flex items-center justify-center z-50 p-4"
         style={modalSpring}
       >
-        <div className="bg-neutral-800 rounded-lg p-6 max-w-md w-full border border-neutral-600 select-none">
+        <div className="modal-shell max-w-md w-full p-6 select-none">
           <div className="text-center mb-6">
             <h2 className="text-xl font-semibold text-white mb-2">Продвижение бита</h2>
             <p className="text-neutral-400 text-sm">
@@ -96,7 +96,7 @@ const BeatPromotionModal: React.FC<BeatPromotionModalProps> = ({
             </p>
           </div>
 
-          <div className="bg-neutral-900 rounded-lg p-4 mb-6">
+          <div className="modal-subpanel mb-6 p-4">
             <div className="text-center mb-4">
               <div className="w-16 h-16 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -123,13 +123,13 @@ const BeatPromotionModal: React.FC<BeatPromotionModalProps> = ({
             <button
               onClick={handlePromote}
               disabled={isProcessing}
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="action-button-primary action-button-compact flex-1"
             >
               {isProcessing ? 'Обработка...' : 'Продвинуть'}
             </button>
             <button
               onClick={handleClose}
-              className="flex-1 bg-neutral-700 hover:bg-neutral-600 text-white px-4 py-2 rounded-lg transition-colors cursor-pointer"
+              className="action-button-secondary action-button-compact flex-1"
               disabled={isProcessing}
             >
               Отмена

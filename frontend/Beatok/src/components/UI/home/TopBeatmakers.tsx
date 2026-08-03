@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { userService, type TopBeatmaker } from '../../../services/userService';
 import { getAvatarUrl } from '../../../utils/getAvatarURL';
 import RoleBadge from '../RoleBadge';
+import { apiUrl } from '../../../services/api';
 
 const TopBeatmakers: React.FC = () => {
   const navigate = useNavigate();
@@ -91,7 +92,7 @@ const TopBeatmakers: React.FC = () => {
           <div className="text-3xl font-bold text-white mb-2">Лучшие битмейкеры</div>
           <button
             onClick={() => setIsModalOpen(true)}
-            className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-medium transition-all duration-300 mb-4"
+            className="action-button-primary action-button-compact mb-4"
           >
             ПОДДЕРЖАТЬ АВТОРОВ
           </button>
@@ -127,7 +128,7 @@ const TopBeatmakers: React.FC = () => {
                   alt={beatmaker.username}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                   onError={(e) => {
-                    e.currentTarget.src = 'https://beatokservice.ru/api/static/default_avatar.png'
+                    e.currentTarget.src = apiUrl('/static/default_avatar.png')
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 via-transparent to-transparent"></div>
@@ -165,7 +166,7 @@ const TopBeatmakers: React.FC = () => {
       <div className="mt-6 text-center">
         <Link
           to="/beatmakers"
-          className="inline-block bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-lg font-medium transition-all duration-300"
+          className="action-button-secondary"
         >
           Посмотреть всех битмейкеров
         </Link>

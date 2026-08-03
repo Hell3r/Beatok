@@ -1,4 +1,4 @@
-const API_URL = 'https://beatokservice.ru/api';
+import { apiUrl } from './api';
 
 interface WithdrawalCreateRequest {
   amount: number;
@@ -31,7 +31,7 @@ export const withdrawalService = {
   async createWithdrawal(data: WithdrawalCreateRequest): Promise<WithdrawalResponse> {
     const token = localStorage.getItem('access_token');
     
-    const response = await fetch(`${API_URL}/withdrawal/create`, {
+    const response = await fetch(apiUrl(`/withdrawal/create`), {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -51,7 +51,7 @@ export const withdrawalService = {
   async getPendingWithdrawals(): Promise<WithdrawalAdminResponse[]> {
     const token = localStorage.getItem('access_token');
     
-    const response = await fetch(`${API_URL}/withdrawal/admin/pending`, {
+    const response = await fetch(apiUrl(`/withdrawal/admin/pending`), {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -69,7 +69,7 @@ export const withdrawalService = {
   async approveWithdrawal(withdrawalId: number): Promise<WithdrawalAdminResponse> {
     const token = localStorage.getItem('access_token');
     
-    const response = await fetch(`${API_URL}/withdrawal/admin/${withdrawalId}/approve`, {
+    const response = await fetch(apiUrl(`/withdrawal/admin/${withdrawalId}/approve`), {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -84,4 +84,3 @@ export const withdrawalService = {
     return response.json();
   },
 };
-

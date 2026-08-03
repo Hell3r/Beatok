@@ -33,7 +33,7 @@ const RejectionReasonModal: React.FC<RejectionReasonModalProps> = ({
         item && (
           <animated.div
             style={style}
-            className="fixed inset-0 bg-black/30 backdrop-blur-md z-40"
+            className="modal-backdrop z-40"
             onClick={onClose}
           />
         )
@@ -45,8 +45,8 @@ const RejectionReasonModal: React.FC<RejectionReasonModalProps> = ({
             style={style}
             className="fixed inset-0 flex items-center justify-center z-50 p-4 select-none"
           >
-            <div className="relative bg-neutral-900 rounded-lg w-full max-w-md border border-neutral-800 shadow-2xl">
-              <div className="p-6 border-b border-neutral-800">
+            <div className="modal-shell relative w-full max-w-md">
+              <div className="modal-divider border-b p-6">
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="text-xl font-semibold text-white">Причина отклонения</h3>
@@ -71,7 +71,7 @@ const RejectionReasonModal: React.FC<RejectionReasonModalProps> = ({
 
                 <div>
                   <p className="text-neutral-300 text-sm mb-2">Причина:</p>
-                  <div className="bg-neutral-800 rounded-lg p-4 border border-neutral-700">
+                  <div className="modal-subpanel p-4">
                     <p className="text-white whitespace-pre-wrap">{beat?.rejection_reason}</p>
                   </div>
                 </div>
@@ -79,7 +79,7 @@ const RejectionReasonModal: React.FC<RejectionReasonModalProps> = ({
                 <div className="flex justify-center mt-6">
                   <button
                     onClick={onClose}
-                    className="bg-red-600 hover:bg-red-700 cursor-pointer select-none text-white px-4 py-2 rounded-lg transition-colors"
+                    className="action-button-secondary action-button-compact"
                   >
                     Закрыть
                   </button>

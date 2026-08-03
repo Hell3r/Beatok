@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Beat } from '../../../types/Beat';
+import { apiUrl } from '../../../services/api';
 
 interface BeatCardProps {
   beat: Beat;
@@ -29,7 +30,7 @@ const BeatCard: React.FC<BeatCardProps> = ({ beat, onPlay, onDownload }) => {
 
   const getCoverUrl = (beat: Beat): string | null => {
     if (!beat.cover_path) return null;
-    return `https://beatokservice.ru/api/static/covers/${beat.cover_path}`;
+    return apiUrl(`/static/covers/${beat.cover_path}`);
   };
 
   const coverUrl = getCoverUrl(beat);

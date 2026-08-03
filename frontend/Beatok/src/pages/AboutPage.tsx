@@ -54,7 +54,7 @@ const AboutPage: React.FC = () => {
                         <div className="text-4xl mb-4">👥</div>
                         <h3 className="text-white font-semibold text-xl mb-3">Сообщество</h3>
                         <p className="text-gray-300">
-                            Активное сообщество битмейкеров для обмена опытом и создания коллабораций
+                            Активное сообщество битмейкеров для обмена опытом, продвижения и продаж
                         </p>
                     </div>
                     <div className="bg-neutral-800 rounded-xl p-6 text-center border border-neutral-700 hover:border-red-500 transition-all duration-300 hover:scale-105">

@@ -17,19 +17,65 @@ interface FilterProps {
 }
 
 const musicalKeys = [
-  'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
-  'Cm', 'C#m', 'Dm', 'D#m', 'Em', 'Fm', 'F#m', 'Gm', 'G#m', 'Am', 'A#m', 'Bm'
+  'C',
+  'C#',
+  'D',
+  'D#',
+  'E',
+  'F',
+  'F#',
+  'G',
+  'G#',
+  'A',
+  'A#',
+  'B',
+  'Cm',
+  'C#m',
+  'Dm',
+  'D#m',
+  'Em',
+  'Fm',
+  'F#m',
+  'Gm',
+  'G#m',
+  'Am',
+  'A#m',
+  'Bm',
 ];
 
 const genres = [
-  'Hip-Hop', 'Trap', 'Trap-Metal', 'Lo-fi', 'R&B', 'Pop', 'Rock', 'Metal', 'Electronic', 'Dubstep', 'Other'
+  'Hip-Hop',
+  'Trap',
+  'Trap-Metal',
+  'Lo-fi',
+  'R&B',
+  'Pop',
+  'Rock',
+  'Metal',
+  'Electronic',
+  'Dubstep',
+  'Other',
 ];
+
+const fieldClassName =
+  'field-shell w-full px-4 py-3 text-white placeholder-neutral-500 transition-colors focus:outline-none';
+
+const SelectArrow = () => (
+  <svg
+    className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+  </svg>
+);
 
 const Filter: React.FC<FilterProps> = ({ filters, onFiltersChange }) => {
   const handleFilterChange = (key: keyof Filters, value: string | boolean) => {
     onFiltersChange({
       ...filters,
-      [key]: value
+      [key]: value,
     });
   };
 
@@ -42,7 +88,7 @@ const Filter: React.FC<FilterProps> = ({ filters, onFiltersChange }) => {
       key: '',
       minPrice: '',
       maxPrice: '',
-      freeOnly: false
+      freeOnly: false,
     });
   };
 
@@ -50,133 +96,137 @@ const Filter: React.FC<FilterProps> = ({ filters, onFiltersChange }) => {
     onFiltersChange({
       ...filters,
       freeOnly: checked,
-      ...(checked && { minPrice: '', maxPrice: '' })
+      ...(checked && { minPrice: '', maxPrice: '' }),
     });
   };
 
-  const hasActiveFilters = Object.values(filters).some(value => 
-    value !== '' && value !== false
-  );
+  const hasActiveFilters = Object.values(filters).some((value) => value !== '' && value !== false);
 
   return (
-    <div className="bg-neutral-900 rounded-lg p-6 border border-neutral-700 select-none">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-white font-semibold text-lg">Фильтры</h3>
+    <div className="glass-panel-strong relative z-20 overflow-visible p-5 md:p-6 select-none">
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <div>
+          <p className="section-kicker mb-2">Каталог</p>
+          <h3 className="text-lg font-semibold text-white">Фильтры</h3>
+        </div>
         {hasActiveFilters && (
           <button
+            type="button"
             onClick={clearFilters}
-            className="text-red-500 hover:text-red-400 text-sm transition-colors cursor-pointer"
+            className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-sm text-neutral-200 transition hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white"
           >
             Сбросить
           </button>
         )}
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-5 overflow-visible">
         <div>
-          <label className="block text-neutral-400 text-sm mb-2">
-            Поиск по названию или тегу
-          </label>
+          <label className="mb-2 block text-sm text-neutral-400">Поиск по названию или тегу</label>
           <input
             type="text"
             value={filters.name}
-            onChange={(e) => handleFilterChange('name', e.target.value)}
-            placeholder="Введите название или тег..."
-            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2 text-white placeholder-neutral-500 focus:outline-none focus:border-red-500 transition-colors"
+            onChange={(event) => handleFilterChange('name', event.target.value)}
+            placeholder="Название, настроение, тег..."
+            className={fieldClassName}
           />
         </div>
 
         <div>
-          <label className="block text-neutral-400 text-sm mb-2">Автор</label>
+          <label className="mb-2 block text-sm text-neutral-400">Автор</label>
           <input
             type="text"
             value={filters.author}
-            onChange={(e) => handleFilterChange('author', e.target.value)}
-            placeholder="Поиск по автору..."
-            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2 text-white placeholder-neutral-500 focus:outline-none focus:border-red-500 transition-colors"
+            onChange={(event) => handleFilterChange('author', event.target.value)}
+            placeholder="Найти автора..."
+            className={fieldClassName}
           />
         </div>
 
         <div>
-          <label className="block text-neutral-400 text-sm mb-2">Темп (BPM)</label>
+          <label className="mb-2 block text-sm text-neutral-400">Темп (BPM)</label>
           <input
             type="text"
             value={filters.bpm}
-            onChange={(e) => handleFilterChange('bpm', e.target.value)}
+            onChange={(event) => handleFilterChange('bpm', event.target.value)}
             placeholder="BPM"
-            className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2 text-white placeholder-neutral-500 focus:outline-none focus:border-red-500 transition-colors"
+            className={fieldClassName}
           />
         </div>
 
-        <div>
-          <label className="block text-neutral-400 text-sm mb-2">Тональность</label>
-          <select
-            value={filters.key}
-            onChange={(e) => handleFilterChange('key', e.target.value)}
-            className="w-full select-none bg-neutral-800 border cursor-pointer border-neutral-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-red-500 transition-colors"
-          >
-            <option className='cursor-pointer' value="">Все тональности</option>
-            {musicalKeys.map((key) => (
-              <option className='cursor-pointer' key={key} value={key}>
-                {key}
-              </option>
-            ))}
-          </select>
+        <div className="relative z-30 overflow-visible">
+          <label className="mb-2 block text-sm text-neutral-400">Тональность</label>
+          <div className="relative">
+            <select
+              value={filters.key}
+              onChange={(event) => handleFilterChange('key', event.target.value)}
+              className={`${fieldClassName} relative z-30 cursor-pointer appearance-none pr-10`}
+            >
+                <option value="">Все тональности</option>
+              {musicalKeys.map((key) => (
+                <option key={key} value={key}>
+                  {key}
+                </option>
+              ))}
+            </select>
+            <SelectArrow />
+          </div>
         </div>
 
-        <div>
-          <label className="block text-neutral-400 text-sm mb-2">Жанр</label>
-          <select
-            value={filters.genre}
-            onChange={(e) => handleFilterChange('genre', e.target.value)}
-            className="w-full select-none bg-neutral-800 border cursor-pointer border-neutral-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-red-500 transition-colors"
-          >
-            <option className='cursor-pointer' value="">Все жанры</option>
-            {genres.map((genre) => (
-              <option className='cursor-pointer' key={genre} value={genre}>
-                {genre}
-              </option>
-            ))}
-          </select>
+        <div className="relative z-30 overflow-visible">
+          <label className="mb-2 block text-sm text-neutral-400">Жанр</label>
+          <div className="relative">
+            <select
+              value={filters.genre}
+              onChange={(event) => handleFilterChange('genre', event.target.value)}
+              className={`${fieldClassName} relative z-30 cursor-pointer appearance-none pr-10`}
+            >
+                <option value="">Все жанры</option>
+              {genres.map((genre) => (
+                <option key={genre} value={genre}>
+                  {genre}
+                </option>
+              ))}
+            </select>
+            <SelectArrow />
+          </div>
         </div>
 
-        <div className="space-y-3 space-x-4">
-          <div className="flex items-center gap-4">
+        <div className="rounded-[22px] border border-white/[0.08] bg-white/[0.04] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+          <label htmlFor="freeOnly" className="flex cursor-pointer items-center gap-3 text-neutral-300">
             <input
               type="checkbox"
               id="freeOnly"
               checked={filters.freeOnly}
-              onChange={(e) => handleFreeOnlyChange(e.target.checked)}
-              className="w-5 h-5 text-red-600 bg-neutral-800 border-neutral-700 rounded cursor-pointer"
+              onChange={(event) => handleFreeOnlyChange(event.target.checked)}
+              className="h-5 w-5 cursor-pointer rounded border-white/[0.15] bg-black/30 text-red-600"
             />
-            <label htmlFor="freeOnly" className="text-neutral-300 cursor-pointer">
-              Только бесплатные
-            </label>
-          </div>
+            Только бесплатные биты
+          </label>
 
           {!filters.freeOnly && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="mt-4 grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-neutral-400 text-sm mb-2">Мин. цена</label>
+                  <label className="mb-2 block text-sm text-neutral-400">Цена от</label>
                 <input
                   type="number"
                   value={filters.minPrice}
-                  onChange={(e) => handleFilterChange('minPrice', e.target.value)}
+                  onChange={(event) => handleFilterChange('minPrice', event.target.value)}
                   placeholder="0"
                   min="0"
-                  className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2 text-white placeholder-neutral-500 focus:outline-none focus:border-red-500 transition-colors"
+                  className={fieldClassName}
                 />
               </div>
 
               <div>
-                <label className="block text-neutral-400 text-sm mb-2">Макс. цена</label>
+                  <label className="mb-2 block text-sm text-neutral-400">Цена до</label>
                 <input
                   type="number"
                   value={filters.maxPrice}
-                  onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
+                  onChange={(event) => handleFilterChange('maxPrice', event.target.value)}
                   placeholder="1000"
                   min="0"
-                  className="w-full bg-neutral-800 border border-neutral-700 rounded-lg px-4 py-2 text-white placeholder-neutral-500 focus:outline-none focus:border-red-500 transition-colors"
+                  className={fieldClassName}
                 />
               </div>
             </div>

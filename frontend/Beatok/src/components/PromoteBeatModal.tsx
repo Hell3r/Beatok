@@ -46,7 +46,7 @@ const PromoteBeatModal: React.FC<PromoteBeatModal> = ({
         item && (
           <animated.div
             style={style}
-            className="fixed inset-0 bg-black/30 backdrop-blur-md z-40"
+            className="modal-backdrop z-40"
             onClick={handleClose}
           />
         )
@@ -58,7 +58,7 @@ const PromoteBeatModal: React.FC<PromoteBeatModal> = ({
             style={style}
             className="fixed inset-0 flex items-center justify-center z-50 p-4 select-none"
           >
-            <div className="bg-neutral-900 rounded-lg p-6 border border-neutral-700 max-w-md w-full mx-4">
+            <div className="modal-shell max-w-md w-full p-6 mx-4">
               <div className="text-center">
                 <div className="mb-4">
                   <svg
@@ -89,14 +89,14 @@ const PromoteBeatModal: React.FC<PromoteBeatModal> = ({
                   <button
                     onClick={handleClose}
                     disabled={loading}
-                    className="px-6 py-2 bg-neutral-700 hover:bg-neutral-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer select-none"
+                    className="action-button-secondary action-button-compact"
                   >
                     Отмена
                   </button>
                   <button
                     onClick={handleConfirm}
                     disabled={loading}
-                    className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer select-none"
+                    className="action-button-primary action-button-compact"
                   >
                     {loading ? 'Удаление...' : 'Да, удалить'}
                   </button>

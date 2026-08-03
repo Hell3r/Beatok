@@ -6,7 +6,7 @@ from .messages import MessageTemplates
 
 class SupportBot:
     def __init__(self):
-        self.bot = Bot(token=TelegramConfig.BOT_TOKEN)
+        self.bot = Bot(token=TelegramConfig.BOT_TOKEN) if TelegramConfig.is_configured() else None
         self.admin_chat_ids = TelegramConfig.ADMIN_CHAT_IDS
 
     async def send_support_notification(self, request_data: dict, user_info: dict):

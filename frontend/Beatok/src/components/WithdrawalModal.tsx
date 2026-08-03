@@ -126,7 +126,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, curr
         item && (
           <animated.div
             style={style}
-            className="fixed inset-0 bg-black/30 backdrop-blur-md z-40"
+            className="modal-backdrop z-40"
             onClick={onClose}
           />
         )
@@ -138,8 +138,8 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, curr
             style={style}
             className="fixed inset-0 flex items-center justify-center z-50 p-4 select-none"
           >
-            <div className="bg-neutral-900 rounded-lg w-full max-w-md border border-neutral-800 shadow-2xl">
-              <div className="p-6 border-b border-neutral-800">
+            <div className="modal-shell w-full max-w-md">
+              <div className="modal-divider border-b p-6">
                 <div className="flex justify-between items-start">
                   <div>
                     <h2 className="text-xl font-bold text-white select-none">
@@ -185,35 +185,35 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, curr
                     <button
                       type="button"
                       onClick={() => handleQuickAmount(100)}
-                      className="py-2 bg-neutral-800 hover:bg-neutral-700 text-white text-sm rounded transition-colors cursor-pointer border border-neutral-700"
+                      className="action-button-secondary action-button-slim"
                     >
                       100₽
                     </button>
                     <button
                       type="button"
                       onClick={() => handleQuickAmount(300)}
-                      className="py-2 bg-neutral-800 hover:bg-neutral-700 text-white text-sm rounded transition-colors cursor-pointer border border-neutral-700"
+                      className="action-button-secondary action-button-slim"
                     >
                       300₽
                     </button>
                     <button
                       type="button"
                       onClick={() => handleQuickAmount(500)}
-                      className="py-2 bg-neutral-800 hover:bg-neutral-700 text-white text-sm rounded transition-colors cursor-pointer border border-neutral-700"
+                      className="action-button-secondary action-button-slim"
                     >
                       500₽
                     </button>
                     <button
                       type="button"
                       onClick={() => handleQuickAmount(Math.floor(currentBalance))}
-                      className="py-2 bg-neutral-800 hover:bg-neutral-700 text-white text-sm rounded transition-colors cursor-pointer border border-neutral-700"
+                      className="action-button-secondary action-button-slim"
                     >
                       Всё
                     </button>
                   </div>
 
                   {amountNum > 0 && (
-                    <div className="pt-2 bg-neutral-800 rounded-lg p-3">
+                    <div className="modal-subpanel p-3 pt-2">
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-neutral-400">Доступно:</span>
                         <span className="text-white">{currentBalance.toFixed(2)} ₽</span>
@@ -222,7 +222,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, curr
                         <span className="text-neutral-400">К выводу:</span>
                         <span className="text-white font-medium">{amountNum.toFixed(2)} ₽</span>
                       </div>
-                      <div className="border-t border-neutral-700 mt-2 pt-2 flex justify-between items-center">
+                      <div className="modal-divider mt-2 flex items-center justify-between border-t pt-2">
                         <span className="text-neutral-300">После вывода:</span>
                         <span className="text-green-400 font-bold">
                           {(currentBalance - amountNum).toFixed(2)} ₽
@@ -248,7 +248,7 @@ const WithdrawalModal: React.FC<WithdrawalModalProps> = ({ isOpen, onClose, curr
                   <button
                     type="submit"
                     disabled={loading || !amount || cardDigits.length !== 16}
-                    className="w-full bg-red-600 hover:bg-red-700 disabled:bg-neutral-700 disabled:cursor-not-allowed text-white py-3 rounded-lg font-medium transition-colors cursor-pointer"
+                    className="action-button-primary action-button-block"
                   >
                     {loading ? 'Создание запроса...' : 'Вывести средства'}
                   </button>

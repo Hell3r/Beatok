@@ -1,6 +1,6 @@
 
 from fastapi import APIRouter, HTTPException, Depends, Query, Request
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -177,26 +177,18 @@ async def download_direct(
 
         beat = download_token.beat
 
-        from pathlib import Path
-        from fastapi.responses import FileResponse
+        if not beat.audio_key:
+            raise HTTPException(status_code=404, detail="Audio file not found")
 
-        AUDIO_STORAGE = Path("audio_storage")
-        file_path = AUDIO_STORAGE / beat.wav_path
+        from src.core.s3_client import s3_client, S3_BUCKET
 
-        if not file_path.exists():
-            raise HTTPException(status_code=404, detail="Файл не найден")
-
-        safe_filename = ZipCreator._safe_filename(beat.name) + ".wav"
-
-        return FileResponse(
-            path=file_path,
-            filename=safe_filename,
-            media_type="application/octet-stream",
-            headers={
-                "Content-Disposition": f"attachment; filename=\"{safe_filename}\"",
-                "Cache-Control": "no-cache, no-store, must-revalidate"
-            }
+        audio_url = s3_client.generate_presigned_url(
+            'get_object',
+            Params={'Bucket': S3_BUCKET, 'Key': beat.audio_key},
+            ExpiresIn=3600
         )
+
+        return RedirectResponse(audio_url)
 
     except Exception as e:
         logger.error(f"Direct download error: {e}")

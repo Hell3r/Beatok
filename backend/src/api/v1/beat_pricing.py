@@ -107,10 +107,10 @@ async def create_pricing(
 
             audio_path = None
             cover_path = None
-            if beat_with_relations.mp3_path:
-                audio_path = AUDIO_STORAGE / beat_with_relations.mp3_path
-            elif beat_with_relations.wav_path:
-                audio_path = AUDIO_STORAGE / beat_with_relations.wav_path
+            if beat_with_relations.audio_key:
+                local_audio_path = AUDIO_STORAGE / beat_with_relations.audio_key
+                if local_audio_path.exists():
+                    audio_path = local_audio_path
             
             if beat_with_relations.cover_path:
                 cover_path = COVER_STORAGE / beat_with_relations.cover_path

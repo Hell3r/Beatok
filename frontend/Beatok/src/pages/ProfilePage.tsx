@@ -16,6 +16,7 @@ import { useNotificationContext } from '../components/NotificationProvider';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
 import type { Beat } from '../types/Beat';
 import RoleBadge from '../components/UI/RoleBadge';
+import { apiUrl } from '../services/api';
 
 interface UserProfile {
   id: number;
@@ -169,7 +170,7 @@ const ProfilePage: React.FC = () => {
     }
     
     try {
-        await fetch(`https://beatokservice.ru/api/beats/${beat.id}/increment-download`, {
+        await fetch(apiUrl(`/beats/${beat.id}/increment-download`), {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -179,11 +180,10 @@ const ProfilePage: React.FC = () => {
     } catch (error) {
         console.log('Не удалось увеличить счетчик скачиваний, но продолжаем скачивание:', error);
     }
-    const baseUrl = 'https://beatokservice.ru/api'
     const beatFolder = `beats/${beat.id}`;
 
-    const wavUrl = `${baseUrl}/audio_storage/${beatFolder}/audio.wav`;
-    const mp3Url = `${baseUrl}/audio_storage/${beatFolder}/audio.mp3`;
+    const wavUrl = apiUrl(`/audio_storage/${beatFolder}/audio.wav`);
+    const mp3Url = apiUrl(`/audio_storage/${beatFolder}/audio.mp3`);
 
     const checkAudioFile = async (url: string): Promise<boolean> => {
       try {
@@ -647,7 +647,7 @@ const ProfilePage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setAuthModalOpen(true)}
-                  className="bg-red-600 select-none cursor-pointer hover:bg-red-700 text-white px-6 py-3 rounded-lg transition-colors"
+                  className="action-button-primary"
                 >
                   Войти
                 </button>
@@ -673,10 +673,11 @@ const ProfilePage: React.FC = () => {
       }
 
       return (
-        <div>
-          {/* desktop header */}
-          <div className="mb-8 text-center select-none">
-          <h1 className="text-3xl font-bold text-white mx-auto flex items-center justify-center gap-3">
+        <div className="page-shell pb-24">
+          <div className="section-shell mb-8 overflow-hidden px-6 py-8 sm:px-8 lg:px-10">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(220,38,38,0.18),transparent_26%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.08),transparent_24%)]" />
+            <div className="relative text-center select-none">
+          <h1 className="mx-auto flex items-center justify-center gap-3 text-3xl font-bold text-white sm:text-4xl">
             {isOwnProfile ? (
               `Привет, ${user.username}!`
             ) : (
@@ -686,7 +687,7 @@ const ProfilePage: React.FC = () => {
                   alt="Аватар"
                   className="w-16 h-16 rounded-full object-cover border-2 border-neutral-600"
                   onError={(e) => {
-                    e.currentTarget.src = 'https://beatokservice.ru/api/static/default_avatar.png';
+                    e.currentTarget.src = apiUrl('/static/default_avatar.png');
                   }}
                 />
                 <span className="flex items-center gap-2">
@@ -696,13 +697,17 @@ const ProfilePage: React.FC = () => {
               </div>
             )}
           </h1>
+              <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-[var(--text-secondary)] sm:text-base">
+                Управляйте профилем, релизами, балансом, избранным и заявками в одном кабинете.
+              </p>
+            </div>
         </div>
 
-        <div className="flex flex-row gap-6 max-w-7xl md:max-w-7xl mx-auto mb-20">
+        <div className="flex flex-row gap-6 mx-auto mb-20 max-w-7xl">
           {/* desktop left panel */}
           <animated.div
             style={leftPanelSpring}
-            className="hidden md:block bg-neutral-900 rounded-lg p-6 border border-neutral-700 overflow-hidden flex-shrink-0"
+            className="glass-panel hidden flex-shrink-0 overflow-hidden p-6 md:block"
           >
             <div className="flex flex-col items-center mb-6">
               <div className="relative group select-none">
@@ -712,7 +717,7 @@ const ProfilePage: React.FC = () => {
                     alt="Аватар"
                     className={`w-32 h-32 rounded-full object-cover border-4 select-none ${user.prom_status === 'subscription' ? 'border-none' : 'border-neutral-700'}`}
                     onError={(e) => {
-                      e.currentTarget.src = 'https://beatokservice.ru/api/static/default_avatar.png';
+                      e.currentTarget.src = apiUrl('/static/default_avatar.png');
                     }}
                   />
                 </div>
@@ -741,7 +746,7 @@ const ProfilePage: React.FC = () => {
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
-                    className="mt-4 select-none bg-red-600 hover:bg-red-700 text-white px-4 py-2 cursor-pointer rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="action-button-primary action-button-compact mt-4"
                   >
                     {uploading ? 'Загрузка...' : 'Сменить аватар'}
                   </button>
@@ -774,11 +779,11 @@ const ProfilePage: React.FC = () => {
                   value={formData.description}
                   onChange={handleInputChange}
                   rows={4}
-                  className="w-full bg-neutral-700 border border-neutral-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-red-500 resize-none text-sm"
+                  className="w-full rounded-[20px] border border-white/10 bg-white/6 px-3 py-2 text-sm text-white resize-none focus:border-red-500 focus:outline-none"
                   placeholder="Расскажите о себе..."
                 />
               ) : (
-                <div className="text-white text-sm bg-neutral-800 p-3 rounded-lg min-h-[100px] whitespace-pre-wrap">
+                <div className="min-h-[100px] whitespace-pre-wrap rounded-[22px] border border-white/8 bg-white/5 p-4 text-sm text-white">
                   {user.description || 'Не указано'}
                 </div>
               )}
@@ -788,12 +793,12 @@ const ProfilePage: React.FC = () => {
           {/* main content panel */}
           <animated.div
             style={rightPanelSpring}
-            className="bg-neutral-900 rounded-lg border border-neutral-700 flex-shrink-0 w-full"
+            className="glass-panel-strong w-full flex-shrink-0 overflow-hidden"
           >
                   {/* mobile interface */}
                   <div className="md:hidden">
                     {viewMode === 'tabs' ? (
-                      <div className="bg-neutral-800 rounded-lg p-4 border border-neutral-700 mb-6">
+                      <div className="border-b border-white/8 bg-white/4 p-4">
                         <div className="flex flex-col gap-2">
                           {isOwnProfile && (
                             <button
@@ -803,8 +808,8 @@ const ProfilePage: React.FC = () => {
                               }}
                               className={`w-full px-4 py-3 text-sm rounded-lg transition-colors cursor-pointer select-none ${
                                 activeTab === 'info'
-                                  ? 'bg-red-600 text-white'
-                                  : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                                  ? 'border border-red-500/30 bg-red-500/18 text-white'
+                                  : 'border border-white/10 bg-white/5 text-neutral-300 hover:bg-white/10'
                               }`}
                             >
                               Основная информация
@@ -818,8 +823,8 @@ const ProfilePage: React.FC = () => {
                               }}
                               className={`w-full px-4 py-3 text-sm rounded-lg transition-colors cursor-pointer select-none ${
                                 activeTab === 'balance'
-                                  ? 'bg-red-600 text-white'
-                                  : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                                  ? 'border border-red-500/30 bg-red-500/18 text-white'
+                                  : 'border border-white/10 bg-white/5 text-neutral-300 hover:bg-white/10'
                               }`}
                             >
                               Баланс
@@ -832,8 +837,8 @@ const ProfilePage: React.FC = () => {
                             }}
                             className={`w-full px-4 py-3 text-sm rounded-lg transition-colors cursor-pointer select-none ${
                               activeTab === 'mybeats'
-                                ? 'bg-red-600 text-white'
-                                : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                                ? 'border border-red-500/30 bg-red-500/18 text-white'
+                                : 'border border-white/10 bg-white/5 text-neutral-300 hover:bg-white/10'
                             }`}
                           >
                             {isOwnProfile ? 'Мои биты' : 'Биты'}
@@ -845,8 +850,8 @@ const ProfilePage: React.FC = () => {
                             }}
                             className={`w-full px-4 py-3 text-sm rounded-lg transition-colors cursor-pointer select-none ${
                               activeTab === 'stats'
-                                ? 'bg-red-600 text-white'
-                                : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                                ? 'border border-red-500/30 bg-red-500/18 text-white'
+                                : 'border border-white/10 bg-white/5 text-neutral-300 hover:bg-white/10'
                             }`}
                           >
                             Статистика
@@ -859,8 +864,8 @@ const ProfilePage: React.FC = () => {
                               }}
                               className={`w-full px-4 py-3 text-sm rounded-lg transition-colors cursor-pointer select-none ${
                                 activeTab === 'favorites'
-                                  ? 'bg-red-600 text-white'
-                                  : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                                  ? 'border border-red-500/30 bg-red-500/18 text-white'
+                                  : 'border border-white/10 bg-white/5 text-neutral-300 hover:bg-white/10'
                               }`}
                             >
                               Избранное
@@ -874,8 +879,8 @@ const ProfilePage: React.FC = () => {
                               }}
                               className={`w-full px-4 py-3 text-sm rounded-lg transition-colors cursor-pointer select-none ${
                                 activeTab === 'history'
-                                  ? 'bg-red-600 text-white'
-                                  : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                                  ? 'border border-red-500/30 bg-red-500/18 text-white'
+                                  : 'border border-white/10 bg-white/5 text-neutral-300 hover:bg-white/10'
                               }`}
                             >
                               История
@@ -889,8 +894,8 @@ const ProfilePage: React.FC = () => {
                               }}
                               className={`w-full px-4 py-3 text-sm rounded-lg transition-colors cursor-pointer select-none ${
                                 activeTab === 'requests'
-                                  ? 'bg-red-600 text-white'
-                                  : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                                  ? 'border border-red-500/30 bg-red-500/18 text-white'
+                                  : 'border border-white/10 bg-white/5 text-neutral-300 hover:bg-white/10'
                               }`}
                             >
                               Заявки
@@ -899,7 +904,7 @@ const ProfilePage: React.FC = () => {
                         </div>
                       </div>
                     ) : (
-                      <div className="bg-neutral-800 rounded-lg p-4 border border-neutral-700 mb-6">
+                      <div className="border-b border-white/8 bg-white/4 p-4">
                         <button
                           onClick={() => {
                             setViewMode('tabs');
@@ -914,7 +919,7 @@ const ProfilePage: React.FC = () => {
                   </div>
 
                   {/* desktop tabs */}
-                  <div className="hidden md:block bg-neutral-800 rounded-lg p-4 border border-neutral-700">
+                  <div className="hidden border-b border-white/8 bg-white/4 p-4 md:block">
                     <div className="flex flex-wrap justify-center gap-2">
                       {isOwnProfile && (
                         <button
@@ -924,8 +929,8 @@ const ProfilePage: React.FC = () => {
                           }}
                           className={`px-4 py-2 text-base rounded-lg transition-colors cursor-pointer select-none ${
                             activeTab === 'info'
-                              ? 'bg-red-600 text-white'
-                              : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                              ? 'border border-red-500/30 bg-red-500/18 text-white'
+                              : 'border border-white/10 bg-white/5 text-neutral-300 hover:bg-white/10'
                           }`}
                         >
                           Информация
@@ -939,8 +944,8 @@ const ProfilePage: React.FC = () => {
                           }}
                           className={`px-4 py-2 text-base rounded-lg transition-colors cursor-pointer select-none ${
                             activeTab === 'balance'
-                              ? 'bg-red-600 text-white'
-                              : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                              ? 'border border-red-500/30 bg-red-500/18 text-white'
+                              : 'border border-white/10 bg-white/5 text-neutral-300 hover:bg-white/10'
                           }`}
                         >
                           Баланс
@@ -953,8 +958,8 @@ const ProfilePage: React.FC = () => {
                         }}
                         className={`px-4 py-2 text-base rounded-lg transition-colors cursor-pointer select-none ${
                           activeTab === 'mybeats'
-                            ? 'bg-red-600 text-white'
-                            : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                            ? 'border border-red-500/30 bg-red-500/18 text-white'
+                            : 'border border-white/10 bg-white/5 text-neutral-300 hover:bg-white/10'
                         }`}
                       >
                         {isOwnProfile ? 'Мои биты' : 'Биты'}
@@ -966,8 +971,8 @@ const ProfilePage: React.FC = () => {
                         }}
                         className={`px-4 py-2 text-base rounded-lg transition-colors cursor-pointer select-none ${
                           activeTab === 'stats'
-                            ? 'bg-red-600 text-white'
-                              : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                            ? 'border border-red-500/30 bg-red-500/18 text-white'
+                              : 'border border-white/10 bg-white/5 text-neutral-300 hover:bg-white/10'
                         }`}
                       >
                         Статистика
@@ -980,8 +985,8 @@ const ProfilePage: React.FC = () => {
                           }}
                           className={`px-4 py-2 text-base rounded-lg transition-colors cursor-pointer select-none ${
                             activeTab === 'favorites'
-                              ? 'bg-red-600 text-white'
-                              : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                              ? 'border border-red-500/30 bg-red-500/18 text-white'
+                              : 'border border-white/10 bg-white/5 text-neutral-300 hover:bg-white/10'
                           }`}
                         >
                           Избранное
@@ -995,8 +1000,8 @@ const ProfilePage: React.FC = () => {
                           }}
                           className={`px-4 py-2 text-base rounded-lg transition-colors cursor-pointer select-none ${
                             activeTab === 'history'
-                              ? 'bg-red-600 text-white'
-                              : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                              ? 'border border-red-500/30 bg-red-500/18 text-white'
+                              : 'border border-white/10 bg-white/5 text-neutral-300 hover:bg-white/10'
                           }`}
                         >
                           История
@@ -1010,8 +1015,8 @@ const ProfilePage: React.FC = () => {
                           }}
                           className={`px-4 py-2 text-base rounded-lg transition-colors cursor-pointer select-none ${
                             activeTab === 'requests'
-                              ? 'bg-red-600 text-white'
-                              : 'bg-neutral-700 text-neutral-400 hover:bg-neutral-600'
+                              ? 'border border-red-500/30 bg-red-500/18 text-white'
+                              : 'border border-white/10 bg-white/5 text-neutral-300 hover:bg-white/10'
                           }`}
                         >
                           Заявки
@@ -1027,7 +1032,7 @@ const ProfilePage: React.FC = () => {
                         {!editing ? (
                           <button
                             onClick={handleEdit}
-                            className="bg-red-600 select-none cursor-pointer hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+                            className="action-button-primary action-button-compact"
                           >
                             Редактировать
                           </button>
@@ -1035,14 +1040,14 @@ const ProfilePage: React.FC = () => {
                           <div className="flex space-x-2">
                             <button
                               onClick={handleCancel}
-                              className="bg-neutral-700 hover:bg-neutral-600 select-none cursor-pointer text-white px-4 py-2 rounded-lg transition-colors"
+                              className="action-button-secondary action-button-compact"
                             >
                               Отмена
                             </button>
                             <button
                               onClick={handleSave}
                               disabled={saving}
-                              className="bg-green-600 select-none cursor-pointer hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+                              className="action-button-primary action-button-compact"
                             >
                               {saving ? 'Сохранение...' : 'Сохранить'}
                             </button>
@@ -1124,13 +1129,13 @@ const ProfilePage: React.FC = () => {
                           <div className="flex space-x-4">
                             <button
                               onClick={() => setDepositModalOpen(true)}
-                              className="flex-1 bg-white hover:bg-gray-300 text-red-600 px-4 py-2 select-none cursor-pointer rounded-lg transition-colors"
+                              className="action-button-primary action-button-compact flex-1"
                             >
                               Пополнить
                             </button>
                             <button
                               onClick={() => setWithdrawalModalOpen(true)}
-                              className="flex-1 bg-red-600 hover:bg-red-700 text-white px-4 py-2 select-none cursor-pointer rounded-lg transition-colors"
+                              className="action-button-secondary action-button-compact flex-1"
                             >
                               Вывести
                             </button>
@@ -1488,7 +1493,7 @@ const ProfilePage: React.FC = () => {
         item && (
           <animated.div
             style={overlayStyle}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            className="modal-backdrop z-50 flex items-center justify-center"
             onClick={() => {
               setResponseViewModalOpen(false);
               setSelectedRequestForView(null);
@@ -1498,12 +1503,12 @@ const ProfilePage: React.FC = () => {
               item && (
                 <animated.div
                   style={modalStyle}
-                  className="bg-neutral-800 rounded-lg p-6 max-w-lg w-full mx-4 select-none"
+                  className="modal-shell mx-4 w-full max-w-lg p-6 select-none"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <h3 className="text-xl font-semibold text-white mb-4">Ответ на заявку</h3>
                   
-                  <div className="mb-4 p-3 bg-neutral-700 rounded">
+                  <div className="modal-subpanel mb-4 p-3">
                     <p className="text-neutral-400 text-sm mb-1">Ваша заявка:</p>
                     <p className="text-white font-medium">{selectedRequestForView?.title}</p>
                     <p className="text-neutral-400 text-sm mt-1">Тип: {selectedRequestForView?.problem_type}</p>
@@ -1521,7 +1526,7 @@ const ProfilePage: React.FC = () => {
 
                   <div className="mb-4">
                     <p className="text-neutral-400 text-sm mb-2">Ответ службы поддержки:</p>
-                    <div className="bg-neutral-700 rounded p-4 max-h-60 overflow-y-auto">
+                    <div className="modal-subpanel max-h-60 overflow-y-auto p-4">
                       <p className="text-white whitespace-pre-wrap">{selectedRequestForView?.response}</p>
                     </div>
                   </div>
@@ -1531,7 +1536,7 @@ const ProfilePage: React.FC = () => {
                       setResponseViewModalOpen(false);
                       setSelectedRequestForView(null);
                     }}
-                    className="w-full cursor-pointer bg-neutral-600 hover:bg-neutral-500 text-white font-semibold py-2 px-4 rounded transition-colors"
+                    className="action-button-secondary action-button-block"
                   >
                     Закрыть
                   </button>

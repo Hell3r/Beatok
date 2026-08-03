@@ -71,7 +71,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose }
         item && (
           <animated.div
             style={style}
-            className="fixed inset-0 bg-black/30 backdrop-blur-md z-40"
+            className="modal-backdrop z-40"
             onClick={onClose}
           />
         )
@@ -85,9 +85,9 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose }
           >
             <animated.div
               style={modalHeightSpring}
-              className="bg-neutral-900 rounded-lg w-full max-w-md border border-neutral-800 shadow-2xl"
+              className="modal-shell w-full max-w-md"
             >
-              <div className="p-6 border-b border-neutral-800">
+              <div className="modal-divider border-b p-6">
                 <div className="flex justify-between items-start">
                   <div>
                     <h2 className="text-xl font-bold text-white">
@@ -147,7 +147,7 @@ const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose }
                     </li>
                   </ul>
 
-                  <div className="mt-6 pt-4 border-t border-neutral-700">
+                  <div className="modal-divider mt-6 border-t pt-4">
                     <div className="text-center mb-4">
                       <p className="text-white text-xl font-bold">
                         300 ₽ / месяц

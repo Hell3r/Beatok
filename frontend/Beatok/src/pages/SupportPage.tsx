@@ -4,187 +4,228 @@ import { useNotificationContext } from '../components/NotificationProvider';
 import SEO, { generateBreadcrumbSchema, generateFAQSchema } from '../components/SEO';
 
 const SupportPage: React.FC = () => {
-    const { showError } = useNotificationContext();
-    const [formData, setFormData] = useState({
-        problemType: '',
-        description: ''
-    });
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [isSubmitted, setIsSubmitted] = useState(false);
+  const { showError } = useNotificationContext();
+  const [formData, setFormData] = useState({
+    problemType: '',
+    description: '',
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
-    const faqItems = [
-        {
-            question: "Как восстановить доступ к аккаунту?",
-            answer: 'Используйте функцию "Забыли пароль" на странице входа и восстановите пароль с вашим Email адресом.'
-        },
-        {
-            question: "Что делать, если потерял доступ к почте?",
-            answer: "Изменить или восстановить Email при его потере можно в индивидуальном порядке связавшись напрямую с администрацией. Такие проблемы решаются в приоритетной очереди."
-        },
-        {
-            question: "Почему не приходит письмо для подтверждения?",
-            answer: 'Проверьте папку "Спам". Если письма нет, запросите повторную отправку или напишите нам.'
-        },
-    ];
+  const faqItems = [
+    {
+      question: 'Как восстановить доступ к аккаунту?',
+      answer:
+        'Используйте функцию "Забыли пароль" на странице входа и восстановите пароль с вашим Email адресом.',
+    },
+    {
+      question: 'Что делать, если потерял доступ к почте?',
+      answer:
+        'Изменить или восстановить Email при его потере можно в индивидуальном порядке, связавшись напрямую с администрацией. Такие проблемы решаются в приоритетной очереди.',
+    },
+    {
+      question: 'Почему не приходит письмо для подтверждения?',
+      answer:
+        'Проверьте папку "Спам". Если письма нет, запросите повторную отправку или напишите нам.',
+    },
+  ];
 
-    const problemTypes = [
-        "Изменение/Восстановление Email",
-        "Техническая проблема",
-        "Вопрос по функционалу", 
-        "Проблема с оплатой",
-        "Жалоба",
-        "Предложение",
-        "Другое"
-    ];
+  const problemTypes = [
+    'Изменение/Восстановление Email',
+    'Техническая проблема',
+    'Вопрос по функционалу',
+    'Проблема с оплатой',
+    'Жалоба',
+    'Предложение',
+    'Другое',
+  ];
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsSubmitting(true);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
 
-        try {
-            const requestData = {
-                problem_type: formData.problemType,
-                title: formData.problemType,
-                description: formData.description
-            };
+    try {
+      const requestData = {
+        problem_type: formData.problemType,
+        title: formData.problemType,
+        description: formData.description,
+      };
 
-            await requestService.createSupportRequest(requestData);
-            setIsSubmitted(true);
-            setFormData({ problemType: '', description: '' });
-        } catch (error: any) {
-            console.error('Failed to create support request:', error);
-            if (error.response?.status !== 401) {
-                showError('Произошла ошибка при отправке. Попробуйте еще раз.');
-            }
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLTextAreaElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
-
-    if (isSubmitted) {
-        return (
-            <>
-                <SEO 
-                    title="Сообщение отправлено"
-                    description="Ваше обращение в службу поддержки БИТОК успешно отправлено. Мы ответим вам в ближайшее время."
-                    url="/support"
-                    noIndex
-                />
-                <div className="max-w-4xl mx-auto px-4 select-none">
-                <div className="bg-neutral-900 rounded-xl p-6 border border-neutral-800 shadow-lg">
-                    <div className="flex justify-center">
-                        <h2 className="text-white text-xl font-semibold mb-3">Сообщение отправлено!</h2>
-                    </div>
-                    <div className='flex justify-center'>
-                        <p className="text-neutral-400">Мы получили Ваше обращение и ответим Вам на почту и в раздел заявок в профиле в ближайшее время.</p>
-                    </div>
-                    </div>
-                <div className='flex justify-center'>
-                    <button 
-                        onClick={() => setIsSubmitted(false)}
-                        className="bg-red-600 hover:bg-red-700 cursor-pointer text-white px-6 py-2 rounded-lg transition-all duration-300 mt-6 shadow-md hover:shadow-lg transform ">
-                        Отправить еще одну заявку
-                    </button>
-                </div>    
-                
-            </div>
-            </>
-        );
+      await requestService.createSupportRequest(requestData);
+      setIsSubmitted(true);
+      setFormData({ problemType: '', description: '' });
+    } catch (error: any) {
+      console.error('Failed to create support request:', error);
+      if (error.response?.status !== 401) {
+        showError('Произошла ошибка при отправке. Попробуйте еще раз.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
+  };
 
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  if (isSubmitted) {
     return (
-        <>
-            <SEO 
-                title="Поддержка"
-                description="Служба поддержки БИТОК. Часто задаваемые вопросы, помощь с аккаунтом, техническая поддержка, вопросы по оплате. Свяжитесь с нами."
-                keywords="поддержка, help, FAQ, помощь, техническая поддержка, служба поддержки, вопросы по аккаунту"
-                url="/support"
-                schema={[
-                    generateBreadcrumbSchema([
-                        { name: 'Главная', url: '/' },
-                        { name: 'Поддержка', url: '/support' }
-                    ]),
-                    generateFAQSchema(faqItems)
-                ]}
-            />
-            <div className="max-w-4xl mx-auto px-4 select-none">
-            <section className="mb-8">
-                <div className='flex justify-center'>
-                    <h2 className="text-white text-2xl font-semibold mb-6">Свяжитесь с нами</h2>
-                </div>
-                <form onSubmit={handleSubmit} className="space-y-6 bg-neutral-900 rounded-xl p-6 border border-neutral-900 shadow-lg">
-                    <div>
-                        <label htmlFor="problemType" className="block text-neutral-300 text-sm font-medium mb-3 cursor-pointer">
-                            Тип проблемы
-                        </label>
-                        <select
-                            id="problemType"
-                            name="problemType"
-                            value={formData.problemType}
-                            onChange={handleChange}
-                            required
-                            className="w-full px-4 cursor-pointer py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all"
-                        >
-                            <option value="" className="text-neutral-400 cursor-pointer">Выберите тип проблемы</option>
-                            {problemTypes.map((type, index) => (
-                                <option key={index} value={type} className="text-white cursor-pointer bg-neutral-800">{type}</option>
-                            ))}
-                        </select>
-                    </div>
+      <>
+        <SEO
+          title="Сообщение отправлено"
+          description="Ваше обращение в службу поддержки БИТОК успешно отправлено. Мы ответим вам в ближайшее время."
+          url="/support"
+          noIndex
+        />
 
-                    <div>
-                        <label htmlFor="description" className="block text-neutral-300 text-sm font-medium mb-3">
-                            Описание проблемы
-                        </label>
-                        <textarea
-                            id="description"
-                            name="description"
-                            value={formData.description}
-                            onChange={handleChange}
-                            required
-                            rows={6}
-                            placeholder="Подробно опишите вашу проблему или вопрос..."
-                            className="w-full px-4 py-3 bg-neutral-800 border border-neutral-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 resize-vertical transition-all placeholder-neutral-500"
-                        />
-                    </div>
-                    <div className='flex justify-center'>
-                        <button
-                            type="submit"
-                            disabled={isSubmitting}
-                            className="w-80 mx-auto bg-red-600 hover:bg-red-700 disabled:bg-neutral-700 text-white font-semibold py-2 px-2 rounded-lg shadow-md transition-all duration-300 transform  cursor-pointer disabled:scale-100 disabled:cursor-not-allowed">
-                            {isSubmitting ? 'Отправка...' : 'Отправить заявку'}
-                        </button>
-                    </div>
-                    
-                </form>
-            </section>
-
-            <section className="mb-8">
-                <div className='flex justify-center'>
-                    <h2 className="text-white text-2xl font-semibold mb-6">Часто задаваемые вопросы</h2>
-                </div>
-                <div className="space-y-4">
-                    {faqItems.map((item, index) => (
-                        <div key={index} className="bg-neutral-900 rounded-xl p-6 border border-neutral-800 hover:bg-neutral-800 transition-all duration-300 shadow-lg">
-                            <h3 className="text-white font-semibold text-lg mb-3">{item.question}</h3>
-                            <p className="text-neutral-400 leading-relaxed">{item.answer}</p>
-                        </div>
-                    ))}
-                </div>
-            </section>
-
-
+        <div className="section-shell p-8 text-center select-none">
+          <div className="mx-auto max-w-2xl space-y-5">
+            <div className="glass-pill mx-auto w-fit">Заявка отправлена</div>
+            <h2 className="text-3xl font-bold text-white">Сообщение отправлено</h2>
+            <p className="text-neutral-300">
+              Мы получили ваше обращение и ответим вам на почту и в раздел заявок в
+              профиле в ближайшее время.
+            </p>
+            <button
+              onClick={() => setIsSubmitted(false)}
+              className="action-button-primary px-6"
+            >
+              Отправить еще одну заявку
+            </button>
+          </div>
         </div>
-        </>
+      </>
     );
+  }
+
+  return (
+    <>
+      <SEO
+        title="РџРѕРґРґРµСЂР¶РєР°"
+        description="РЎР»СѓР¶Р±Р° РїРѕРґРґРµСЂР¶РєРё Р‘РРўРћРљ. Р§Р°СЃС‚Рѕ Р·Р°РґР°РІР°РµРјС‹Рµ РІРѕРїСЂРѕСЃС‹, РїРѕРјРѕС‰СЊ СЃ Р°РєРєР°СѓРЅС‚РѕРј, С‚РµС…РЅРёС‡РµСЃРєР°СЏ РїРѕРґРґРµСЂР¶РєР°, РІРѕРїСЂРѕСЃС‹ РїРѕ РѕРїР»Р°С‚Рµ. РЎРІСЏР¶РёС‚РµСЃСЊ СЃ РЅР°РјРё."
+        keywords="РїРѕРґРґРµСЂР¶РєР°, help, FAQ, РїРѕРјРѕС‰СЊ, С‚РµС…РЅРёС‡РµСЃРєР°СЏ РїРѕРґРґРµСЂР¶РєР°, СЃР»СѓР¶Р±Р° РїРѕРґРґРµСЂР¶РєРё, РІРѕРїСЂРѕСЃС‹ РїРѕ Р°РєРєР°СѓРЅС‚Сѓ"
+        url="/support"
+        schema={[
+          generateBreadcrumbSchema([
+            { name: 'Р“Р»Р°РІРЅР°СЏ', url: '/' },
+            { name: 'РџРѕРґРґРµСЂР¶РєР°', url: '/support' },
+          ]),
+          generateFAQSchema(faqItems),
+        ]}
+      />
+
+      <div className="space-y-6 select-none">
+        <section className="page-hero">
+          <div className="relative z-10 grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-end">
+            <div className="section-heading">
+              <div className="glass-pill w-fit">Центр поддержки</div>
+              <div>
+                <p className="section-kicker mb-3">Аккаунт, оплата, заявки</p>
+                <h1 className="text-4xl font-black text-white md:text-6xl">Поддержка</h1>
+              </div>
+              <p className="section-summary">
+                Вопросы по аккаунту, оплате, функционалу и техническим проблемам.
+                Пишите подробно, чтобы мы быстрее помогли.
+              </p>
+            </div>
+
+            <div className="page-metrics">
+              <div className="metric-card">
+                <span className="metric-value">FAQ</span>
+                <span className="metric-label">частые вопросы</span>
+              </div>
+              <div className="metric-card">
+                <span className="metric-value">Заявка</span>
+                <span className="metric-label">обращение в поддержку</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+          <section className="section-shell p-6">
+            <div className="mb-6">
+              <p className="text-sm uppercase tracking-[0.24em] text-neutral-500">
+                Форма обращения
+              </p>
+              <h2 className="mt-2 text-2xl font-bold text-white">Свяжитесь с нами</h2>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div>
+                <label
+                  htmlFor="problemType"
+                  className="mb-2 block text-sm font-medium text-neutral-300"
+                >
+                  Тип проблемы
+                </label>
+                <select
+                  id="problemType"
+                  name="problemType"
+                  value={formData.problemType}
+                  onChange={handleChange}
+                  required
+                  className="field-shell cursor-pointer px-4 py-3"
+                >
+                  <option value="">Выберите тип проблемы</option>
+                  {problemTypes.map((type, index) => (
+                    <option key={index} value={type}>
+                      {type}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="description"
+                  className="mb-2 block text-sm font-medium text-neutral-300"
+                >
+                  Описание проблемы
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  required
+                  rows={7}
+                  placeholder="Подробно опишите вашу проблему или вопрос..."
+                  className="field-shell w-full resize-y px-4 py-3"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="action-button-primary w-full disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSubmitting ? 'Отправка...' : 'Отправить заявку'}
+              </button>
+            </form>
+          </section>
+
+          <section className="space-y-4">
+            <div className="section-shell p-6">
+              <p className="text-sm uppercase tracking-[0.24em] text-neutral-500">FAQ</p>
+              <h2 className="mt-2 text-2xl font-bold text-white">Частые вопросы</h2>
+            </div>
+
+            {faqItems.map((item, index) => (
+              <div key={index} className="glass-panel p-5 transition hover:-translate-y-0.5">
+                <h3 className="text-lg font-semibold text-white">{item.question}</h3>
+                <p className="mt-3 leading-7 text-neutral-400">{item.answer}</p>
+              </div>
+            ))}
+          </section>
+        </div>
+      </div>
+    </>
+  );
 };
 
 export default SupportPage;

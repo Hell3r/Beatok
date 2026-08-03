@@ -82,7 +82,7 @@ const BeatPurchaseModal: React.FC<BeatPurchaseModalProps> = ({ isOpen, onClose, 
         item && (
           <animated.div
             style={style}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50"
+            className="modal-backdrop z-50"
             onClick={onClose}
           />
         )
@@ -94,8 +94,8 @@ const BeatPurchaseModal: React.FC<BeatPurchaseModalProps> = ({ isOpen, onClose, 
             style={style}
             className="fixed inset-0 flex items-center justify-center z-50 p-4 pointer-events-none"
           >
-            <div className="bg-neutral-900 rounded-lg w-full max-w-2xl border border-neutral-700 shadow-2xl max-h-[90vh] overflow-y-auto pointer-events-auto">
-              <div className="p-6 border-b border-neutral-700">
+            <div className="modal-shell w-full max-w-2xl max-h-[90vh] overflow-y-auto pointer-events-auto">
+              <div className="modal-divider border-b p-6">
                 <div className="flex justify-between items-start">
                   <div>
                     <h2 className="text-2xl font-bold text-white mb-2">{beat.name}</h2>
@@ -134,7 +134,7 @@ const BeatPurchaseModal: React.FC<BeatPurchaseModalProps> = ({ isOpen, onClose, 
                 </div>
 
 
-                <div className="border-t border-neutral-700 pt-6">
+                <div className="modal-divider border-t pt-6">
                   <h3 className="text-xl font-bold text-white mb-4">Выберите тариф</h3>
 
                   {availablePricings.length > 0 ? (
@@ -142,7 +142,7 @@ const BeatPurchaseModal: React.FC<BeatPurchaseModalProps> = ({ isOpen, onClose, 
                       {availablePricings.map((pricing) => (
                         <div
                           key={pricing.id}
-                          className="flex items-center justify-between p-4 bg-neutral-800 rounded-lg border border-neutral-600 hover:border-red-500 transition-colors cursor-pointer"
+                          className="modal-subpanel flex items-center justify-between p-4 transition-colors cursor-pointer hover:border-red-500/35"
                         >
                           <div>
                             <div className="text-white font-medium">
@@ -161,7 +161,7 @@ const BeatPurchaseModal: React.FC<BeatPurchaseModalProps> = ({ isOpen, onClose, 
                             <button
                               onClick={() => handlePurchase(pricing.tariff_name)}
                               disabled={purchasingTariff === pricing.tariff_name}
-                              className="mt-2 bg-red-600 cursor-pointer hover:bg-red-700 disabled:bg-red-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded transition-colors"
+                              className="action-button-primary action-button-slim mt-2"
                             >
                               {purchasingTariff === pricing.tariff_name ? 'Покупка...' : 'Купить'}
                             </button>

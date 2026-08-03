@@ -16,7 +16,7 @@ const CookieConsentBanner: React.FC = () => {
   
   return (
     <>
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-gradient-to-r from-neutral-900 to-neutral-800 border-t border-neutral-700 shadow-2xl p-4 md:p-6">
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.14),rgba(255,255,255,0.03)_18%,transparent_58%),linear-gradient(180deg,rgba(10,13,19,0.88),rgba(8,11,17,0.94))] p-4 shadow-[0_-24px_60px_rgba(0,0,0,0.26)] backdrop-blur-xl md:p-6">
         <div className="max-w-4xl mx-auto">
           <div className="text-white text-sm md:text-base leading-relaxed select-none">
             <p className="mb-3">
@@ -32,19 +32,19 @@ const CookieConsentBanner: React.FC = () => {
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
               <button
                 onClick={accept}
-                className="px-6 cursor-pointer py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                className="action-button-primary action-button-compact"
               >
                 Принять все
               </button>
               <button
                 onClick={openSettings}
-                className="px-6 cursor-pointer py-2.5 bg-neutral-700 hover:bg-neutral-600 text-white font-medium rounded-lg transition-all duration-200"
+                className="action-button-secondary action-button-compact"
               >
                 Настройки
               </button>
               <button
                 onClick={reject}
-                className="px-6 cursor-pointer py-2.5 bg-transparent hover:bg-neutral-800 border border-neutral-600 text-neutral-300 hover:text-white font-medium rounded-lg transition-all duration-200"
+                className="action-button-ghost action-button-compact"
               >
                 Отклонить
               </button>
@@ -57,15 +57,15 @@ const CookieConsentBanner: React.FC = () => {
         item && (
           <animated.div
             style={style}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-end p-6"
+            className="modal-backdrop z-[60] flex items-end p-6"
             onClick={closeSettings}
           >
-            <div className="bg-neutral-900 select-none w-full max-w-md min-w-130 mx-auto border border-neutral-700 rounded-t-2xl p-6 max-h-[80vh] overflow-y-auto"
+            <div className="modal-shell mx-auto w-full min-w-130 max-w-md select-none overflow-y-auto rounded-t-[28px] p-6 max-h-[80vh]"
               onClick={e => e.stopPropagation()}>
               <h3 className="text-xl font-bold text-white mb-6">Настройки cookies</h3>
               
               <div className="space-y-4 mb-8">
-                <div className="flex items-center justify-between p-4 bg-neutral-850 rounded-lg border border-neutral-700">
+                <div className="modal-subpanel flex items-center justify-between p-4">
                   <div>
                     <h4 className="font-semibold text-white mb-1">Необходимые</h4>
                     <p className="text-sm text-neutral-400">Сохранение настроек, авторизация</p>
@@ -75,7 +75,7 @@ const CookieConsentBanner: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-neutral-850 rounded-lg border border-neutral-700">
+                <div className="modal-subpanel flex items-center justify-between p-4">
                   <div>
                     <h4 className="font-semibold text-white mb-1">Аналитика</h4>
                     <p className="text-sm text-neutral-400">Google Analytics, статистика посещений</p>
@@ -92,22 +92,22 @@ const CookieConsentBanner: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-neutral-800">
+              <div className="modal-divider flex flex-col gap-3 border-t pt-4 sm:flex-row">
                 <button
                   onClick={accept}
-                  className="flex-1 cursor-pointer px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-all duration-200"
+                  className="action-button-primary action-button-compact flex-1"
                 >
                   Принять все
                 </button>
                 <button
                   onClick={reject}
-                  className="flex-1 cursor-pointer px-6 py-3 bg-neutral-700 hover:bg-neutral-600 text-white font-medium rounded-lg transition-all duration-200"
+                  className="action-button-secondary action-button-compact flex-1"
                 >
                   Отклонить
                 </button>
                 <button
                   onClick={closeSettings}
-                  className="flex-1 cursor-pointer px-6 py-3 bg-neutral-800 hover:bg-neutral-700 text-neutral-300 font-medium rounded-lg transition-all duration-200 border border-neutral-600"
+                  className="action-button-ghost action-button-compact flex-1"
                 >
                   Закрыть
                 </button>

@@ -71,16 +71,17 @@ class DownloadService:
         await session.commit()
 
         beat = download_token.beat
-        if not beat.wav_path:
+        if not beat.audio_key:
             return None
         
         from pathlib import Path
         AUDIO_STORAGE = Path("audio_storage")
-        file_path = AUDIO_STORAGE / beat.wav_path
+        file_path = AUDIO_STORAGE / beat.audio_key
+        file_extension = beat.audio_key.split('.')[-1].lower() if '.' in beat.audio_key else 'audio'
         
         return {
             "file_path": file_path,
-            "file_name": f"{beat.name.replace(' ', '_')}.wav",
+            "file_name": f"{beat.name.replace(' ', '_')}.{file_extension}",
             "beat_name": beat.name,
             "user_id": download_token.user_id,
             "downloads_left": download_token.max_downloads - download_token.downloads_count,

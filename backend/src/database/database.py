@@ -2,9 +2,10 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.pool import NullPool
 from src.models import *
+from src.core.config import settings
 
 
-DATABASE_URL = "postgresql+asyncpg://admin:CzosFgElyKAF@master.a9806fa5-1071-481d-9dc2-3373c4f577a5.c.dbaas.selcloud.ru:5432/beatok_db"
+DATABASE_URL = settings.DATABASE_URL
 
 engine = create_async_engine(DATABASE_URL, poolclass=NullPool)
 

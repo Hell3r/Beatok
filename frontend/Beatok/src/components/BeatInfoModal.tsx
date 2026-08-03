@@ -5,6 +5,7 @@ import type { Beat } from '../types/Beat';
 import { getAvatarUrl } from '../utils/getAvatarURL';
 import { formatDuration } from '../utils/formatDuration';
 import { useAudioPlayer } from '../hooks/useAudioPlayer';
+import { apiUrl } from '../services/api';
 
 interface BeatInfoModalProps {
   isOpen: boolean;
@@ -14,7 +15,7 @@ interface BeatInfoModalProps {
 
 const getCoverUrl = (beat: Beat): string | null => {
   if (!beat.cover_path) return null;
-  return `https://beatokservice.ru/api/static/covers/${beat.cover_path}`;
+  return apiUrl(`/static/covers/${beat.cover_path}`);
 };
 
 const BeatInfoModal: React.FC<BeatInfoModalProps> = ({ isOpen, onClose, beat }) => {
@@ -106,7 +107,7 @@ const BeatInfoModal: React.FC<BeatInfoModalProps> = ({ isOpen, onClose, beat }) 
         item && (
           <animated.div
             style={style}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+            className="modal-backdrop z-40"
             onClick={onClose}
           />
         )
@@ -118,8 +119,8 @@ const BeatInfoModal: React.FC<BeatInfoModalProps> = ({ isOpen, onClose, beat }) 
             style={style}
             className="fixed inset-0 flex items-center justify-center z-50 p-4"
           >
-            <div className="bg-neutral-900 select-none rounded-lg w-full max-w-3xl border border-neutral-800 shadow-2xl">
-              <div className="p-4 border-b border-neutral-800">
+            <div className="modal-shell w-full max-w-3xl select-none">
+              <div className="modal-divider border-b p-4">
                 <div className="flex justify-between items-center">
                   <h2 className="text-lg font-bold text-white select-none">
                     Информация о бите
@@ -141,7 +142,7 @@ const BeatInfoModal: React.FC<BeatInfoModalProps> = ({ isOpen, onClose, beat }) 
                   <div className="flex flex-col md:flex-row gap-6">
                     <div className="flex-shrink-0">
                       <div 
-                        className="relative w-full md:w-48 aspect-square rounded-lg overflow-hidden bg-neutral-800 cursor-pointer group"
+                        className="modal-subpanel relative aspect-square w-full cursor-pointer overflow-hidden rounded-[20px] md:w-48 group"
                         onMouseEnter={() => setIsHoveringCover(true)}
                         onMouseLeave={() => setIsHoveringCover(false)}
                         onClick={handleCoverClick}
@@ -197,19 +198,19 @@ const BeatInfoModal: React.FC<BeatInfoModalProps> = ({ isOpen, onClose, beat }) 
                       </div>
 
                       <div className="grid grid-cols-2 gap-2">
-                        <div className="bg-neutral-800 p-2 rounded">
+                        <div className="modal-subpanel p-2">
                           <p className="text-neutral-500 text-xs">Жанр</p>
                           <p className="text-white font-medium text-sm">{beat.genre}</p>
                         </div>
-                        <div className="bg-neutral-800 p-2 rounded">
+                        <div className="modal-subpanel p-2">
                           <p className="text-neutral-500 text-xs">Темп</p>
                           <p className="text-white font-medium text-sm">{beat.tempo} BPM</p>
                         </div>
-                        <div className="bg-neutral-800 p-2 rounded">
+                        <div className="modal-subpanel p-2">
                           <p className="text-neutral-500 text-xs">Тональность</p>
                           <p className="text-white font-medium text-sm">{beat.key}</p>
                         </div>
-                        <div className="bg-neutral-800 p-2 rounded">
+                        <div className="modal-subpanel p-2">
                           <p className="text-neutral-500 text-xs">Длительность</p>
                           <p className="text-white font-medium text-sm">{formatDuration(beat.duration)}</p>
                         </div>
@@ -254,7 +255,7 @@ const BeatInfoModal: React.FC<BeatInfoModalProps> = ({ isOpen, onClose, beat }) 
                         </div>
                       )}
 
-                      <div className="pt-2 border-t border-neutral-700">
+                      <div className="modal-divider border-t pt-2">
                         <p className="text-neutral-500 text-xs">
                           Добавлен: {formatDate(beat.created_at)}
                         </p>

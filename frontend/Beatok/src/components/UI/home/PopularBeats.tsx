@@ -4,6 +4,7 @@ import { useAudioPlayer } from '../../../hooks/useAudioPlayer';
 import type { Beat } from '../../../types/Beat';
 import BeatList from '../beats/BeatList';
 import type { Filters } from '../beats/Filter';
+import { apiUrl } from '../../../services/api';
 
 const PopularBeats: React.FC = () => {
   const [beats, setBeats] = useState<Beat[]>([]);
@@ -30,7 +31,6 @@ const PopularBeats: React.FC = () => {
 
   const handleDownload = async (beat: Beat) => {
   const token = localStorage.getItem("access_token");
-  const API_BASE_URL = 'https://beatokservice.ru/';
 
   if (isFreeBeat(beat) && !token) {
     const event = new CustomEvent('openAuthModal');
@@ -40,7 +40,7 @@ const PopularBeats: React.FC = () => {
 
   try {
     console.log('Increment download for beat', beat.id);
-    const incResponse = await fetch(`https://beatokservice.ru/api/beats/${beat.id}/increment-download`, {
+    const incResponse = await fetch(apiUrl(`/beats/${beat.id}/increment-download`), {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -49,8 +49,8 @@ const PopularBeats: React.FC = () => {
     });
     console.log('Increment response status:', incResponse.status);
 
-    console.log('Fetching audio URL from:', `${API_BASE_URL}/api/beats/${beat.id}/audio-url`);
-    const urlResponse = await fetch(`${API_BASE_URL}/api/beats/${beat.id}/audio-url`);
+    console.log('Fetching audio URL from:', apiUrl(`/beats/${beat.id}/audio-url`));
+    const urlResponse = await fetch(apiUrl(`/beats/${beat.id}/audio-url`));
     console.log('Audio URL response status:', urlResponse.status);
     
     if (!urlResponse.ok) {
@@ -180,7 +180,7 @@ const PopularBeats: React.FC = () => {
       <div className="mt-6 text-center">
         <a
           href="/beats"
-          className="inline-block bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md font-medium transition-colors duration-200"
+          className="action-button-primary action-button-compact"
         >
           Посмотреть все биты
         </a>

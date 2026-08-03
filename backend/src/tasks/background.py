@@ -13,12 +13,6 @@ logger = logging.getLogger(__name__)
 
 AUDIO_STORAGE = Path("audio_storage")
 
-AUDIO_EXTENSIONS = ['.wav', '.mp3']
-
-
-
-
-
 async def cleanup_expired_tokens(session) -> int:
     try:
         result = await session.execute(
@@ -160,8 +154,7 @@ async def cleanup_sold_beats_files(session) -> dict:
     stats = {
         'sold_beats_found': 0,
         'total_files_deleted': 0,
-        'wav_deleted': 0,
-        'mp3_deleted': 0,
+        'audio_files_deleted': 0,
         'errors': []
     }
     
@@ -180,50 +173,21 @@ async def cleanup_sold_beats_files(session) -> dict:
         for beat in sold_beats:
             try:
                 files_deleted_for_beat = 0
+                audio_key = beat.audio_key
 
-                if beat.wav_path:
-                    wav_path = AUDIO_STORAGE / beat.wav_path
-                    if wav_path.exists():
-                        wav_size = wav_path.stat().st_size
-                        wav_path.unlink()
-                        
-                        stats['wav_deleted'] += 1
+                if audio_key:
+                    audio_path = AUDIO_STORAGE / audio_key
+                    if audio_path.exists():
+                        audio_size = audio_path.stat().st_size
+                        audio_path.unlink()
+
+                        stats['audio_files_deleted'] += 1
                         stats['total_files_deleted'] += 1
                         files_deleted_for_beat += 1
-                        
-                        logger.info(
-                            f"Deleted SOLD beat WAV file: ID={beat.id}, "
-                            f"name='{beat.name}', size={wav_size/1024/1024:.2f}MB"
-                        )
 
-                if hasattr(beat, 'mp3_path') and beat.mp3_path:
-                    mp3_path = AUDIO_STORAGE / beat.mp3_path
-                    if mp3_path.exists():
-                        mp3_size = mp3_path.stat().st_size
-                        mp3_path.unlink()
-                        
-                        stats['mp3_deleted'] += 1
-                        stats['total_files_deleted'] += 1
-                        files_deleted_for_beat += 1
-                        
                         logger.info(
-                            f"Deleted SOLD beat MP3 file: ID={beat.id}, "
-                            f"name='{beat.name}', size={mp3_size/1024/1024:.2f}MB"
-                        )
-
-                elif beat.wav_path:
-                    mp3_path = AUDIO_STORAGE / beat.wav_path.replace('.wav', '.mp3')
-                    if mp3_path.exists():
-                        mp3_size = mp3_path.stat().st_size
-                        mp3_path.unlink()
-                        
-                        stats['mp3_deleted'] += 1
-                        stats['total_files_deleted'] += 1
-                        files_deleted_for_beat += 1
-                        
-                        logger.info(
-                            f"Deleted SOLD beat MP3 file (auto-found): ID={beat.id}, "
-                            f"name='{beat.name}', size={mp3_size/1024/1024:.2f}MB"
+                            f"Deleted SOLD beat audio file: ID={beat.id}, "
+                            f"name='{beat.name}', path='{audio_key}', size={audio_size/1024/1024:.2f}MB"
                         )
                 
                 if files_deleted_for_beat == 0:
@@ -253,8 +217,7 @@ async def cleanup_sold_beats_files(session) -> dict:
         if stats['total_files_deleted'] > 0:
             logger.info(
                 f"SOLD beats cleanup completed: "
-                f"{stats['total_files_deleted']} files deleted "
-                f"(WAV: {stats['wav_deleted']}, MP3: {stats['mp3_deleted']}) "
+                f"{stats['total_files_deleted']} audio files deleted "
                 f"from {stats['sold_beats_found']} SOLD beats"
             )
         else:
@@ -300,15 +263,14 @@ class BackgroundTaskManager:
         
         while self.is_running:
             try:
-                logger.info("Starting SOLD beats file cleanup (WAV & MP3)...")
+                logger.info("Starting SOLD beats audio file cleanup...")
                 
                 async with async_session_factory() as session:
                     stats = await cleanup_sold_beats_files(session)
                     
                     if stats['total_files_deleted'] > 0:
                         logger.info(
-                            f"SOLD beats cleanup: {stats['total_files_deleted']} files deleted "
-                            f"(WAV: {stats['wav_deleted']}, MP3: {stats['mp3_deleted']})"
+                            f"SOLD beats cleanup: {stats['total_files_deleted']} audio files deleted"
                         )
 
                 await asyncio.sleep(24 * 60 * 60)
@@ -404,8 +366,7 @@ class BackgroundTaskManager:
                         
                         if cleanup_stats['total_files_deleted'] > 0:
                             logger.info(
-                                f"Emergency cleanup freed {cleanup_stats['total_files_deleted']} files "
-                                f"({cleanup_stats['wav_deleted']} WAV, {cleanup_stats['mp3_deleted']} MP3)"
+                                f"Emergency cleanup freed {cleanup_stats['total_files_deleted']} audio files"
                             )
 
                             disk_stats_after = await check_disk_space()
@@ -528,7 +489,7 @@ class BackgroundTaskManager:
         logger.info(
             "Background tasks started:\n"
             "  - Token cleanup: every 2 hours\n"
-            "  - SOLD beats cleanup (WAV+MP3): every 24 hours\n"
+            "  - SOLD beats audio cleanup: every 24 hours\n"
             "  - Disk space check: every 6 hours\n"
             "  - Storage report: every 24 hours\n"
             "  - Check Promotions: every 1 hour"

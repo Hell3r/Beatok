@@ -1,5 +1,9 @@
 import os
+from pathlib import Path
 from typing import Optional
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parents[2] / ".env")
 
 class Settings():
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://185.55.59.6:6379")
@@ -24,7 +28,7 @@ class Settings():
     SMTP_USER: str = os.getenv("SMTP_USER", "")
     SMTP_PASSWORD: str = os.getenv("SMTP_PASSWORD", "")
 
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql+asyncpg://user:password@185.55.59.6/beatok")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/beatok")
 
     DEBUG: bool = os.getenv("DEBUG", "true").lower() == "true"
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
@@ -36,6 +40,7 @@ class Settings():
     S3_ACCESS_KEY: str = os.getenv("aws_access_key_id")
     S3_SECRET_KEY: str = os.getenv("aws_secret_access_key")
     S3_REGION: str = os.getenv("S3_REGION")
+    S3_BUCKET: str = os.getenv("S3_BUCKET", "beatok-bucket")
     
     
     

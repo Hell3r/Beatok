@@ -7,6 +7,7 @@ import os
 import shutil
 import json
 import aiofiles
+import logging
 from mutagen import File as MutagenFile
 from pathlib import Path
 from src.database.deps import SessionDep
@@ -24,20 +25,11 @@ from src.services.rate_limiter import check_rate_limit
 from src.services.rate_limiter import RateLimiter
 from PIL import Image
 from io import BytesIO
-import boto3
-from botocore.config import Config
-from src.core.config import settings
+from botocore.exceptions import ClientError
+from src.core.s3_client import s3_client, S3_BUCKET
 import tempfile
 
-s3_client = boto3.client(
-    's3',
-    endpoint_url= "https://beatok-bucket.s3.ru-7.storage.selcloud.ru",
-    aws_access_key_id=settings.S3_ACCESS_KEY,
-    aws_secret_access_key=settings.S3_SECRET_KEY,
-    config=Config(signature_version='s3v4'),
-    region_name=settings.S3_REGION
-)
-S3_BUCKET = "beatok-bucket"
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/beats", tags=["Аудио файлы"])
 
@@ -593,7 +585,7 @@ async def generate_identical_beats(
             beat = BeatModel(
                 name=f"{name} #{i}",
                 author_id=current_user_id,
-                audio_file_path=None,
+                audio_key=None,
                 cover_path=None,
                 genre=genre,
                 tempo=tempo,
@@ -616,7 +608,7 @@ async def generate_identical_beats(
             async with aiofiles.open(audio_path, "wb") as f:
                 await f.write(audio_content)
             
-            beat.audio_file_path = str(audio_path.relative_to(AUDIO_STORAGE))
+            beat.audio_key = str(audio_path.relative_to(AUDIO_STORAGE))
 
         await session.commit()
 
@@ -626,7 +618,7 @@ async def generate_identical_beats(
                 "id": beat.id,
                 "name": beat.name,
                 "folder": f"beats/{beat.id}",
-                "audio_file_path": beat.audio_file_path
+                "audio_key": beat.audio_key
             })
 
         response_data = {
@@ -826,6 +818,7 @@ async def reject_beat(
 
 @router.get("/{beat_id}/audio-url")
 async def get_beat_audio_url(
+    request: Request,
     beat_id: int,
     session: SessionDep
 ):
@@ -842,15 +835,25 @@ async def get_beat_audio_url(
     
     if not beat.audio_key:
         raise HTTPException(status_code=404, detail="No audio file for this beat")
+
+    audio_format = beat.audio_key.split('.')[-1].lower() if '.' in beat.audio_key else 'audio'
+    local_audio_path = AUDIO_STORAGE / beat.audio_key
+    if local_audio_path.exists():
+        audio_url = str(request.url_for("serve_audio_file", path=beat.audio_key))
+        return {"audio_url": audio_url, "audio_format": audio_format}
     
     try:
+        s3_client.head_object(Bucket=S3_BUCKET, Key=beat.audio_key)
         url = s3_client.generate_presigned_url(
             'get_object',
             Params={'Bucket': S3_BUCKET, 'Key': beat.audio_key},
             ExpiresIn=3600
         )
     except ClientError as e:
+        error_code = e.response.get("Error", {}).get("Code")
+        if error_code in ("404", "NoSuchKey", "NotFound"):
+            raise HTTPException(status_code=404, detail="Audio file not found")
         logger.error(f"Error generating presigned URL for beat {beat_id}: {e}")
         raise HTTPException(status_code=500, detail="Error generating audio URL")
     
-    return {"audio_url": url, "audio_format": beat.audio_key.split('.')[-1].lower()}
+    return {"audio_url": url, "audio_format": audio_format}

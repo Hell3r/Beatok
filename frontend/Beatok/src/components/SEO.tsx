@@ -18,11 +18,13 @@ export interface SEOProps {
 }
 
 const DEFAULT_SEO = {
-  title: 'БИТОК - Продажа и покупка битов',
-  description: 'БИТОК - сервис для продажи и покупки битов в СНГ. Свежие биты для рэпа, роки, поп-музыки и других жанров. Скачивай бесплатные биты или покупай премиум.',
-  keywords: 'биты, купить биты, продать биты, биты для рэпа, бесплатные биты, минуса, битмейкеры, рэп, музыка',
+  title: '\u0411\u0418\u0422\u041e\u041a - \u041f\u0440\u043e\u0434\u0430\u0436\u0430 \u0438 \u043f\u043e\u043a\u0443\u043f\u043a\u0430 \u0431\u0438\u0442\u043e\u0432',
+  description:
+    '\u0411\u0418\u0422\u041e\u041a - \u0441\u0435\u0440\u0432\u0438\u0441 \u0434\u043b\u044f \u043f\u0440\u043e\u0434\u0430\u0436\u0438 \u0438 \u043f\u043e\u043a\u0443\u043f\u043a\u0438 \u0431\u0438\u0442\u043e\u0432 \u0432 \u0421\u041d\u0413.',
+  keywords:
+    '\u0431\u0438\u0442\u044b, \u0431\u0438\u0442\u043c\u0435\u0439\u043a\u0435\u0440\u044b, \u043a\u0443\u043f\u0438\u0442\u044c \u0431\u0438\u0442\u044b, \u0440\u044d\u043f, \u043c\u0443\u0437\u044b\u043a\u0430',
   image: 'https://beatokservice.ru/og-image.png',
-  siteName: 'БИТОК',
+  siteName: '\u0411\u0418\u0422\u041e\u041a',
 };
 
 const SEO: React.FC<SEOProps> = ({
@@ -43,8 +45,7 @@ const SEO: React.FC<SEOProps> = ({
 }) => {
   const fullTitle = title ? `${title} | ${DEFAULT_SEO.title}` : DEFAULT_SEO.title;
   const canonicalUrl = canonical || (url ? `https://beatokservice.ru${url}` : 'https://beatokservice.ru/');
-  
-  // Build robots meta
+
   const robots: string[] = [];
   if (noIndex) robots.push('noindex');
   else robots.push('index');
@@ -52,14 +53,12 @@ const SEO: React.FC<SEOProps> = ({
   else robots.push('follow');
 
   useEffect(() => {
-    // Update document title
     document.title = fullTitle;
 
-    // Update or create meta tags
     const updateMetaTag = (name: string, content: string, isProperty = false) => {
       const selector = isProperty ? `meta[property="${name}"]` : `meta[name="${name}"]`;
       let element = document.querySelector(selector) as HTMLMetaElement | null;
-      
+
       if (!element) {
         element = document.createElement('meta');
         if (isProperty) {
@@ -69,16 +68,15 @@ const SEO: React.FC<SEOProps> = ({
         }
         document.head.appendChild(element);
       }
+
       element.content = content;
     };
 
-    // Primary meta tags
     updateMetaTag('title', fullTitle);
     updateMetaTag('description', description);
     updateMetaTag('keywords', keywords);
     updateMetaTag('robots', robots.join(', '));
 
-    // Open Graph
     updateMetaTag('og:title', fullTitle, true);
     updateMetaTag('og:description', description, true);
     updateMetaTag('og:image', image, true);
@@ -87,24 +85,21 @@ const SEO: React.FC<SEOProps> = ({
     updateMetaTag('og:site_name', DEFAULT_SEO.siteName, true);
     updateMetaTag('og:locale', 'ru_RU', true);
 
-    // Article specific OG tags
     if (type === 'article') {
       if (publishedTime) updateMetaTag('article:published_time', publishedTime, true);
       if (author) updateMetaTag('article:author', author, true);
       if (section) updateMetaTag('article:section', section, true);
       if (tags && tags.length > 0) {
-        tags.forEach(tag => updateMetaTag('article:tag', tag, true));
+        tags.forEach((tag) => updateMetaTag('article:tag', tag, true));
       }
     }
 
-    // Twitter Card
     updateMetaTag('twitter:card', 'summary_large_image');
     updateMetaTag('twitter:title', fullTitle);
     updateMetaTag('twitter:description', description);
     updateMetaTag('twitter:image', image);
     updateMetaTag('twitter:domain', 'beatokservice.ru');
 
-    // Canonical URL
     let canonicalLink = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
     if (!canonicalLink) {
       canonicalLink = document.createElement('link');
@@ -113,7 +108,6 @@ const SEO: React.FC<SEOProps> = ({
     }
     canonicalLink.href = canonicalUrl;
 
-    // Handle JSON-LD structured data
     const existingSchema = document.querySelector('script[type="application/ld+json"]');
     if (schema) {
       const schemaData = JSON.stringify(schema);
@@ -128,16 +122,13 @@ const SEO: React.FC<SEOProps> = ({
     } else if (existingSchema) {
       existingSchema.remove();
     }
+  }, [author, canonicalUrl, description, fullTitle, image, keywords, noFollow, noIndex, publishedTime, robots, schema, section, tags, type]);
 
-  }, [fullTitle, description, keywords, image, canonicalUrl, type, schema, publishedTime, author, section, tags, robots]);
-
-  // This component doesn't render anything visible
   return null;
 };
 
 export default SEO;
 
-// Helper function to generate breadcrumb structured data
 export const generateBreadcrumbSchema = (items: { name: string; url: string }[]) => {
   return {
     '@context': 'https://schema.org',
@@ -151,19 +142,15 @@ export const generateBreadcrumbSchema = (items: { name: string; url: string }[])
   };
 };
 
-// Helper function to generate organization structured data
 export const generateOrganizationSchema = () => {
   return {
     '@context': 'https://schema.org',
     '@type': 'Organization',
-    name: 'БИТОК',
+    name: 'BEATOK',
     url: 'https://beatokservice.ru',
     logo: 'https://beatokservice.ru/og-image.png',
-    description: 'Сервис для продажи и покупки битов в СНГ',
-    sameAs: [
-      'https://t.me/beatok_service',
-      'https://vk.com/beatok_service',
-    ],
+    description: 'Marketplace for buying and selling beats.',
+    sameAs: ['https://t.me/beatok_service', 'https://vk.com/beatok_service'],
     contactPoint: {
       '@type': 'ContactPoint',
       email: 'beatok_service@mail.ru',
@@ -172,23 +159,22 @@ export const generateOrganizationSchema = () => {
     },
     founder: {
       '@type': 'Person',
-      name: 'Евгений Репьев',
+      name: 'Evgeniy Repev',
     },
     address: {
       '@type': 'PostalAddress',
-      addressLocality: 'Королев',
-      addressRegion: 'Московская область',
+      addressLocality: 'Korolev',
+      addressRegion: 'Moscow Oblast',
       addressCountry: 'RU',
     },
   };
 };
 
-// Helper function to generate website structured data with search
 export const generateWebsiteSchema = () => {
   return {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: 'БИТОК',
+    name: 'BEATOK',
     url: 'https://beatokservice.ru',
     potentialAction: {
       '@type': 'SearchAction',
@@ -201,7 +187,6 @@ export const generateWebsiteSchema = () => {
   };
 };
 
-// Helper function to generate product/beat structured data
 export const generateBeatProductSchema = (beat: {
   name: string;
   author: string;
@@ -211,26 +196,27 @@ export const generateBeatProductSchema = (beat: {
   genre?: string;
   image?: string;
 }) => {
-  const offers = beat.price !== undefined && beat.price > 0
-    ? {
-        '@type': 'Offer',
-        price: beat.price,
-        priceCurrency: 'RUB',
-        availability: 'https://schema.org/InStock',
-      }
-    : {
-        '@type': 'Offer',
-        price: '0',
-        priceCurrency: 'RUB',
-        availability: 'https://schema.org/FreeItem',
-      };
+  const offers =
+    beat.price !== undefined && beat.price > 0
+      ? {
+          '@type': 'Offer',
+          price: beat.price,
+          priceCurrency: 'RUB',
+          availability: 'https://schema.org/InStock',
+        }
+      : {
+          '@type': 'Offer',
+          price: '0',
+          priceCurrency: 'RUB',
+          availability: 'https://schema.org/FreeItem',
+        };
 
   return {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: beat.name,
     image: beat.image || 'https://beatokservice.ru/og-image.png',
-    description: `Бит "${beat.name}" от ${beat.author}${beat.bpm ? `, ${beat.bpm} BPM` : ''}${beat.key ? `, ${beat.key} ключ` : ''}${beat.genre ? `, жанр ${beat.genre}` : ''}`,
+    description: `${beat.name} by ${beat.author}${beat.bpm ? `, ${beat.bpm} BPM` : ''}${beat.key ? `, key ${beat.key}` : ''}${beat.genre ? `, genre ${beat.genre}` : ''}`,
     brand: {
       '@type': 'Brand',
       name: beat.author,
@@ -239,7 +225,6 @@ export const generateBeatProductSchema = (beat: {
   };
 };
 
-// Helper function to generate person/beatmaker structured data
 export const generateBeatmakerPersonSchema = (user: {
   username: string;
   description?: string;
@@ -253,19 +238,20 @@ export const generateBeatmakerPersonSchema = (user: {
     url: `https://beatokservice.ru/profile/${user.username}`,
     image: user.avatarUrl,
     description: user.description,
-    worksCreated: user.beatCount ? {
-      '@type': 'Collection',
-      numberOfItems: user.beatCount,
-    } : undefined,
+    worksCreated: user.beatCount
+      ? {
+          '@type': 'Collection',
+          numberOfItems: user.beatCount,
+        }
+      : undefined,
   };
 };
 
-// Helper function to generate FAQ structured data
 export const generateFAQSchema = (faqs: { question: string; answer: string }[]) => {
   return {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
-    mainEntity: faqs.map(faq => ({
+    mainEntity: faqs.map((faq) => ({
       '@type': 'Question',
       name: faq.question,
       acceptedAnswer: {
@@ -275,4 +261,3 @@ export const generateFAQSchema = (faqs: { question: string; answer: string }[]) 
     })),
   };
 };
-

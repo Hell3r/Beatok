@@ -88,7 +88,7 @@ const EmailChange: React.FC = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full select-none cursor-pointer max-w-100 mx-auto bg-red-600 hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="action-button-primary action-button-block max-w-100 mx-auto"
                         >
                             {loading ? 'Отправка...' : 'Подтвердить изменение'}
                         </button>

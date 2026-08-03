@@ -6,14 +6,14 @@ S3_ENDPOINT = settings.S3_ENDPOINT
 S3_ACCESS_KEY = settings.S3_ACCESS_KEY
 S3_SECRET_KEY = settings.S3_SECRET_KEY
 S3_REGION = settings.S3_REGION
-S3_BUCKET = "beatok-bucket"
+S3_BUCKET = settings.S3_BUCKET
 
 s3_client = boto3.client(
     's3',
     endpoint_url=S3_ENDPOINT,
     aws_access_key_id=S3_ACCESS_KEY,
     aws_secret_access_key=S3_SECRET_KEY,
-    config=Config(signature_version='s3v4'),
+    config=Config(signature_version='s3v4', s3={'addressing_style': 'virtual'}),
     region_name=S3_REGION
 )
 

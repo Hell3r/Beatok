@@ -12,8 +12,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import BeatInfoModal from '../components/BeatInfoModal';
 import { requestService } from '../services/requestService';
 import { withdrawalService } from '../services/withdrawalService';
-
-const API_URL = 'https://beatokservice.ru/api';
+import { apiUrl } from '../services/api';
 
 interface User {
   id: number;
@@ -170,7 +169,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
     setHistoryLoading(true);
     try {
       const token = localStorage.getItem('access_token');
-      const url = `${API_URL}/v1/users/admin/balance-history?limit=1000`;
+      const url = apiUrl(`/v1/users/admin/balance-history?limit=1000`);
 
       const response = await fetch(url, {
         headers: {
@@ -234,7 +233,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
     setUsersLoading(true);
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_URL}/v1/users/users`, {
+      const response = await fetch(apiUrl(`/v1/users/users`), {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -272,7 +271,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
     setSavingUser(true);
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_URL}/v1/users/${selectedUser.id}/role`, {
+      const response = await fetch(apiUrl(`/v1/users/${selectedUser.id}/role`), {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -305,7 +304,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
     setSavingUser(true);
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_URL}/v1/users/${selectedUser.id}`, {
+      const response = await fetch(apiUrl(`/v1/users/${selectedUser.id}`), {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -369,7 +368,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
   const fetchModerationBeats = async () => {
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_URL}/beats/moderation`, {
+      const response = await fetch(apiUrl(`/beats/moderation`), {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -426,7 +425,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
   const handleApprove = async (beat: Beat) => {
     try {
       const token = localStorage.getItem('access_token');
-      const response = await fetch(`${API_URL}/beats/${beat.id}/approve`, {
+      const response = await fetch(apiUrl(`/beats/${beat.id}/approve`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -446,7 +445,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
       const formData = new FormData();
       formData.append('status', 'closed');
       
-      const response = await fetch(`${API_URL}/v1/requests/${requestId}`, {
+      const response = await fetch(apiUrl(`/v1/requests/${requestId}`), {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -475,7 +474,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
       const formData = new FormData();
       formData.append('reason', rejectReason);
       
-      const response = await fetch(`${API_URL}/beats/${selectedBeat.id}/reject`, {
+      const response = await fetch(apiUrl(`/beats/${selectedBeat.id}/reject`), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -521,15 +520,15 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
 
   const getCoverUrl = (beat: Beat): string | null => {
     if (!beat.cover_path) return null;
-    return `https://beatokservice.ru/api/static/covers/${beat.cover_path}`;
+    return apiUrl(`/static/covers/${beat.cover_path}`);
   };
 
   const getAuthorAvatar = (beat: Beat): string => {
     const authorId = beat.owner?.id || beat.author?.id || beat.user?.id || beat.author_id;
     const avatarPath = beat.owner?.avatar_path || beat.author?.avatar_path || beat.user?.avatar_path;
-    if (!authorId) return 'https://beatokservice.ru/api/static/default_avatar.png';
+    if (!authorId) return apiUrl('/static/default_avatar.png');
     if (avatarPath) return getAvatarUrl(authorId, avatarPath);
-    return 'https://beatokservice.ru/api/static/default_avatar.png';
+    return apiUrl('/static/default_avatar.png');
   };
 
   const getAuthorName = (beat: Beat): string => {
@@ -561,13 +560,13 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
   };
 
   const getBeatPrices = (beat: Beat): string => {
-    if (!beat.pricings || beat.pricings.length === 0) return 'Бесплатно';
+    if (!beat.pricings || beat.pricings.length === 0) return '0 ₽';
     
     const prices = beat.pricings
       .filter(p => p.price !== null && p.is_available)
       .map(p => `${p.tariff_display_name || p.tariff_name}: ${p.price} ₽`);
     
-    return prices.length > 0 ? prices.join(', ') : 'Бесплатно';
+    return prices.length > 0 ? prices.join(', ') : '0 ₽';
   };
 
   const handleCoverClick = (beat: Beat) => {
@@ -753,7 +752,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
                                 alt="Аватар"
                                 className="w-5 h-5 rounded-full"
                                 onError={(e) => {
-                                  e.currentTarget.src = 'https://beatokservice.ru/api/static/default_avatar.png';
+                                  e.currentTarget.src = apiUrl('/static/default_avatar.png');
                                 }}
                               />
                               <span className="text-neutral-400 text-sm hover:text-red-400 transition-colors">by {getAuthorName(beat)}</span>
@@ -824,13 +823,13 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
                       <div className="flex flex-col justify-center gap-2 flex-shrink-0 select-none">
                         <button
                           onClick={() => handleApprove(beat)}
-                          className="bg-green-600 cursor-pointer hover:bg-green-700 text-white font-semibold py-2 px-6 rounded transition-colors whitespace-nowrap"
+                          className="action-button-primary action-button-compact whitespace-nowrap"
                         >
                           Принять
                         </button>
                         <button
                           onClick={() => handleRejectClick(beat)}
-                          className="bg-red-600 cursor-pointer hover:bg-red-700 text-white font-semibold py-2 px-6 rounded transition-colors whitespace-nowrap"
+                          className="action-button-ghost action-button-compact whitespace-nowrap"
                         >
                           Отклонить
                         </button>
@@ -904,13 +903,13 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
                       <div className="flex space-x-2">
                         <button
                           onClick={() => handleResponseClick(request)}
-                          className="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold py-2 px-4 rounded transition-colors cursor-pointer"
+                          className="action-button-primary action-button-slim"
                         >
                           Ответить
                         </button>
                         <button
                           onClick={() => handleCloseRequest(request.id)}
-                          className="bg-neutral-700 hover:bg-neutral-600 text-white text-sm font-semibold py-2 px-4 rounded transition-colors cursor-pointer"
+                          className="action-button-secondary action-button-slim"
                         >
                           Закрыть
                         </button>
@@ -988,7 +987,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
                       <td className="py-3 px-2 text-neutral-300">{user.id}</td>
                       <td className="py-3 px-2">
                         <img
-                          src={user.avatar_path ? getAvatarUrl(user.id, user.avatar_path) : 'https://beatokservice.ru/api/static/default_avatar.png'}
+                          src={user.avatar_path ? getAvatarUrl(user.id, user.avatar_path) : apiUrl('/static/default_avatar.png')}
                           alt="Аватар"
                           className="w-10 h-10 rounded-full cursor-pointer hover:ring-2 hover:ring-red-500 transition-all"
                           onClick={(e) => {
@@ -996,7 +995,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
                             navigate(`/profile/${user.id}`);
                           }}
                           onError={(e) => {
-                            e.currentTarget.src = 'https://beatokservice.ru/api/static/default_avatar.png';
+                            e.currentTarget.src = apiUrl('/static/default_avatar.png');
                           }}
                         />
                       </td>
@@ -1219,7 +1218,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
                     <button
                       onClick={() => handleApproveWithdrawal(withdrawal.id)}
                       disabled={approvingId === withdrawal.id}
-                      className="bg-green-600 hover:bg-green-700 disabled:bg-neutral-600 disabled:cursor-not-allowed text-white font-semibold py-2 px-6 rounded transition-colors cursor-pointer"
+                      className="action-button-primary action-button-compact"
                     >
                       {approvingId === withdrawal.id ? 'Подтверждение...' : 'Подтвердить'}
                     </button>
@@ -1235,7 +1234,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
         item && (
           <animated.div
             style={style}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            className="modal-backdrop z-50 flex items-center justify-center"
             onClick={() => {
               setRejectModalOpen(false);
               setSelectedBeat(null);
@@ -1246,21 +1245,21 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
               modalItem && (
                 <animated.div
                   style={modalStyle}
-                  className="bg-neutral-800 rounded-lg p-6 max-w-md w-full mx-4 select-none"
+                  className="modal-shell mx-4 w-full max-w-md p-6 select-none"
                 >
                   <h3 className="text-xl font-semibold text-white mb-4">Отклонить бит</h3>
                   <p className="text-neutral-400 mb-4">Укажите причину отклонения:</p>
                   <textarea
                     value={rejectReason}
                     onChange={(e) => setRejectReason(e.target.value)}
-                    className="w-full h-32 bg-neutral-700 text-white rounded-lg p-3 mb-4 resize-none focus:outline-none focus:ring-2 focus:ring-red-500"
+                    className="mb-4 h-32 w-full resize-none p-3 text-white"
                     placeholder="Причина отклонения..."
                   />
                   <div className="flex space-x-2">
                     <button
                       onClick={handleRejectConfirm}
                       disabled={!rejectReason.trim()}
-                      className="flex-1 cursor-pointer bg-red-600 hover:bg-red-700 disabled:bg-neutral-600 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded transition-colors"
+                      className="action-button-primary action-button-compact flex-1"
                     >
                       Отклонить
                     </button>
@@ -1270,7 +1269,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
                         setSelectedBeat(null);
                         setRejectReason('');
                       }}
-                      className="flex-1 cursor-pointer bg-neutral-600 hover:bg-neutral-500 text-white font-semibold py-2 px-4 rounded transition-colors"
+                      className="action-button-secondary action-button-compact flex-1"
                     >
                       Отмена
                     </button>
@@ -1286,7 +1285,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
         item && (
           <animated.div
             style={style}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            className="modal-backdrop z-50 flex items-center justify-center"
             onClick={() => {
               setEditModalOpen(false);
               setSelectedUser(null);
@@ -1296,18 +1295,18 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
               modalItem && selectedUser && (
                 <animated.div
                   style={modalStyle}
-                  className="bg-neutral-800 rounded-lg p-6 max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto select-none"
+                  className="modal-shell mx-4 max-h-[90vh] w-full max-w-lg overflow-y-auto p-6 select-none"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <h3 className="text-xl font-semibold text-white mb-4">Редактирование пользователя</h3>
                   
-                  <div className="flex items-center space-x-3 mb-6 p-3 bg-neutral-700 rounded-lg">
+                  <div className="modal-subpanel mb-6 flex items-center space-x-3 p-3">
                     <img
-                      src={selectedUser.avatar_path ? getAvatarUrl(selectedUser.id, selectedUser.avatar_path) : 'https://beatokservice.ru/api/static/default_avatar.png'}
+                      src={selectedUser.avatar_path ? getAvatarUrl(selectedUser.id, selectedUser.avatar_path) : apiUrl('/static/default_avatar.png')}
                       alt="Аватар"
                       className="w-12 h-12 rounded-full"
                       onError={(e) => {
-                        e.currentTarget.src = 'https://beatokservice.ru/api/static/default_avatar.png';
+                        e.currentTarget.src = apiUrl('/static/default_avatar.png');
                       }}
                     />
                     <div>
@@ -1322,7 +1321,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
                       value={editForm.role}
                       onChange={(e) => handleRoleChange(e.target.value)}
                       disabled={savingUser}
-                      className="w-full bg-neutral-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50"
+                      className="w-full px-4 py-2 text-white disabled:opacity-50"
                     >
                       <option value="common">Пользователь</option>
                       <option value="moderator">Модератор</option>
@@ -1336,7 +1335,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
                       type="text"
                       value={editForm.username}
                       onChange={(e) => setEditForm(prev => ({ ...prev, username: e.target.value }))}
-                      className="w-full bg-neutral-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      className="w-full px-4 py-2 text-white"
                     />
                   </div>
                   <div className="mb-4">
@@ -1345,7 +1344,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
                       type="email"
                       value={editForm.email}
                       onChange={(e) => setEditForm(prev => ({ ...prev, email: e.target.value }))}
-                      className="w-full bg-neutral-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      className="w-full px-4 py-2 text-white"
                     />
                   </div>
                   <div className="mb-4">
@@ -1353,7 +1352,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
                     <textarea
                       value={editForm.description}
                       onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
-                      className="w-full h-24 bg-neutral-700 text-white rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500 resize-none"
+                      className="h-24 w-full resize-none px-4 py-2 text-white"
                       placeholder="Описание профиля..."
                     />
                   </div>
@@ -1362,7 +1361,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
                     <button
                       onClick={handleUserSave}
                       disabled={savingUser}
-                      className="flex-1 cursor-pointer bg-red-600 hover:bg-red-700 disabled:bg-neutral-600 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded transition-colors"
+                      className="action-button-primary action-button-compact flex-1"
                     >
                       {savingUser ? 'Сохранение...' : 'Сохранить'}
                     </button>
@@ -1372,7 +1371,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
                         setSelectedUser(null);
                       }}
                       disabled={savingUser}
-                      className="flex-1 cursor-pointer bg-neutral-600 hover:bg-neutral-500 disabled:bg-neutral-700 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded transition-colors"
+                      className="action-button-secondary action-button-compact flex-1"
                     >
                       Отмена
                     </button>
@@ -1394,7 +1393,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
         item && (
           <animated.div
             style={style}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            className="modal-backdrop z-50 flex items-center justify-center"
             onClick={() => {
               setResponseModalOpen(false);
               setSelectedRequest(null);
@@ -1405,11 +1404,11 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
               modalItem && selectedRequest && (
                 <animated.div
                   style={modalStyle}
-                  className="bg-neutral-800 rounded-lg p-6 max-w-lg w-full mx-4 select-none"
+                  className="modal-shell mx-4 w-full max-w-lg p-6 select-none"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <h3 className="text-xl font-semibold text-white mb-4">Ответ на заявку</h3>
-                  <div className="mb-4 p-3 bg-neutral-700 rounded">
+                  <div className="modal-subpanel mb-4 p-3">
                     <p className="text-neutral-400 text-sm mb-1">Заявка:</p>
                     <p className="text-white font-medium">{selectedRequest.title}</p>
                     <p className="text-neutral-400 text-sm mt-1">От: {selectedRequest.user?.username} ({selectedRequest.user?.email})</p>
@@ -1418,14 +1417,14 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
                   <textarea
                     value={responseText}
                     onChange={(e) => setResponseText(e.target.value)}
-                    className="w-full h-40 bg-neutral-700 text-white rounded-lg p-3 mb-4 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="mb-4 h-40 w-full resize-none p-3 text-white"
                     placeholder="Введите текст ответа..."
                   />
                   <div className="flex space-x-2">
                     <button
                       onClick={handleSendResponse}
                       disabled={!responseText.trim() || sendingResponse}
-                      className="flex-1 cursor-pointer bg-red-600 hover:bg-red-700 disabled:bg-neutral-600 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded transition-colors"
+                      className="action-button-primary action-button-compact flex-1"
                     >
                       {sendingResponse ? 'Отправка...' : 'Отправить ответ'}
                     </button>
@@ -1436,7 +1435,7 @@ const [responseModalOpen, setResponseModalOpen] = useState(false);
                         setResponseText('');
                       }}
                       disabled={sendingResponse}
-                      className="flex-1 cursor-pointer bg-neutral-600 hover:bg-neutral-500 disabled:bg-neutral-700 disabled:cursor-not-allowed text-white font-semibold py-2 px-4 rounded transition-colors"
+                      className="action-button-secondary action-button-compact flex-1"
                     >
                       Отмена
                     </button>

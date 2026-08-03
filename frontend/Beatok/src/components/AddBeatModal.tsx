@@ -3,6 +3,7 @@ import { useTransition, animated } from '@react-spring/web';
 import { beatService, type Tariff } from '../services/beatService';
 import { useNotificationContext } from './NotificationProvider';
 import { useModal } from '../hooks/useModal';
+import { apiUrl } from '../services/api';
 
 interface AddBeatModalProps {
   isOpen: boolean;
@@ -250,7 +251,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
         formData.append('cover_file', beatData.cover_file);
       }
 
-      const response = await fetch('https://beatokservice.ru/api/beats/create', {
+      const response = await fetch(apiUrl('/beats/create'), {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -372,7 +373,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
         item && (
           <animated.div
             style={style}
-            className="fixed inset-0 bg-black/30 backdrop-blur-md z-40"
+            className="modal-backdrop z-40"
             onClick={onClose}
           />
         )
@@ -384,8 +385,8 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
             style={style}
             className="fixed inset-0 flex items-center justify-center z-50 p-4"
           >
-            <div className="bg-neutral-900 rounded-lg w-full max-w-6xl max-h-[95vh] border border-neutral-800 shadow-2xl overflow-y-auto">
-              <div className="p-6 border-b border-neutral-800">
+            <div className="modal-shell w-full max-w-6xl max-h-[95vh] overflow-y-auto">
+              <div className="modal-divider border-b p-6">
                 <div className="flex justify-between items-start">
                   <div>
                     <h2 className="text-xl font-bold text-white select-none">
@@ -599,7 +600,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                         </div>
                       </div>
 
-                      <div className="border-t border-neutral-700 pt-2 select-none">
+                      <div className="modal-divider border-t pt-2 select-none">
                         <label className="block text-sm font-medium text-neutral-300 mb-2">
                           Теги (макс. 10)
                         </label>
@@ -652,7 +653,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                             type="button"
                             onClick={handleAddTag}
                             disabled={tags.length >= 10 || !tagInput.trim()}
-                            className="px-3 h-8 bg-red-600 hover:bg-red-700 disabled:bg-neutral-700 disabled:cursor-not-allowed text-white text-xs rounded transition-colors cursor-pointer"
+                            className="action-button-primary action-button-slim"
                           >
                             +
                           </button>
@@ -665,7 +666,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                     </div>
                   </div>
 
-                  <div className="border-t border-neutral-700 pt-4">
+                  <div className="modal-divider border-t pt-4">
                     <div className="flex items-center mb-4">
                       <input
                         type="checkbox"
@@ -675,7 +676,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                         className="mr-2 accent-red-600"
                       />
                       <label htmlFor="is_free" className="text-lg select-none font-medium text-white">
-                        Бесплатно
+                        0 ₽
                       </label>
                       <label className="text-sm ml-6 text-neutral-500 select-none">При добавлении платного бита сервис прибавляет к цене комиссионные 200 р. к стоимости бита.</label>
                     </div>
@@ -711,7 +712,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="w-full select-none cursor-pointer max-w-100 mx-auto bg-red-600 hover:bg-red-700 text-white p-3 rounded font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="action-button-primary action-button-block max-w-100 mx-auto"
                     >
                       {loading ? 'Отправка на модерацию...' : 'Отправить на модерацию'}
                     </button>
@@ -728,7 +729,7 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
         item && (
           <animated.div
             style={style}
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-60"
+            className="modal-backdrop z-60"
             onClick={() => setShowRules(false)}
           />
         )
@@ -740,8 +741,8 @@ const AddBeatModal: React.FC<AddBeatModalProps> = ({ isOpen, onClose }) => {
             style={style}
             className="fixed inset-0 flex items-center justify-center z-70 p-4"
           >
-            <div className="bg-neutral-900 rounded-lg w-full max-w-md border border-neutral-800 shadow-2xl">
-              <div className="p-6 border-b border-neutral-800">
+            <div className="modal-shell w-full max-w-md">
+              <div className="modal-divider border-b p-6">
                 <div className="flex justify-between items-center">
                   <h3 className="text-lg font-bold text-white select-none">
                     Правила добавления бита

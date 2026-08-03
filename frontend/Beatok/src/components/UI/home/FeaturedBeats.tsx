@@ -3,6 +3,7 @@ import { beatService } from '../../../services/beatService';
 import type { Beat } from '../../../types/Beat';
 import BeatList from '../beats/BeatList';
 import { useAudioPlayer } from '../../../hooks/useAudioPlayer';
+import { apiUrl } from '../../../services/api';
 
 const FeaturedBeats: React.FC = () => {
   const [featuredBeats, setFeaturedBeats] = useState<Beat[]>([]);
@@ -52,7 +53,7 @@ const FeaturedBeats: React.FC = () => {
     }
     
     try {
-        await fetch(`https://beatokservice.ru/api/beats/${beat.id}/increment-download`, {
+        await fetch(apiUrl(`/beats/${beat.id}/increment-download`), {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -68,8 +69,7 @@ const FeaturedBeats: React.FC = () => {
       return;
     }
 
-    const baseUrl = 'https://beatokservice.ru/api';
-    const audioUrl = `${baseUrl}/audio_storage/${beat.audio_file_path}`;
+    const audioUrl = apiUrl(`/audio_storage/${beat.audio_file_path}`);
     const fileExtension = beat.audio_file_path.split('.').pop()?.toLowerCase() || 'mp3';
 
     try {

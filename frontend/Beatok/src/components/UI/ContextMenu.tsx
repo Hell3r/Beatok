@@ -40,7 +40,7 @@ const ContextMenu: React.FC<ContextMenuProps> = ({ x, y, onDelete, onPromote, on
       />
 
       <animated.div
-        className="fixed z-50 bg-neutral-800 border border-neutral-600 rounded-lg shadow-lg py-2 min-w-[140px]"
+        className="glass-panel-strong fixed z-50 min-w-[140px] overflow-hidden py-2 shadow-[0_24px_60px_rgba(0,0,0,0.28)]"
         style={{
           left: x,
           top: y,
