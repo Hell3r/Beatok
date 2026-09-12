@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import PopularBeats from '../components/UI/home/PopularBeats';
 import FeaturedBeats from '../components/UI/home/FeaturedBeats';
@@ -15,30 +15,34 @@ import SEO, {
 import { apiUrl } from '../services/api';
 
 const HomePage: React.FC = () => {
-  const [scale, setScale] = useState(1.5);
+  const heroImageRef = useRef<HTMLImageElement>(null);
 
   useEffect(() => {
+    let frame = 0;
     const handleScroll = () => {
-      const scrollY = window.scrollY;
-      const newScale = Math.max(1, 1.5 - (scrollY / window.innerHeight) * 0.5);
-      setScale(newScale);
+      if (frame) return;
+      frame = requestAnimationFrame(() => {
+        frame = 0;
+        const image = heroImageRef.current;
+        if (!image) return;
+        const scale = Math.max(1, 1.5 - (window.scrollY / window.innerHeight) * 0.5);
+        image.style.transform = `scale(${scale})`;
+      });
     };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => { window.removeEventListener('scroll', handleScroll); if (frame) cancelAnimationFrame(frame); };
   }, []);
 
   return (
     <>
       <SEO
-        title="Р“Р»Р°РІРЅР°СЏ"
-        description="Р‘РРўРћРљ - СЃРµСЂРІРёСЃ РґР»СЏ РїСЂРѕРґР°Р¶Рё Рё РїРѕРєСѓРїРєРё Р±РёС‚РѕРІ РІ РЎРќР“. РЎРІРµР¶РёРµ Р±РёС‚С‹ РґР»СЏ СЂСЌРїР°, СЂРѕРєРё, РїРѕРї-РјСѓР·С‹РєРё Рё РґСЂСѓРіРёС… Р¶Р°РЅСЂРѕРІ. РЎРєР°С‡РёРІР°Р№ Р±РµСЃРїР»Р°С‚РЅС‹Рµ Р±РёС‚С‹ РёР»Рё РїРѕРєСѓРїР°Р№ РїСЂРµРјРёСѓРј РѕС‚ С‚РѕРїРѕРІС‹С… Р±РёС‚РјРµР№РєРµСЂРѕРІ Р РѕСЃСЃРёРё Рё РЎРќР“."
-        keywords="Р±РёС‚С‹, РєСѓРїРёС‚СЊ Р±РёС‚С‹, РїСЂРѕРґР°С‚СЊ Р±РёС‚С‹, Р±РёС‚С‹ РґР»СЏ СЂСЌРїР°, Р±РµСЃРїР»Р°С‚РЅС‹Рµ Р±РёС‚С‹, РјРёРЅСѓСЃР°, Р±РёС‚РјРµР№РєРµСЂС‹, СЂСЌРї РјСѓР·С‹РєР°, РјРёРЅСѓСЃРѕРІРєРё, РєСѓРїРёС‚СЊ РјРёРЅСѓСЃ, РїСЂРѕРґР°С‚СЊ РјРёРЅСѓСЃ"
+        title="БИТОК"
+        description="БИТОК - Сервис для продажи и покупки битов. Каталог, поиск битмейкеров, демо и лицензии на биты для артистов и продюсеров."
         url="/"
         schema={[
           generateOrganizationSchema(),
           generateWebsiteSchema(),
-          generateBreadcrumbSchema([{ name: 'Р“Р»Р°РІРЅР°СЏ', url: '/' }]),
+          generateBreadcrumbSchema([{ name: 'Главная', url: '/' }]),
         ]}
       />
 
@@ -46,13 +50,14 @@ const HomePage: React.FC = () => {
         <div className="page-shell">
           <section className="page-hero select-none mt-4">
             <img
+              ref={heroImageRef}
               src={apiUrl('/static/images/homepage-bg.jpg')}
               alt="Homepage Background"
               className="absolute inset-0 h-full w-full object-cover opacity-35"
               style={{
-                transform: `scale(${scale})`,
+                transform: 'scale(1.5)',
                 transformOrigin: 'center center',
-                transition: 'transform 0.1s ease-out',
+                willChange: 'transform',
               }}
             />
             <div className="absolute inset-0 bg-gradient-to-br from-black/65 via-black/50 to-black/75" />

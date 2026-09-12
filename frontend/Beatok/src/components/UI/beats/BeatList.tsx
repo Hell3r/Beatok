@@ -1,5 +1,4 @@
 import React, { useMemo, useState } from 'react';
-import { useTrail, animated } from '@react-spring/web';
 import { useNavigate } from 'react-router-dom';
 import type { Beat } from '../../../types/Beat';
 import { truncateText } from '../../../utils/truncateText';
@@ -198,11 +197,10 @@ const BeatList: React.FC<BeatListProps> = ({
     });
   }, [filteredBeats]);
 
-  const trail = useTrail(sortedBeats.length, {
-    from: { opacity: 0, transform: 'translateY(10px)' },
-    to: { opacity: 1, transform: 'translateY(0px)' },
-    config: { duration: 90 },
-  });
+  const favoriteBeatIds = useMemo(
+    () => new Set(favoriteBeats.map((favoriteBeat) => favoriteBeat.id)),
+    [favoriteBeats],
+  );
 
   const gridClassName =
     maxColumns >= 6
@@ -227,6 +225,16 @@ const BeatList: React.FC<BeatListProps> = ({
 
     setBeatToPurchase(beat);
     setPurchaseModalOpen(true);
+  };
+
+  const handleFavoriteClick = (beat: Beat) => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      window.dispatchEvent(new CustomEvent('openAuthModal'));
+      return;
+    }
+
+    onToggleFavorite?.(beat);
   };
 
   if (loading) {
@@ -268,17 +276,16 @@ const BeatList: React.FC<BeatListProps> = ({
   return (
     <>
       <div className={gridClassName}>
-        {trail.map((style, index) => {
-          const beat = sortedBeats[index];
+        {sortedBeats.map((beat) => {
           const isOwnBeat = Boolean(currentUser && getAuthorId(beat) === currentUser.id);
           const coverUrl = getCoverUrl(beat);
           const minPrice = getBeatMinPrice(beat);
-          const isFavorite = favoriteBeats.some((favoriteBeat) => favoriteBeat.id === beat.id);
+          const isFavorite = favoriteBeatIds.has(beat.id);
           const isCurrentBeat = currentPlayingBeat?.id === beat.id && isPlaying;
           const displayTags = beat.tags?.slice(0, 2) ?? [];
 
           return (
-            <animated.article key={beat.id} style={style} className="glass-card group relative p-3">
+            <article key={beat.id} className="glass-card group relative p-3">
               <div className="pointer-events-none absolute inset-0 opacity-0 transition duration-500 group-hover:opacity-100">
                 <div className="absolute left-[-10%] top-[-12%] h-28 w-28 rounded-full bg-red-500/20 blur-3xl" />
                 <div className="absolute bottom-[-14%] right-[-8%] h-32 w-32 rounded-full bg-orange-300/10 blur-3xl" />
@@ -301,14 +308,7 @@ const BeatList: React.FC<BeatListProps> = ({
 
                   <button
                     type="button"
-                    onClick={() => {
-                      const token = localStorage.getItem('access_token');
-                      if (!token) {
-                        window.dispatchEvent(new CustomEvent('openAuthModal'));
-                        return;
-                      }
-                      onToggleFavorite?.(beat);
-                    }}
+                    onClick={() => handleFavoriteClick(beat)}
                     className={`hidden absolute right-2.5 top-2.5 z-10 h-11 w-11 items-center justify-center rounded-full border transition ${
                       isFavorite
                         ? 'border-red-500/25 bg-red-500/[0.16] text-red-300'
@@ -317,7 +317,7 @@ const BeatList: React.FC<BeatListProps> = ({
                     title={isFavorite ? 'Убрать из избранного' : 'Добавить в избранное'}
                   >
                     <svg
-                      className="h-8 w-8"
+                      className="h-12 w-12"
                       fill={isFavorite ? 'currentColor' : 'none'}
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -509,15 +509,8 @@ const BeatList: React.FC<BeatListProps> = ({
 
                     <button
                       type="button"
-                      onClick={() => {
-                        const token = localStorage.getItem('access_token');
-                        if (!token) {
-                          window.dispatchEvent(new CustomEvent('openAuthModal'));
-                          return;
-                        }
-                        onToggleFavorite?.(beat);
-                      }}
-                      className={`beat-card-action flex h-12 w-12 shrink-0 items-center justify-center rounded-full border px-0 transition ${
+                      onClick={() => handleFavoriteClick(beat)}
+                      className={`beat-card-action flex h-12 w-12 shrink-0 items-center justify-center overflow-visible rounded-full border px-0 transition ${
                         isFavorite
                           ? 'border-red-500/25 bg-red-500/[0.16] text-red-300'
                           : 'border-white/10 bg-black/30 text-white/75 hover:border-white/[0.18] hover:bg-white/[0.08] hover:text-white'
@@ -525,7 +518,7 @@ const BeatList: React.FC<BeatListProps> = ({
                       title={isFavorite ? 'РЈР±СЂР°С‚СЊ РёР· РёР·Р±СЂР°РЅРЅРѕРіРѕ' : 'Р”РѕР±Р°РІРёС‚СЊ РІ РёР·Р±СЂР°РЅРЅРѕРµ'}
                     >
                       <svg
-                        className="h-10 w-10"
+                        className="h-6 w-6 scale-[1.35]"
                         fill={isFavorite ? 'currentColor' : 'none'}
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -533,7 +526,7 @@ const BeatList: React.FC<BeatListProps> = ({
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
-                          strokeWidth={2.2}
+                          strokeWidth={2.6}
                           d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
                         />
                       </svg>
@@ -556,7 +549,7 @@ const BeatList: React.FC<BeatListProps> = ({
 
                 </div>
               </div>
-            </animated.article>
+            </article>
           );
         })}
       </div>

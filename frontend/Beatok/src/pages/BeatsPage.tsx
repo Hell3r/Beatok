@@ -6,7 +6,6 @@ import { beatService } from '../services/beatService';
 import type { Beat } from '../types/Beat';
 import BeatList from '../components/UI/beats/BeatList';
 import Filter, { type Filters } from '../components/UI/beats/Filter';
-import { useTransition, animated } from '@react-spring/web';
 import { FaFilter } from 'react-icons/fa';
 import SEO, { generateBreadcrumbSchema } from '../components/SEO';
 import { apiUrl } from '../services/api';
@@ -34,13 +33,6 @@ const BeatsPage: React.FC = () => {
   const [favoriteBeats, setFavoriteBeats] = useState<Beat[]>([]);
 
   const { playBeat, currentBeat, isPlaying, togglePlayPause, setBeats } = useAudioPlayer();
-
-  const transitions = useTransition(viewMode, {
-    from: { opacity: 0 },
-    enter: { opacity: 1 },
-    leave: { opacity: 0 },
-    config: { duration: 250 },
-  });
 
   const handleViewModeChange = (newViewMode: ViewMode) => {
     setViewMode(newViewMode);
@@ -323,9 +315,7 @@ const BeatsPage: React.FC = () => {
             </div>
 
             <div className="hidden md:block">
-              {transitions((style, item) => (
-                <animated.div style={style}>
-                  {item === 'grid' ? (
+              {viewMode === 'grid' ? (
                     <BeatList
                       beats={beats}
                       loading={loading}
@@ -351,8 +341,6 @@ const BeatsPage: React.FC = () => {
                       favoriteBeats={favoriteBeats}
                     />
                   )}
-                </animated.div>
-              ))}
             </div>
           </div>
         </div>

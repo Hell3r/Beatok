@@ -406,9 +406,6 @@ const AudioPlayer: React.FC = () => {
                         {currentBeat.owner?.username || `${currentBeat.author?.username}`}
                       </p>
                       <div className="mt-3 flex items-center gap-2 text-[11px] uppercase tracking-[0.24em] text-[var(--text-muted)]">
-                        <span className="rounded-full border border-red-500/20 bg-red-500/10 px-2.5 py-1 text-red-200">
-                          В эфире
-                        </span>
                         <span>{formatTime(currentTime)} / {formatTime(duration)}</span>
                       </div>
                     </div>

@@ -102,6 +102,8 @@ const App: React.FC = () => {
   useEffect(() => {
     const surfaceSelector = '.page-hero, .section-shell, .glass-panel, .glass-panel-strong, .nav-shell, .glass-card, .beat-table-shell';
     let activeSurface: HTMLElement | null = null;
+    let frameId = 0;
+    let pendingEvent: PointerEvent | null = null;
 
     const resetSurfacePointer = (surface: HTMLElement | null) => {
       if (!surface) return;
@@ -109,7 +111,11 @@ const App: React.FC = () => {
       surface.style.removeProperty('--surface-pointer-y');
     };
 
-    const handlePointerMove = (event: PointerEvent) => {
+    const paintSurfacePointer = () => {
+      frameId = 0;
+      const event = pendingEvent;
+      pendingEvent = null;
+      if (!event) return;
       const target = event.target;
       if (!(target instanceof Element)) {
         resetSurfacePointer(activeSurface);
@@ -134,6 +140,11 @@ const App: React.FC = () => {
       activeSurface = surface;
     };
 
+    const handlePointerMove = (event: PointerEvent) => {
+      pendingEvent = event;
+      if (frameId === 0) frameId = window.requestAnimationFrame(paintSurfacePointer);
+    };
+
     const handlePointerLeaveDocument = () => {
       resetSurfacePointer(activeSurface);
       activeSurface = null;
@@ -147,6 +158,7 @@ const App: React.FC = () => {
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerleave', handlePointerLeaveDocument);
       window.removeEventListener('blur', handlePointerLeaveDocument);
+      if (frameId !== 0) window.cancelAnimationFrame(frameId);
       resetSurfacePointer(activeSurface);
     };
   }, []);

@@ -264,10 +264,25 @@ const BeatTable: React.FC<BeatTableProps> = ({
     window.dispatchEvent(new CustomEvent('beatsUpdated'));
   };
 
+  const favoriteBeatIds = useMemo(
+    () => new Set(favoriteBeats.map((favoriteBeat) => favoriteBeat.id)),
+    [favoriteBeats],
+  );
+
+  const handleFavoriteClick = (beat: Beat) => {
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      window.dispatchEvent(new CustomEvent('openAuthModal'));
+      return;
+    }
+
+    onToggleFavorite?.(beat);
+  };
+
   const renderActions = (beat: Beat) => {
     const currentUser = getCurrentUser();
     const isOwnBeat = currentUser && getAuthorId(beat) === currentUser.id;
-    const isFavorite = favoriteBeats.some((fav) => fav.id === beat.id);
+    const isFavorite = favoriteBeatIds.has(beat.id);
     const minPrice = getBeatMinPrice(beat);
 
     if (isProfileView) {
@@ -340,14 +355,7 @@ const BeatTable: React.FC<BeatTableProps> = ({
           )}
 
           <button
-            onClick={() => {
-              const token = localStorage.getItem('access_token');
-              if (!token) {
-                window.dispatchEvent(new CustomEvent('openAuthModal'));
-                return;
-              }
-              onToggleFavorite?.(beat);
-            }}
+            onClick={() => handleFavoriteClick(beat)}
             className={`beat-table-favorite flex h-11 w-11 items-center justify-center rounded-full border transition duration-300 ${isFavorite ? 'border-red-500/30 bg-red-500/12 text-red-400 shadow-[0_0_24px_rgba(220,38,38,0.18)]' : 'border-white/10 bg-white/5 text-white hover:border-white/20 hover:bg-white/10'}`}
             title={isFavorite ? 'Убрать из избранного' : 'Добавить в избранное'}
           >
